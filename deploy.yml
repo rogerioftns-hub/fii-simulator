@@ -1,0 +1,27 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - main        # dispara deploy a cada push na branch main
+  workflow_dispatch: # permite rodar manualmente pelo GitHub
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: fii-simulator          # nome do projeto no Cloudflare Pages
+          directory: .                         # pasta raiz (onde está o index.html)
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
