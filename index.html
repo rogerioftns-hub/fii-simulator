@@ -673,7 +673,7 @@
   };
 
   // Chaves que devem ser sincronizadas com Firebase
-  const FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta"];
+  const FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas"];
 
   let _fbApp, _fbDb, _fbStorage, _fbReady = false, _fbWriting = false;
 
@@ -914,6 +914,11 @@
     <div class="nav-divider"></div>
     <div class="nav-section-label">Educação</div>
     <div class="nav-tab"   data-page="aprendizagem" onclick="goPage('aprendizagem')"><span class="nav-tab-icon">📚</span> Aprendizagem</div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Operações</div>
+    <div class="nav-tab"   data-page="historicocompras" onclick="goPage('historicocompras')"><span class="nav-tab-icon">🛒</span> Hist. Compras</div>
+    <div class="nav-tab"   data-page="historicovendas"  onclick="goPage('historicovendas')"><span class="nav-tab-icon">💹</span> Hist. Vendas</div>
 
     <div class="nav-divider"></div>
     <div class="nav-section-label">Configuração</div>
@@ -18808,6 +18813,870 @@ function iaSalvarDiario(encodedTexto) {
     </div>
   </div>
 </div>
+
+<!-- ══════════════ PAGE: HISTÓRICO DE COMPRAS ══════════════ -->
+<div class="page" id="page-historicocompras">
+  <div class="sec-head">
+    <div class="sec-title">HISTÓRICO DE COMPRAS</div>
+    <div class="frow" style="gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-green" onclick="hcAbrirModal()">+ Registrar Compra</button>
+      <button class="btn" style="background:#38bdf818;color:var(--papel);border:1px solid #38bdf830" onclick="hcExportar()">⬇ Exportar</button>
+    </div>
+  </div>
+
+  <!-- Resumo Cards -->
+  <div class="g4" style="margin-bottom:.85rem">
+    <div class="card">
+      <div class="card-label">Total Compras</div>
+      <div id="hc-total-ops" class="num" style="font-size:1.6rem;color:var(--hi)">0</div>
+      <div style="font-size:.52rem;color:var(--dim);margin-top:.2rem">operações registradas</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Volume Total</div>
+      <div id="hc-total-volume" class="num" style="font-size:1.6rem;color:var(--papel)">R$ 0</div>
+      <div style="font-size:.52rem;color:var(--dim);margin-top:.2rem">investido</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Ativos Únicos</div>
+      <div id="hc-total-ativos" class="num" style="font-size:1.6rem;color:var(--green)">0</div>
+      <div style="font-size:.52rem;color:var(--dim);margin-top:.2rem">tickers diferentes</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Última Compra</div>
+      <div id="hc-ultima-data" style="font-size:.9rem;color:var(--hi);font-family:'Bebas Neue',sans-serif;letter-spacing:.04em">—</div>
+      <div style="font-size:.52rem;color:var(--dim);margin-top:.2rem">data</div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card" style="margin-bottom:.7rem">
+    <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">BUSCAR TICKER</div>
+        <input type="text" id="hc-filtro-ticker" placeholder="ex: PETR4" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();hcRenderTabela()" />
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">TIPO</div>
+        <select id="hc-filtro-tipo" onchange="hcRenderTabela()">
+          <option value="">Todos</option>
+          <option value="Ação">Ação</option>
+          <option value="ETF">ETF</option>
+          <option value="FII">FII</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">DATA INÍCIO</div>
+        <input type="date" id="hc-filtro-inicio" onchange="hcRenderTabela()" style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);padding:.33rem .5rem;outline:none;width:100%" />
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">DATA FIM</div>
+        <input type="date" id="hc-filtro-fim" onchange="hcRenderTabela()" style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);padding:.33rem .5rem;outline:none;width:100%" />
+      </div>
+      <div style="align-self:flex-end">
+        <button class="btn btn-dim" onclick="hcLimparFiltros()" style="font-size:.58rem">✕ Limpar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela -->
+  <div class="card">
+    <div style="overflow-x:auto">
+      <table class="tbl" id="tbl-historicocompras" style="min-width:750px">
+        <thead>
+          <tr>
+            <th>DATA</th><th>TICKER</th><th>TIPO</th><th>QUANTIDADE</th>
+            <th>PREÇO MÉDIO (R$)</th><th>TOTAL INVESTIDO (R$)</th><th>CORRETORA</th><th>OBS</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-historicocompras">
+          <tr><td colspan="9" style="text-align:center;color:var(--dim);padding:2rem;font-size:.65rem">Nenhuma compra registrada ainda. Clique em "+ Registrar Compra".</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PAGE: HISTÓRICO DE VENDAS ══════════════ -->
+<div class="page" id="page-historicovendas">
+  <div class="sec-head">
+    <div class="sec-title">HISTÓRICO DE VENDAS</div>
+    <div class="frow" style="gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-red" onclick="hvAbrirModal()">+ Registrar Venda</button>
+      <button class="btn" style="background:#38bdf818;color:var(--papel);border:1px solid #38bdf830" onclick="hvExportar()">⬇ Exportar</button>
+    </div>
+  </div>
+
+  <!-- Resumo Cards -->
+  <div class="g4" style="margin-bottom:.85rem">
+    <div class="card">
+      <div class="card-label">Total Vendas</div>
+      <div id="hv-total-ops" class="num" style="font-size:1.6rem;color:var(--hi)">0</div>
+      <div style="font-size:.52rem;color:var(--dim);margin-top:.2rem">operações registradas</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Resultado Líquido</div>
+      <div id="hv-total-resultado" class="num" style="font-size:1.6rem">R$ 0</div>
+      <div style="font-size:.52rem;color:var(--dim);margin-top:.2rem">lucro / prejuízo total</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Volume Total</div>
+      <div id="hv-total-volume" class="num" style="font-size:1.6rem;color:var(--papel)">R$ 0</div>
+      <div style="font-size:.52rem;color:var(--dim);margin-top:.2rem">total recebido</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Taxa de Acerto</div>
+      <div id="hv-taxa-acerto" class="num" style="font-size:1.6rem;color:var(--green)">—</div>
+      <div style="font-size:.52rem;color:var(--dim);margin-top:.2rem">vendas lucrativas</div>
+    </div>
+  </div>
+
+  <!-- Consolidado por dia -->
+  <div class="card" style="margin-bottom:.7rem" id="hv-consolidado-card">
+    <div class="card-label">📅 Consolidado por Dia de Venda</div>
+    <div style="overflow-x:auto">
+      <table class="tbl" id="tbl-consolidado-dia" style="min-width:600px">
+        <thead>
+          <tr>
+            <th>DATA</th><th>Nº OPERAÇÕES</th><th>VOLUME VENDIDO (R$)</th>
+            <th>RESULTADO (R$)</th><th>RESULTADO (%)</th><th>STATUS</th>
+          </tr>
+        </thead>
+        <tbody id="tbody-consolidado-dia">
+          <tr><td colspan="6" style="text-align:center;color:var(--dim);padding:1.5rem;font-size:.65rem">Sem dados</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card" style="margin-bottom:.7rem">
+    <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">BUSCAR TICKER</div>
+        <input type="text" id="hv-filtro-ticker" placeholder="ex: VALE3" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase();hvRenderTabela()" />
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">TIPO</div>
+        <select id="hv-filtro-tipo" onchange="hvRenderTabela()">
+          <option value="">Todos</option>
+          <option value="Ação">Ação</option>
+          <option value="ETF">ETF</option>
+          <option value="FII">FII</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">RESULTADO</div>
+        <select id="hv-filtro-result" onchange="hvRenderTabela()">
+          <option value="">Todos</option>
+          <option value="lucro">Apenas Lucros</option>
+          <option value="prejuizo">Apenas Prejuízos</option>
+        </select>
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">DATA INÍCIO</div>
+        <input type="date" id="hv-filtro-inicio" onchange="hvRenderTabela()" style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);padding:.33rem .5rem;outline:none;width:100%" />
+      </div>
+      <div style="flex:1;min-width:120px">
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">DATA FIM</div>
+        <input type="date" id="hv-filtro-fim" onchange="hvRenderTabela()" style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);padding:.33rem .5rem;outline:none;width:100%" />
+      </div>
+      <div style="align-self:flex-end">
+        <button class="btn btn-dim" onclick="hvLimparFiltros()" style="font-size:.58rem">✕ Limpar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabela de vendas -->
+  <div class="card">
+    <div class="card-label" style="margin-bottom:.6rem">Todas as Operações</div>
+    <div style="overflow-x:auto">
+      <table class="tbl" id="tbl-historicovendas" style="min-width:900px">
+        <thead>
+          <tr>
+            <th>DATA</th><th>TICKER</th><th>TIPO</th><th>QUANTIDADE</th>
+            <th>P. MÉDIO COMPRA</th><th>P. VENDA</th><th>TOTAL RECEBIDO</th>
+            <th>RESULTADO (R$)</th><th>RESULTADO (%)</th><th>CORRETORA</th><th>OBS</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-historicovendas">
+          <tr><td colspan="12" style="text-align:center;color:var(--dim);padding:2rem;font-size:.65rem">Nenhuma venda registrada ainda. Clique em "+ Registrar Venda".</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: Registrar Compra ───────────────────────────── -->
+<div id="modal-hc" style="display:none;position:fixed;inset:0;background:#00000099;z-index:7000;align-items:center;justify-content:center;padding:1rem">
+  <div class="card" style="width:min(480px,96vw);display:flex;flex-direction:column;gap:.75rem;border:1px solid #38bdf840;box-shadow:0 0 40px #38bdf815;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--papel);letter-spacing:.05em">🛒 REGISTRAR COMPRA</div>
+      <button class="btn-icon" onclick="hcFecharModal()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">DATA DA COMPRA *</div>
+        <input type="date" id="hc-data" style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);padding:.33rem .5rem;outline:none;width:100%" />
+      </div>
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">TIPO *</div>
+        <select id="hc-tipo">
+          <option value="Ação">Ação</option>
+          <option value="ETF">ETF</option>
+          <option value="FII">FII</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">TICKER *</div>
+      <input type="text" id="hc-ticker" placeholder="ex: PETR4" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" />
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">QUANTIDADE *</div>
+        <input type="number" id="hc-qtd" placeholder="0" min="1" step="1" oninput="hcCalcTotal()" />
+      </div>
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">PREÇO MÉDIO (R$) *</div>
+        <input type="number" id="hc-preco" placeholder="0.00" min="0" step="0.01" oninput="hcCalcTotal()" />
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">CORRETORA</div>
+        <input type="text" id="hc-corretora" placeholder="ex: XP, Clear, Rico..." />
+      </div>
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">CUSTOS (R$)</div>
+        <input type="number" id="hc-custos" placeholder="0.00" min="0" step="0.01" oninput="hcCalcTotal()" />
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">OBSERVAÇÃO</div>
+      <input type="text" id="hc-obs" placeholder="ex: Aporte mensal, rebalanceamento..." />
+    </div>
+
+    <!-- Preview do total -->
+    <div id="hc-preview-total" style="display:none;background:var(--bg3);border:1px solid #38bdf830;border-radius:8px;padding:.65rem .85rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">
+        <div>
+          <div style="font-size:.45rem;color:var(--dim)">TOTAL INVESTIDO</div>
+          <div id="hc-prev-total" class="num" style="font-size:1.1rem;color:var(--papel)">R$ 0,00</div>
+        </div>
+        <div>
+          <div style="font-size:.45rem;color:var(--dim)">TOTAL C/ CUSTOS</div>
+          <div id="hc-prev-total-custos" class="num" style="font-size:1.1rem;color:var(--hi)">R$ 0,00</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="hc-modal-erro" style="display:none;font-size:.58rem;color:var(--red);background:#f8717115;border:1px solid #f8717130;border-radius:6px;padding:.4rem .6rem"></div>
+
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn btn-dim" onclick="hcFecharModal()">Cancelar</button>
+      <button class="btn" style="background:#38bdf818;color:var(--papel);border:1px solid #38bdf840;font-weight:700" onclick="hcSalvar()">💾 Salvar Compra</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL: Registrar Venda ────────────────────────────── -->
+<div id="modal-hv" style="display:none;position:fixed;inset:0;background:#00000099;z-index:7000;align-items:center;justify-content:center;padding:1rem">
+  <div class="card" style="width:min(520px,96vw);display:flex;flex-direction:column;gap:.75rem;border:1px solid #f8717140;box-shadow:0 0 40px #f8717115;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--red);letter-spacing:.05em">💹 REGISTRAR VENDA</div>
+      <button class="btn-icon" onclick="hvFecharModal()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">DATA DA VENDA *</div>
+        <input type="date" id="hv-data" style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);padding:.33rem .5rem;outline:none;width:100%" />
+      </div>
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">TIPO *</div>
+        <select id="hv-tipo">
+          <option value="Ação">Ação</option>
+          <option value="ETF">ETF</option>
+          <option value="FII">FII</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">TICKER *</div>
+      <input type="text" id="hv-ticker" placeholder="ex: VALE3" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" />
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">QUANTIDADE *</div>
+        <input type="number" id="hv-qtd" placeholder="0" min="1" step="1" oninput="hvCalcResultado()" />
+      </div>
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">PREÇO MÉDIO COMPRA (R$) *</div>
+        <input type="number" id="hv-pmedio" placeholder="0.00" min="0" step="0.01" oninput="hvCalcResultado()" />
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">PREÇO DE VENDA (R$) *</div>
+        <input type="number" id="hv-pvenda" placeholder="0.00" min="0" step="0.01" oninput="hvCalcResultado()" />
+      </div>
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">CUSTOS (R$)</div>
+        <input type="number" id="hv-custos" placeholder="0.00" min="0" step="0.01" oninput="hvCalcResultado()" />
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">CORRETORA</div>
+        <input type="text" id="hv-corretora" placeholder="ex: XP, Clear, Rico..." />
+      </div>
+      <div>
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">OBSERVAÇÃO</div>
+        <input type="text" id="hv-obs" placeholder="ex: Stop loss, realização..." />
+      </div>
+    </div>
+
+    <!-- Preview resultado -->
+    <div id="hv-preview" style="display:none;border-radius:8px;padding:.75rem .9rem;border:1.5px solid">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.5rem">
+        <div>
+          <div style="font-size:.45rem;color:var(--dim)">CUSTO TOTAL</div>
+          <div id="hv-prev-custo" class="num" style="font-size:.9rem;color:var(--dim)">R$ 0,00</div>
+        </div>
+        <div>
+          <div style="font-size:.45rem;color:var(--dim)">TOTAL RECEBIDO</div>
+          <div id="hv-prev-recebido" class="num" style="font-size:.9rem;color:var(--hi)">R$ 0,00</div>
+        </div>
+        <div>
+          <div style="font-size:.45rem;color:var(--dim)">RESULTADO LÍQUIDO</div>
+          <div id="hv-prev-resultado" class="num" style="font-size:1.1rem;font-weight:700">R$ 0,00</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.6rem">
+        <div id="hv-prev-pct-bar-wrap" style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden">
+          <div id="hv-prev-pct-bar" style="height:100%;border-radius:3px;width:0%;transition:width .4s"></div>
+        </div>
+        <div id="hv-prev-pct" style="font-size:.75rem;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;min-width:55px;text-align:right">0,00%</div>
+      </div>
+    </div>
+
+    <div id="hv-modal-erro" style="display:none;font-size:.58rem;color:var(--red);background:#f8717115;border:1px solid #f8717130;border-radius:6px;padding:.4rem .6rem"></div>
+
+    <div style="display:flex;gap:.5rem;justify-content:flex-end">
+      <button class="btn btn-dim" onclick="hvFecharModal()">Cancelar</button>
+      <button class="btn" style="background:#f8717118;color:var(--red);border:1px solid #f8717150;font-weight:700" onclick="hvSalvar()">💾 Salvar Venda</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  HISTÓRICO DE COMPRAS — lógica completa
+// ═══════════════════════════════════════════════════════
+
+function hcGetAll() {
+  try { return JSON.parse(localStorage.getItem('hist-compras') || '[]'); } catch(e) { return []; }
+}
+function hcSaveAll(arr) {
+  localStorage.setItem('hist-compras', JSON.stringify(arr));
+  if (typeof fbWrite === 'function') fbWrite('hist-compras', JSON.stringify(arr));
+}
+
+function hcAbrirModal(id) {
+  const el = document.getElementById('modal-hc');
+  if (id !== undefined) {
+    // editar
+    const arr = hcGetAll();
+    const r = arr.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('hc-data').value = r.data;
+    document.getElementById('hc-tipo').value = r.tipo;
+    document.getElementById('hc-ticker').value = r.ticker;
+    document.getElementById('hc-qtd').value = r.qtd;
+    document.getElementById('hc-preco').value = r.preco;
+    document.getElementById('hc-corretora').value = r.corretora || '';
+    document.getElementById('hc-custos').value = r.custos || 0;
+    document.getElementById('hc-obs').value = r.obs || '';
+    el.dataset.editId = id;
+  } else {
+    // novo
+    delete el.dataset.editId;
+    document.getElementById('hc-data').value = new Date().toISOString().slice(0,10);
+    document.getElementById('hc-tipo').value = 'Ação';
+    document.getElementById('hc-ticker').value = '';
+    document.getElementById('hc-qtd').value = '';
+    document.getElementById('hc-preco').value = '';
+    document.getElementById('hc-corretora').value = '';
+    document.getElementById('hc-custos').value = '';
+    document.getElementById('hc-obs').value = '';
+    document.getElementById('hc-preview-total').style.display = 'none';
+  }
+  document.getElementById('hc-modal-erro').style.display = 'none';
+  hcCalcTotal();
+  el.style.display = 'flex';
+}
+function hcFecharModal() {
+  document.getElementById('modal-hc').style.display = 'none';
+}
+
+function hcCalcTotal() {
+  const qtd = parseFloat(document.getElementById('hc-qtd').value) || 0;
+  const preco = parseFloat(document.getElementById('hc-preco').value) || 0;
+  const custos = parseFloat(document.getElementById('hc-custos').value) || 0;
+  if (qtd > 0 && preco > 0) {
+    const total = qtd * preco;
+    const totalC = total + custos;
+    document.getElementById('hc-prev-total').textContent = 'R$ ' + total.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+    document.getElementById('hc-prev-total-custos').textContent = 'R$ ' + totalC.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+    document.getElementById('hc-preview-total').style.display = 'block';
+  } else {
+    document.getElementById('hc-preview-total').style.display = 'none';
+  }
+}
+
+function hcSalvar() {
+  const errEl = document.getElementById('hc-modal-erro');
+  errEl.style.display = 'none';
+  const data = document.getElementById('hc-data').value;
+  const tipo = document.getElementById('hc-tipo').value;
+  const ticker = document.getElementById('hc-ticker').value.trim().toUpperCase();
+  const qtd = parseFloat(document.getElementById('hc-qtd').value);
+  const preco = parseFloat(document.getElementById('hc-preco').value);
+  const corretora = document.getElementById('hc-corretora').value.trim();
+  const custos = parseFloat(document.getElementById('hc-custos').value) || 0;
+  const obs = document.getElementById('hc-obs').value.trim();
+
+  if (!data || !ticker || isNaN(qtd) || qtd <= 0 || isNaN(preco) || preco <= 0) {
+    errEl.textContent = '⚠ Preencha os campos obrigatórios: data, ticker, quantidade e preço.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const arr = hcGetAll();
+  const modal = document.getElementById('modal-hc');
+  const editId = modal.dataset.editId;
+
+  const reg = { id: editId || Date.now().toString(), data, tipo, ticker, qtd, preco, corretora, custos, obs,
+    total: qtd * preco, totalComCustos: qtd * preco + custos };
+
+  if (editId) {
+    const idx = arr.findIndex(x => x.id === editId);
+    if (idx >= 0) arr[idx] = reg; else arr.push(reg);
+  } else {
+    arr.push(reg);
+  }
+
+  hcSaveAll(arr);
+  hcFecharModal();
+  hcRenderTabela();
+  if (typeof toast === 'function') toast('✅ Compra ' + (editId ? 'atualizada' : 'registrada') + ' com sucesso!');
+}
+
+function hcDeletar(id) {
+  if (!confirm('Remover esta compra?')) return;
+  const arr = hcGetAll().filter(x => x.id !== id);
+  hcSaveAll(arr);
+  hcRenderTabela();
+  if (typeof toast === 'function') toast('Compra removida.');
+}
+
+function hcLimparFiltros() {
+  document.getElementById('hc-filtro-ticker').value = '';
+  document.getElementById('hc-filtro-tipo').value = '';
+  document.getElementById('hc-filtro-inicio').value = '';
+  document.getElementById('hc-filtro-fim').value = '';
+  hcRenderTabela();
+}
+
+function hcGetFiltrado() {
+  let arr = hcGetAll();
+  const fTicker = (document.getElementById('hc-filtro-ticker') || {}).value || '';
+  const fTipo   = (document.getElementById('hc-filtro-tipo') || {}).value || '';
+  const fIni    = (document.getElementById('hc-filtro-inicio') || {}).value || '';
+  const fFim    = (document.getElementById('hc-filtro-fim') || {}).value || '';
+  if (fTicker) arr = arr.filter(r => r.ticker.includes(fTicker));
+  if (fTipo)   arr = arr.filter(r => r.tipo === fTipo);
+  if (fIni)    arr = arr.filter(r => r.data >= fIni);
+  if (fFim)    arr = arr.filter(r => r.data <= fFim);
+  return arr.sort((a,b) => b.data.localeCompare(a.data));
+}
+
+function hcRenderTabela() {
+  const all = hcGetAll();
+  const filtrado = hcGetFiltrado();
+  const tbody = document.getElementById('tbody-historicocompras');
+  if (!tbody) return;
+
+  // Resumo
+  const totalVolume = all.reduce((s,r) => s + (r.total||0), 0);
+  const ativos = new Set(all.map(r => r.ticker)).size;
+  const ultima = all.length ? all.sort((a,b) => b.data.localeCompare(a.data))[0].data : null;
+
+  const fmt = v => 'R$ ' + v.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmtDate = d => d ? d.split('-').reverse().join('/') : '—';
+
+  const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setEl('hc-total-ops', all.length);
+  setEl('hc-total-volume', fmt(totalVolume));
+  setEl('hc-total-ativos', ativos);
+  setEl('hc-ultima-data', ultima ? fmtDate(ultima) : '—');
+
+  if (!filtrado.length) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--dim);padding:2rem;font-size:.65rem">Nenhuma compra encontrada com os filtros aplicados.</td></tr>';
+    return;
+  }
+
+  const tipoChip = {
+    'Ação': '<span class="chip cp">AÇÃO</span>',
+    'ETF':  '<span class="chip ct">ETF</span>',
+    'FII':  '<span class="chip cf">FII</span>',
+  };
+
+  tbody.innerHTML = filtrado.map(r => `
+    <tr>
+      <td style="white-space:nowrap">${fmtDate(r.data)}</td>
+      <td><span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--papel);letter-spacing:.04em">${r.ticker}</span></td>
+      <td>${tipoChip[r.tipo] || r.tipo}</td>
+      <td class="num" style="font-size:.8rem">${r.qtd.toLocaleString('pt-BR')}</td>
+      <td class="num">${fmt(r.preco)}</td>
+      <td class="num" style="color:var(--papel);font-weight:600">${fmt(r.total)}</td>
+      <td style="color:var(--dim)">${r.corretora || '—'}</td>
+      <td style="color:var(--dim);font-size:.58rem;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.obs || '—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" title="Editar" onclick="hcAbrirModal('${r.id}')">✏️</button>
+        <button class="btn-icon" title="Remover" onclick="hcDeletar('${r.id}')">🗑</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function hcExportar() {
+  const arr = hcGetAll();
+  if (!arr.length) { if (typeof toast === 'function') toast('Nenhum dado para exportar.', false); return; }
+  const headers = ['Data','Ticker','Tipo','Quantidade','Preço Médio','Total','Custos','Corretora','Observação'];
+  const rows = arr.map(r => [r.data, r.ticker, r.tipo, r.qtd, r.preco, r.total, r.custos||0, r.corretora||'', r.obs||'']);
+  const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'historico-compras.csv';
+  a.click();
+}
+
+// ═══════════════════════════════════════════════════════
+//  HISTÓRICO DE VENDAS — lógica completa
+// ═══════════════════════════════════════════════════════
+
+function hvGetAll() {
+  try { return JSON.parse(localStorage.getItem('hist-vendas') || '[]'); } catch(e) { return []; }
+}
+function hvSaveAll(arr) {
+  localStorage.setItem('hist-vendas', JSON.stringify(arr));
+  if (typeof fbWrite === 'function') fbWrite('hist-vendas', JSON.stringify(arr));
+}
+
+function hvAbrirModal(id) {
+  const el = document.getElementById('modal-hv');
+  if (id !== undefined) {
+    const arr = hvGetAll();
+    const r = arr.find(x => x.id === id);
+    if (!r) return;
+    document.getElementById('hv-data').value = r.data;
+    document.getElementById('hv-tipo').value = r.tipo;
+    document.getElementById('hv-ticker').value = r.ticker;
+    document.getElementById('hv-qtd').value = r.qtd;
+    document.getElementById('hv-pmedio').value = r.pmedio;
+    document.getElementById('hv-pvenda').value = r.pvenda;
+    document.getElementById('hv-custos').value = r.custos || 0;
+    document.getElementById('hv-corretora').value = r.corretora || '';
+    document.getElementById('hv-obs').value = r.obs || '';
+    el.dataset.editId = id;
+  } else {
+    delete el.dataset.editId;
+    document.getElementById('hv-data').value = new Date().toISOString().slice(0,10);
+    document.getElementById('hv-tipo').value = 'Ação';
+    document.getElementById('hv-ticker').value = '';
+    document.getElementById('hv-qtd').value = '';
+    document.getElementById('hv-pmedio').value = '';
+    document.getElementById('hv-pvenda').value = '';
+    document.getElementById('hv-custos').value = '';
+    document.getElementById('hv-corretora').value = '';
+    document.getElementById('hv-obs').value = '';
+    document.getElementById('hv-preview').style.display = 'none';
+  }
+  document.getElementById('hv-modal-erro').style.display = 'none';
+  hvCalcResultado();
+  el.style.display = 'flex';
+}
+function hvFecharModal() {
+  document.getElementById('modal-hv').style.display = 'none';
+}
+
+function hvCalcResultado() {
+  const qtd    = parseFloat(document.getElementById('hv-qtd').value) || 0;
+  const pmedio = parseFloat(document.getElementById('hv-pmedio').value) || 0;
+  const pvenda = parseFloat(document.getElementById('hv-pvenda').value) || 0;
+  const custos = parseFloat(document.getElementById('hv-custos').value) || 0;
+
+  if (qtd > 0 && pmedio > 0 && pvenda > 0) {
+    const custo    = qtd * pmedio + custos;
+    const recebido = qtd * pvenda;
+    const resultado = recebido - custo;
+    const pct = pmedio > 0 ? ((pvenda - pmedio) / pmedio * 100) : 0;
+    const isLucro = resultado >= 0;
+
+    const fmt = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+    const cor = isLucro ? 'var(--green)' : 'var(--red)';
+
+    const prevEl = document.getElementById('hv-preview');
+    prevEl.style.display = 'block';
+    prevEl.style.borderColor = isLucro ? '#00e5a040' : '#f8717140';
+    prevEl.style.background = isLucro ? '#00e5a008' : '#f8717108';
+
+    document.getElementById('hv-prev-custo').textContent = fmt(custo);
+    document.getElementById('hv-prev-recebido').textContent = fmt(recebido);
+
+    const resEl = document.getElementById('hv-prev-resultado');
+    resEl.textContent = (isLucro ? '+' : '-') + fmt(resultado);
+    resEl.style.color = cor;
+
+    const pctEl = document.getElementById('hv-prev-pct');
+    pctEl.textContent = (isLucro ? '+' : '') + pct.toFixed(2).replace('.',',') + '%';
+    pctEl.style.color = cor;
+
+    const barEl = document.getElementById('hv-prev-pct-bar');
+    barEl.style.background = cor;
+    barEl.style.width = Math.min(Math.abs(pct), 100) + '%';
+  } else {
+    document.getElementById('hv-preview').style.display = 'none';
+  }
+}
+
+function hvSalvar() {
+  const errEl = document.getElementById('hv-modal-erro');
+  errEl.style.display = 'none';
+  const data      = document.getElementById('hv-data').value;
+  const tipo      = document.getElementById('hv-tipo').value;
+  const ticker    = document.getElementById('hv-ticker').value.trim().toUpperCase();
+  const qtd       = parseFloat(document.getElementById('hv-qtd').value);
+  const pmedio    = parseFloat(document.getElementById('hv-pmedio').value);
+  const pvenda    = parseFloat(document.getElementById('hv-pvenda').value);
+  const custos    = parseFloat(document.getElementById('hv-custos').value) || 0;
+  const corretora = document.getElementById('hv-corretora').value.trim();
+  const obs       = document.getElementById('hv-obs').value.trim();
+
+  if (!data || !ticker || isNaN(qtd) || qtd <= 0 || isNaN(pmedio) || pmedio <= 0 || isNaN(pvenda) || pvenda <= 0) {
+    errEl.textContent = '⚠ Preencha os campos obrigatórios: data, ticker, quantidade, preço médio e preço de venda.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const custo     = qtd * pmedio + custos;
+  const recebido  = qtd * pvenda;
+  const resultado = recebido - custo;
+  const pct       = ((pvenda - pmedio) / pmedio * 100);
+
+  const arr = hvGetAll();
+  const modal = document.getElementById('modal-hv');
+  const editId = modal.dataset.editId;
+
+  const reg = { id: editId || Date.now().toString(), data, tipo, ticker, qtd, pmedio, pvenda, custos,
+    corretora, obs, custo, recebido, resultado, pct };
+
+  if (editId) {
+    const idx = arr.findIndex(x => x.id === editId);
+    if (idx >= 0) arr[idx] = reg; else arr.push(reg);
+  } else {
+    arr.push(reg);
+  }
+
+  hvSaveAll(arr);
+  hvFecharModal();
+  hvRenderTabela();
+  if (typeof toast === 'function') toast('✅ Venda ' + (editId ? 'atualizada' : 'registrada') + ' com sucesso!');
+}
+
+function hvDeletar(id) {
+  if (!confirm('Remover esta venda?')) return;
+  const arr = hvGetAll().filter(x => x.id !== id);
+  hvSaveAll(arr);
+  hvRenderTabela();
+  if (typeof toast === 'function') toast('Venda removida.');
+}
+
+function hvLimparFiltros() {
+  document.getElementById('hv-filtro-ticker').value = '';
+  document.getElementById('hv-filtro-tipo').value = '';
+  document.getElementById('hv-filtro-result').value = '';
+  document.getElementById('hv-filtro-inicio').value = '';
+  document.getElementById('hv-filtro-fim').value = '';
+  hvRenderTabela();
+}
+
+function hvGetFiltrado() {
+  let arr = hvGetAll();
+  const fTicker = (document.getElementById('hv-filtro-ticker') || {}).value || '';
+  const fTipo   = (document.getElementById('hv-filtro-tipo') || {}).value || '';
+  const fResult = (document.getElementById('hv-filtro-result') || {}).value || '';
+  const fIni    = (document.getElementById('hv-filtro-inicio') || {}).value || '';
+  const fFim    = (document.getElementById('hv-filtro-fim') || {}).value || '';
+  if (fTicker) arr = arr.filter(r => r.ticker.includes(fTicker));
+  if (fTipo)   arr = arr.filter(r => r.tipo === fTipo);
+  if (fResult === 'lucro')    arr = arr.filter(r => r.resultado >= 0);
+  if (fResult === 'prejuizo') arr = arr.filter(r => r.resultado < 0);
+  if (fIni)    arr = arr.filter(r => r.data >= fIni);
+  if (fFim)    arr = arr.filter(r => r.data <= fFim);
+  return arr.sort((a,b) => b.data.localeCompare(a.data));
+}
+
+function hvRenderTabela() {
+  const all = hvGetAll();
+  const filtrado = hvGetFiltrado();
+  const tbody = document.getElementById('tbody-historicovendas');
+  if (!tbody) return;
+
+  const fmt = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmtDate = d => d ? d.split('-').reverse().join('/') : '—';
+
+  // Resumo cards
+  const totalResultado = all.reduce((s,r) => s + (r.resultado||0), 0);
+  const totalVolume = all.reduce((s,r) => s + (r.recebido||0), 0);
+  const lucrativas = all.filter(r => r.resultado >= 0).length;
+  const taxaAcerto = all.length ? Math.round(lucrativas / all.length * 100) : null;
+
+  const setEl = (id, val, color) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = val;
+    if (color) el.style.color = color;
+  };
+
+  setEl('hv-total-ops', all.length);
+  const isLucroTotal = totalResultado >= 0;
+  setEl('hv-total-resultado',
+    (isLucroTotal ? '+' : '-') + fmt(totalResultado),
+    isLucroTotal ? 'var(--green)' : 'var(--red)');
+  setEl('hv-total-volume', fmt(totalVolume));
+  setEl('hv-taxa-acerto', taxaAcerto !== null ? taxaAcerto + '%' : '—',
+    taxaAcerto !== null ? (taxaAcerto >= 50 ? 'var(--green)' : 'var(--red)') : '');
+
+  // Consolidado por dia
+  hvRenderConsolidado();
+
+  if (!filtrado.length) {
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--dim);padding:2rem;font-size:.65rem">Nenhuma venda encontrada com os filtros aplicados.</td></tr>';
+    return;
+  }
+
+  const tipoChip = {
+    'Ação': '<span class="chip cp">AÇÃO</span>',
+    'ETF':  '<span class="chip ct">ETF</span>',
+    'FII':  '<span class="chip cf">FII</span>',
+  };
+
+  tbody.innerHTML = filtrado.map(r => {
+    const isLucro = r.resultado >= 0;
+    const cor = isLucro ? 'var(--green)' : 'var(--red)';
+    const sinal = isLucro ? '+' : '-';
+    return `<tr>
+      <td style="white-space:nowrap">${fmtDate(r.data)}</td>
+      <td><span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--red);letter-spacing:.04em">${r.ticker}</span></td>
+      <td>${tipoChip[r.tipo] || r.tipo}</td>
+      <td class="num" style="font-size:.8rem">${r.qtd.toLocaleString('pt-BR')}</td>
+      <td class="num" style="color:var(--dim)">${fmt(r.pmedio)}</td>
+      <td class="num">${fmt(r.pvenda)}</td>
+      <td class="num" style="color:var(--hi)">${fmt(r.recebido)}</td>
+      <td class="num" style="color:${cor};font-weight:700">${sinal}${fmt(r.resultado)}</td>
+      <td class="num" style="color:${cor}">${sinal}${Math.abs(r.pct).toFixed(2).replace('.',',')}%</td>
+      <td style="color:var(--dim)">${r.corretora || '—'}</td>
+      <td style="color:var(--dim);font-size:.58rem;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.obs || '—'}</td>
+      <td style="white-space:nowrap">
+        <button class="btn-icon" title="Editar" onclick="hvAbrirModal('${r.id}')">✏️</button>
+        <button class="btn-icon" title="Remover" onclick="hvDeletar('${r.id}')">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function hvRenderConsolidado() {
+  const all = hvGetAll();
+  const tbody = document.getElementById('tbody-consolidado-dia');
+  if (!tbody) return;
+
+  if (!all.length) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--dim);padding:1.5rem;font-size:.65rem">Sem dados</td></tr>';
+    return;
+  }
+
+  // Agrupar por data
+  const porDia = {};
+  all.forEach(r => {
+    if (!porDia[r.data]) porDia[r.data] = { data: r.data, ops: 0, volume: 0, resultado: 0, custoTotal: 0 };
+    porDia[r.data].ops++;
+    porDia[r.data].volume += r.recebido || 0;
+    porDia[r.data].resultado += r.resultado || 0;
+    porDia[r.data].custoTotal += r.custo || 0;
+  });
+
+  const dias = Object.values(porDia).sort((a,b) => b.data.localeCompare(a.data));
+  const fmt = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmtDate = d => d ? d.split('-').reverse().join('/') : '—';
+
+  tbody.innerHTML = dias.map(d => {
+    const isLucro = d.resultado >= 0;
+    const cor = isLucro ? 'var(--green)' : 'var(--red)';
+    const sinal = isLucro ? '+' : '-';
+    const pct = d.custoTotal > 0 ? (d.resultado / d.custoTotal * 100) : 0;
+    const statusBadge = isLucro
+      ? '<span style="background:#00e5a015;color:var(--green);border:1px solid #00e5a030;border-radius:4px;padding:1px 7px;font-size:.52rem;font-weight:700">✅ LUCRO</span>'
+      : '<span style="background:#f8717115;color:var(--red);border:1px solid #f8717130;border-radius:4px;padding:1px 7px;font-size:.52rem;font-weight:700">📉 PREJUÍZO</span>';
+    return `<tr>
+      <td style="white-space:nowrap;font-weight:700">${fmtDate(d.data)}</td>
+      <td class="num" style="color:var(--dim)">${d.ops}</td>
+      <td class="num" style="color:var(--papel)">${fmt(d.volume)}</td>
+      <td class="num" style="color:${cor};font-weight:700">${sinal}${fmt(d.resultado)}</td>
+      <td class="num" style="color:${cor}">${sinal}${Math.abs(pct).toFixed(2).replace('.',',')}%</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+function hvExportar() {
+  const arr = hvGetAll();
+  if (!arr.length) { if (typeof toast === 'function') toast('Nenhum dado para exportar.', false); return; }
+  const headers = ['Data','Ticker','Tipo','Quantidade','P.Medio Compra','P.Venda','Total Recebido','Resultado','Pct%','Custos','Corretora','Observação'];
+  const rows = arr.map(r => [r.data, r.ticker, r.tipo, r.qtd, r.pmedio, r.pvenda, r.recebido,
+    r.resultado, r.pct.toFixed(2), r.custos||0, r.corretora||'', r.obs||'']);
+  const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'historico-vendas.csv';
+  a.click();
+}
+
+// Inicializa tabelas quando página é aberta
+document.addEventListener('DOMContentLoaded', function() {
+  // Hook no goPage para renderizar ao navegar
+  const _origGoPage = window.goPage;
+  if (typeof _origGoPage === 'function') {
+    window.goPage = function(id) {
+      _origGoPage(id);
+      if (id === 'historicocompras') hcRenderTabela();
+      if (id === 'historicovendas')  hvRenderTabela();
+    };
+  }
+});
+</script>
 
 <!-- ─── Botão flutuante do Assistente ────────────────────────────────────── -->
 <button onclick="iaAssistAbrir()" title="Abrir assistente de IA"
