@@ -673,7 +673,7 @@
   };
 
   // Chaves que devem ser sincronizadas com Firebase
-  const FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas"];
+  const FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos"];
 
   let _fbApp, _fbDb, _fbStorage, _fbReady = false, _fbWriting = false;
 
@@ -804,6 +804,15 @@
         const t = localStorage.getItem("brapi-token");
         if (t) try { localStorage.setItem("brapi-token", t); } catch(e2) {}
       }
+      if (k === "hist-vendas") {
+        if (typeof hvRenderTabela === "function") hvRenderTabela();
+      }
+      if (k === "hist-compras") {
+        if (typeof hcRenderTabela === "function") hcRenderTabela();
+      }
+      if (k === "fav-ativos") {
+        if (typeof favRender === "function") favRender();
+      }
     } catch(e) {}
   }
 
@@ -887,6 +896,7 @@
     <div class="nav-tab"   data-page="carteiraacoes" onclick="goPage('carteiraacoes')"><span class="nav-tab-icon">📈</span> Carteira Ações</div>
     <div class="nav-tab"   data-page="carteiraetfs"  onclick="goPage('carteiraetfs')"><span class="nav-tab-icon">🌍</span> Carteira ETFs</div>
     <div class="nav-tab"   data-page="homebroker"   onclick="goPage('homebroker')"><span class="nav-tab-icon">📡</span> Home Broker</div>
+    <div class="nav-tab"   data-page="favoritos"     onclick="goPage('favoritos')"><span class="nav-tab-icon">⭐</span> Favoritos</div>
     <div class="nav-tab"   data-page="watchlist"    onclick="goPage('watchlist')"><span class="nav-tab-icon">👁️</span> Watchlist</div>
     <div class="nav-tab"   data-page="totais"       onclick="goPage('totais')"><span class="nav-tab-icon">📊</span> Totais</div>
     <div class="nav-tab"   data-page="dividendos"    onclick="goPage('dividendos')"><span class="nav-tab-icon">💰</span> Dividendos</div>
@@ -12748,6 +12758,620 @@ function reverterUltimoSnapshotEtfs() {
 }
 
 </script>
+
+<!-- ══════════════ PAGE: FAVORITOS ══════════════ -->
+<div class="page" id="page-favoritos">
+<style>
+/* ── FAVORITOS STYLES ── */
+.fav-section-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:.5rem .9rem; border-radius:10px; margin-bottom:.5rem; cursor:pointer;
+  background:var(--bg2); border:1.5px solid var(--border); transition:all .2s;
+}
+.fav-section-header:hover { border-color:var(--border2); }
+.fav-section-title {
+  display:flex; align-items:center; gap:.55rem;
+  font-family:'Bebas Neue',sans-serif; font-size:1.05rem; letter-spacing:.06em; color:var(--white);
+}
+.fav-section-count {
+  font-size:.52rem; font-family:'IBM Plex Mono',monospace; font-weight:600;
+  padding:2px 8px; border-radius:10px; letter-spacing:.04em;
+}
+.fav-section-chevron { font-size:.7rem; color:var(--dim); transition:transform .25s; }
+.fav-section-chevron.open { transform:rotate(180deg); }
+
+.fav-card {
+  background:var(--bg2); border:1.5px solid var(--border); border-radius:14px;
+  padding:.9rem 1rem; transition:all .2s; position:relative; overflow:hidden;
+}
+.fav-card:hover { border-color:var(--border2); transform:translateY(-1px); box-shadow:0 4px 18px #0006; }
+.fav-card::before {
+  content:''; position:absolute; top:0; left:0; width:4px; height:100%;
+  border-radius:14px 0 0 14px; opacity:.8;
+}
+.fav-card.tipo-acao::before  { background:#38bdf8; }
+.fav-card.tipo-fii::before   { background:#34d399; }
+.fav-card.tipo-etf::before   { background:#fb923c; }
+.fav-card.tipo-rf::before    { background:#fbbf24; }
+
+.fav-ticker {
+  font-family:'Bebas Neue',sans-serif; font-size:1.25rem; letter-spacing:.06em; line-height:1;
+}
+.fav-name { font-size:.52rem; color:var(--dim); margin-top:.1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.fav-price { font-family:'Bebas Neue',sans-serif; font-size:1.5rem; letter-spacing:.04em; line-height:1; }
+.fav-chg   { font-size:.6rem; font-weight:700; }
+.fav-metric-label { font-size:.46rem; color:var(--dim2); letter-spacing:.07em; text-transform:uppercase; margin-bottom:.1rem; }
+.fav-metric-val   { font-family:'Bebas Neue',sans-serif; font-size:.88rem; letter-spacing:.03em; line-height:1.1; }
+.fav-bar-range {
+  display:flex; align-items:center; gap:.4rem; margin-top:.5rem;
+  font-size:.5rem; color:var(--dim);
+}
+.fav-bar-bg { flex:1; height:5px; background:var(--bg3); border-radius:3px; overflow:hidden; position:relative; }
+.fav-bar-fill { position:absolute; height:100%; border-radius:3px; }
+.fav-bar-dot  { position:absolute; top:50%; transform:translateY(-50%); width:8px; height:8px; border-radius:50%; border:2px solid var(--bg2); }
+
+.fav-chip {
+  display:inline-flex; align-items:center; padding:2px 7px;
+  border-radius:4px; font-size:.5rem; font-weight:700; letter-spacing:.04em;
+}
+.fav-chip-acao { background:#38bdf815; color:#38bdf8; }
+.fav-chip-fii  { background:#34d39915; color:#34d399; }
+.fav-chip-etf  { background:#fb923c15; color:#fb923c; }
+.fav-chip-rf   { background:#fbbf2415; color:#fbbf24; }
+
+.fav-loading { animation:pulse 1.4s infinite; background:var(--bg3); border-radius:4px; }
+
+.fav-add-form {
+  background:var(--bg2); border:1.5px dashed var(--border2); border-radius:14px;
+  padding:1rem 1.1rem; display:flex; align-items:flex-end; gap:.6rem; flex-wrap:wrap;
+  margin-bottom:1rem; transition:border-color .2s;
+}
+.fav-add-form:focus-within { border-color:var(--green); border-style:solid; }
+
+.fav-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:.7rem; margin-bottom:.7rem; }
+
+.fav-empty {
+  text-align:center; padding:2.5rem 1rem; color:var(--dim);
+  font-size:.65rem; border:1.5px dashed var(--border); border-radius:12px;
+}
+
+/* Mini sparkline */
+.fav-spark { width:100%; height:32px; }
+
+@media(max-width:680px) {
+  .fav-grid { grid-template-columns:1fr !important; }
+}
+</style>
+
+<div class="sec-head">
+  <div class="sec-title">⭐ ATIVOS FAVORITOS</div>
+  <div class="frow" style="gap:.5rem;flex-wrap:wrap">
+    <button class="btn btn-green" onclick="favRefreshAll()" id="fav-btn-refresh">🔄 Atualizar Preços</button>
+    <button class="btn" style="background:#1a1f38;color:#64748b;border:1px solid var(--border2)" onclick="favExportCSV()">⬇ Exportar</button>
+  </div>
+</div>
+
+<!-- ADD FORM -->
+<div class="fav-add-form" id="fav-add-form">
+  <div style="flex:1;min-width:120px;max-width:160px">
+    <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;margin-bottom:.22rem;text-transform:uppercase">Ticker</div>
+    <div style="position:relative">
+      <input type="text" id="fav-inp-ticker" placeholder="ex: PETR4" autocomplete="off"
+        oninput="this.value=this.value.toUpperCase();favTickerAc(this)"
+        onfocus="favTickerAc(this)" onblur="tickerAcClose()"
+        onkeydown="favTickerAcKey(event,this)"
+        style="text-transform:uppercase;width:100%"/>
+    </div>
+  </div>
+  <div style="flex:0 0 110px">
+    <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;margin-bottom:.22rem;text-transform:uppercase">Tipo</div>
+    <select id="fav-inp-tipo" style="width:100%">
+      <option value="acao">📈 Ação</option>
+      <option value="fii">🏢 FII</option>
+      <option value="etf">🌍 ETF</option>
+      <option value="rf">💰 Renda Fixa</option>
+    </select>
+  </div>
+  <div style="flex:1;min-width:100px">
+    <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;margin-bottom:.22rem;text-transform:uppercase">Nota pessoal</div>
+    <input type="text" id="fav-inp-nota" placeholder="opcional" style="width:100%"/>
+  </div>
+  <div style="flex:0 0 auto">
+    <button class="btn btn-green" onclick="favAddAtivo()" style="height:32px;padding:.3rem 1rem">+ Adicionar</button>
+  </div>
+  <div id="fav-inp-badge" style="width:100%;font-size:.52rem;color:var(--dim);font-family:'IBM Plex Mono',monospace;display:none;margin-top:-.2rem"></div>
+</div>
+
+<!-- STATS BAR -->
+<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:1rem" id="fav-stats-bar">
+  <div class="card" style="padding:.65rem .8rem">
+    <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.2rem">Total Favoritos</div>
+    <div class="num" style="font-size:1.3rem;color:var(--white)" id="fav-stat-total">0</div>
+  </div>
+  <div class="card" style="padding:.65rem .8rem">
+    <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.2rem">Em Alta Hoje</div>
+    <div class="num" style="font-size:1.3rem;color:var(--green)" id="fav-stat-alta">—</div>
+  </div>
+  <div class="card" style="padding:.65rem .8rem">
+    <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.2rem">Em Queda Hoje</div>
+    <div class="num" style="font-size:1.3rem;color:var(--red)" id="fav-stat-queda">—</div>
+  </div>
+  <div class="card" style="padding:.65rem .8rem">
+    <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.2rem">Última Atualização</div>
+    <div style="font-size:.6rem;color:var(--dim2);margin-top:.2rem" id="fav-stat-upd">—</div>
+  </div>
+</div>
+
+<!-- SECTIONS -->
+<div id="fav-sections-wrap"></div>
+
+</div><!-- /page-favoritos -->
+
+<script>
+// ══════════════════════════════════════════════
+//  ATIVOS FAVORITOS
+// ══════════════════════════════════════════════
+const FAV_KEY = 'fav-ativos';
+
+const FAV_TIPOS = {
+  acao: { label:'Ações',       icon:'📈', chipClass:'fav-chip-acao', cardClass:'tipo-acao', color:'#38bdf8', borderColor:'#38bdf840' },
+  fii:  { label:'FIIs',        icon:'🏢', chipClass:'fav-chip-fii',  cardClass:'tipo-fii',  color:'#34d399', borderColor:'#34d39940' },
+  etf:  { label:'ETFs',        icon:'🌍', chipClass:'fav-chip-etf',  cardClass:'tipo-etf',  color:'#fb923c', borderColor:'#fb923c40' },
+  rf:   { label:'Renda Fixa',  icon:'💰', chipClass:'fav-chip-rf',   cardClass:'tipo-rf',   color:'#fbbf24', borderColor:'#fbbf2440' },
+};
+
+// Campos extras por tipo
+const FAV_FIELDS = {
+  acao: ['P/L','P/VP','DY','ROE','EV/EBITDA','Setor'],
+  fii:  ['P/VP','DY','Vacância','Segmento','Tipo','Gestora'],
+  etf:  ['Taxa Adm.','Benchmark','N.º Ativos','Segmento','Liquidez Média','Cotistas'],
+  rf:   ['Rentab.','Indexador','Vencimento','Emissor','Liquidez','Garantia'],
+};
+
+function favGetAll() {
+  try {
+    let raw = localStorage.getItem(FAV_KEY) || '[]';
+    let parsed = JSON.parse(raw);
+    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch(e) { return []; }
+}
+function favSaveAll(arr) {
+  if (!Array.isArray(arr)) arr = [];
+  localStorage.setItem(FAV_KEY, JSON.stringify(arr));
+  if (typeof fbWrite === 'function') {
+    try { fbWrite(FAV_KEY, arr); } catch(e) {}
+  }
+}
+
+function favAddAtivo() {
+  const ticker = (document.getElementById('fav-inp-ticker').value||'').trim().toUpperCase();
+  const tipo   = document.getElementById('fav-inp-tipo').value;
+  const nota   = (document.getElementById('fav-inp-nota').value||'').trim();
+  if (!ticker) { if(typeof toast==='function') toast('Informe o ticker.', false); return; }
+
+  const arr = favGetAll();
+  if (arr.find(a => a.ticker === ticker)) {
+    if(typeof toast==='function') toast('Ativo já está nos favoritos.', false); return;
+  }
+  arr.push({ ticker, tipo, nota, addedAt: new Date().toISOString(), priceData: null });
+  favSaveAll(arr);
+
+  // Reset form
+  document.getElementById('fav-inp-ticker').value = '';
+  document.getElementById('fav-inp-nota').value = '';
+  document.getElementById('fav-inp-badge').style.display = 'none';
+
+  favRender();
+  // Busca preço só do novo ativo, sem bloquear os existentes
+  favRefreshOne(ticker, false);
+  if(typeof toast==='function') toast('⭐ ' + ticker + ' adicionado! Buscando preço...');
+}
+
+function favRemove(ticker) {
+  if (!confirm('Remover ' + ticker + ' dos favoritos?')) return;
+  const arr = favGetAll().filter(a => a.ticker !== ticker);
+  favSaveAll(arr);
+  favRender();
+  if(typeof toast==='function') toast(ticker + ' removido.');
+}
+
+function favRender() {
+  const arr = favGetAll();
+  const wrap = document.getElementById('fav-sections-wrap');
+  if (!wrap) return;
+
+  // Stats
+  const withPrice = arr.filter(a => a.priceData);
+  const altas = withPrice.filter(a => (a.priceData.regularMarketChangePercent||0) >= 0).length;
+  const quedas = withPrice.filter(a => (a.priceData.regularMarketChangePercent||0) < 0).length;
+  const el = id => document.getElementById(id);
+  if(el('fav-stat-total')) el('fav-stat-total').textContent = arr.length;
+  if(el('fav-stat-alta'))  el('fav-stat-alta').textContent = withPrice.length ? altas : '—';
+  if(el('fav-stat-queda')) el('fav-stat-queda').textContent = withPrice.length ? quedas : '—';
+
+  if (!arr.length) {
+    wrap.innerHTML = '<div class="fav-empty">⭐ Nenhum ativo favorito ainda.<br><span style="font-size:.58rem">Adicione um ativo usando o formulário acima.</span></div>';
+    return;
+  }
+
+  wrap.innerHTML = '';
+  const order = ['acao','fii','etf','rf'];
+
+  order.forEach(tipo => {
+    const ativos = arr.filter(a => a.tipo === tipo);
+    if (!ativos.length) return;
+    const t = FAV_TIPOS[tipo];
+    const sectionId = 'fav-sec-' + tipo;
+
+    const section = document.createElement('div');
+    section.style.marginBottom = '.8rem';
+
+    // Header
+    const hdr = document.createElement('div');
+    hdr.className = 'fav-section-header';
+    hdr.innerHTML = `
+      <div class="fav-section-title">
+        <span>${t.icon}</span>
+        <span>${t.label}</span>
+        <span class="fav-section-count" style="background:${t.borderColor};color:${t.color}">${ativos.length}</span>
+      </div>
+      <span class="fav-section-chevron open" id="fav-chev-${tipo}">▼</span>`;
+    hdr.onclick = () => favToggleSection(tipo);
+    section.appendChild(hdr);
+
+    // Grid
+    const grid = document.createElement('div');
+    grid.className = 'fav-grid';
+    grid.id = sectionId;
+
+    ativos.forEach(a => {
+      grid.appendChild(favBuildCard(a, t));
+    });
+
+    section.appendChild(grid);
+    wrap.appendChild(section);
+  });
+}
+
+function favBuildCard(ativo, t) {
+  const d = ativo.priceData;
+  const card = document.createElement('div');
+  card.className = 'fav-card ' + t.cardClass;
+  card.id = 'fav-card-' + ativo.ticker;
+
+  const price     = d ? (d.regularMarketPrice ?? null) : null;
+  const chgPct    = d ? (d.regularMarketChangePercent ?? null) : null;
+  const chgAbs    = d ? (d.regularMarketChange ?? null) : null;
+  const low6m     = d ? (d._min6m ?? d.fiftyTwoWeekLow  ?? d.regularMarketDayLow  ?? null) : null;
+  const high6m    = d ? (d._max6m ?? d.fiftyTwoWeekHigh ?? d.regularMarketDayHigh ?? null) : null;
+  const volume    = d ? (d.regularMarketVolume ?? null) : null;
+  const mktCap    = d ? (d.marketCap ?? null) : null;
+  const longName  = d ? (d.longName || d.shortName || d.symbol || '') : '';
+  const currency  = d ? (d.currency || 'BRL') : 'BRL';
+
+  const isUp    = (chgPct||0) >= 0;
+  const chgColor = isUp ? 'var(--green)' : 'var(--red)';
+  const chgIcon  = isUp ? '▲' : '▼';
+
+  // Range position (where current price sits between 6m low/high)
+  let rangePct = 50;
+  if (price && low6m && high6m && high6m > low6m)
+    rangePct = Math.min(100, Math.max(0, ((price - low6m) / (high6m - low6m)) * 100));
+
+  const fmt  = v => v != null ? 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) : '—';
+  const fmtK = v => {
+    if (v == null) return '—';
+    if (v >= 1e9)  return 'R$ ' + (v/1e9).toFixed(1) + 'B';
+    if (v >= 1e6)  return 'R$ ' + (v/1e6).toFixed(1) + 'M';
+    if (v >= 1e3)  return 'R$ ' + (v/1e3).toFixed(1) + 'K';
+    return 'R$ ' + v.toFixed(2);
+  };
+  const fmtVol = v => v != null ? v.toLocaleString('pt-BR') : '—';
+
+  // Extra fields by tipo
+  const extraFields = FAV_FIELDS[ativo.tipo] || [];
+
+  card.innerHTML = `
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:.55rem">
+      <div>
+        <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.15rem">
+          <span class="fav-ticker" style="color:${t.color}">${ativo.ticker}</span>
+          <span class="fav-chip ${t.chipClass}">${t.label.replace('s','').toUpperCase()}</span>
+        </div>
+        <div class="fav-name" style="max-width:160px" title="${longName}">${longName || '—'}</div>
+        ${ativo.nota ? `<div style="font-size:.5rem;color:#818cf8;margin-top:.15rem;font-style:italic">📝 ${ativo.nota}</div>` : ''}
+      </div>
+      <div style="text-align:right">
+        <div class="fav-price" style="color:var(--white)">${price != null ? fmt(price) : '<span class="fav-loading" style="display:inline-block;width:70px;height:20px"></span>'}</div>
+        ${chgPct != null ? `<div class="fav-chg" style="color:${chgColor}">${chgIcon} ${Math.abs(chgPct).toFixed(2).replace('.',',')}% (${chgAbs >= 0?'+':''}${chgAbs != null ? chgAbs.toFixed(2).replace('.',',') : '—'})</div>` : '<div style="font-size:.52rem;color:var(--dim2)">aguardando...</div>'}
+        <div style="font-size:.46rem;color:var(--dim2);margin-top:.1rem">Vol: ${fmtVol(volume)}</div>
+      </div>
+    </div>
+
+    <!-- Range 6 meses -->
+    <div class="fav-bar-range">
+      <span style="min-width:52px">Mín 6m<br><strong style="color:var(--text)">${low6m != null ? fmt(low6m) : '—'}</strong></span>
+      <div class="fav-bar-bg">
+        <div class="fav-bar-fill" style="left:0;width:${rangePct}%;background:linear-gradient(90deg,var(--red),${t.color})"></div>
+        <div class="fav-bar-dot" style="left:calc(${rangePct}% - 4px);background:${t.color}"></div>
+      </div>
+      <span style="min-width:52px;text-align:right">Máx 6m<br><strong style="color:var(--text)">${high6m != null ? fmt(high6m) : '—'}</strong></span>
+    </div>
+
+    <!-- Métricas -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.4rem;margin-top:.6rem;padding-top:.5rem;border-top:1px solid var(--border)">
+      <div>
+        <div class="fav-metric-label">Abertura</div>
+        <div class="fav-metric-val" style="color:var(--dim)">${d?.regularMarketOpen != null ? fmt(d.regularMarketOpen) : '—'}</div>
+      </div>
+      <div>
+        <div class="fav-metric-label">Fecham. Ant.</div>
+        <div class="fav-metric-val" style="color:var(--dim)">${d?.regularMarketPreviousClose != null ? fmt(d.regularMarketPreviousClose) : '—'}</div>
+      </div>
+      <div>
+        <div class="fav-metric-label">Mkt Cap</div>
+        <div class="fav-metric-val" style="color:var(--dim)">${fmtK(mktCap)}</div>
+      </div>
+      <div>
+        <div class="fav-metric-label">Máx. Dia</div>
+        <div class="fav-metric-val" style="color:var(--green)">${d?.regularMarketDayHigh != null ? fmt(d.regularMarketDayHigh) : '—'}</div>
+      </div>
+      <div>
+        <div class="fav-metric-label">Mín. Dia</div>
+        <div class="fav-metric-val" style="color:var(--red)">${d?.regularMarketDayLow != null ? fmt(d.regularMarketDayLow) : '—'}</div>
+      </div>
+      <div>
+        <div class="fav-metric-label">Volume</div>
+        <div class="fav-metric-val" style="color:var(--dim);font-size:.7rem">${volume != null ? fmtVol(volume) : '—'}</div>
+      </div>
+      <div>
+        <div class="fav-metric-label">Mín 52s</div>
+        <div class="fav-metric-val" style="color:var(--red)">${d?.fiftyTwoWeekLow != null ? fmt(d.fiftyTwoWeekLow) : '—'}</div>
+      </div>
+      <div>
+        <div class="fav-metric-label">Máx 52s</div>
+        <div class="fav-metric-val" style="color:var(--green)">${d?.fiftyTwoWeekHigh != null ? fmt(d.fiftyTwoWeekHigh) : '—'}</div>
+      </div>
+      <div>
+        <div class="fav-metric-label">DY</div>
+        <div class="fav-metric-val" style="color:var(--yellow)">${d?.dividendYield != null ? (d.dividendYield > 1 ? d.dividendYield.toFixed(2) : (d.dividendYield*100).toFixed(2)) + '%' : '—'}</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:.55rem;padding-top:.4rem;border-top:1px solid var(--border)">
+      <div style="font-size:.46rem;color:var(--dim2)">
+        Adicionado: ${new Date(ativo.addedAt).toLocaleDateString('pt-BR')}
+        ${d?._fetchedAt ? ' · Atualizado: ' + new Date(d._fetchedAt).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : ''}
+      </div>
+      <div style="display:flex;gap:.3rem">
+        <button class="btn" style="font-size:.5rem;padding:.2rem .5rem;background:#1a1f38;color:var(--dim);border:1px solid var(--border)" onclick="favRefreshOne('${ativo.ticker}')">🔄</button>
+        <button class="btn" style="font-size:.5rem;padding:.2rem .5rem;background:#f8717115;color:var(--red);border:1px solid #f8717130" onclick="favRemove('${ativo.ticker}')">🗑</button>
+      </div>
+    </div>`;
+
+  return card;
+}
+
+function favToggleSection(tipo) {
+  const grid = document.getElementById('fav-sec-' + tipo);
+  const chev = document.getElementById('fav-chev-' + tipo);
+  if (!grid) return;
+  const isOpen = grid.style.display !== 'none';
+  grid.style.display = isOpen ? 'none' : '';
+  if (chev) chev.classList.toggle('open', !isOpen);
+}
+
+async function favFetchOne(ticker) {
+  // Busca cotação + histórico 6 meses separadamente
+  const token = getBrapiToken();
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
+  // 1) Cotação atual com campos fundamentalistas
+  let quoteData = null;
+  try {
+    const url = buildBrapiUrl(ticker, 'fundamental=false');
+    const res = await fetch(url);
+    if (res.ok) {
+      const json = await res.json();
+      quoteData = (json.results || [])[0] || null;
+    }
+  } catch(e) {}
+
+  // 2) Histórico 6 meses para calcular min/max reais
+  let hist6m = { low: null, high: null };
+  try {
+    const url = buildBrapiUrl(ticker, 'range=6mo&interval=1wk');
+    const res = await fetch(url);
+    if (res.ok) {
+      const json = await res.json();
+      const r = (json.results || [])[0];
+      const prices = r?.historicalDataPrice || [];
+      if (prices.length) {
+        const lows  = prices.map(p => p.low).filter(v => v && v > 0);
+        const highs = prices.map(p => p.high).filter(v => v && v > 0);
+        if (lows.length)  hist6m.low  = Math.min(...lows);
+        if (highs.length) hist6m.high = Math.max(...highs);
+      }
+    }
+  } catch(e) {}
+
+  if (!quoteData) return null;
+
+  // Mescla: usa hist6m se disponível, senão 52w como fallback
+  quoteData._min6m  = hist6m.low  || quoteData.fiftyTwoWeekLow  || quoteData.regularMarketDayLow  || null;
+  quoteData._max6m  = hist6m.high || quoteData.fiftyTwoWeekHigh || quoteData.regularMarketDayHigh || null;
+  quoteData._fetchedAt = new Date().toISOString();
+  return quoteData;
+}
+
+async function favRefreshAll() {
+  const arr = favGetAll();
+  if (!arr.length) return;
+  const btn = document.getElementById('fav-btn-refresh');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Atualizando...'; }
+
+  const tickers = arr.filter(a => a.tipo !== 'rf').map(a => a.ticker);
+  const delay = ms => new Promise(r => setTimeout(r, ms));
+
+  for (let i = 0; i < tickers.length; i++) {
+    await favRefreshOne(tickers[i], true);
+    if (i < tickers.length - 1) await delay(350);
+  }
+
+  favRender();
+  const now = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  const upd = document.getElementById('fav-stat-upd');
+  if (upd) upd.textContent = now;
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 Atualizar Preços'; }
+  if(typeof toast==='function') toast('✅ Preços atualizados!');
+}
+
+async function favRefreshOne(ticker, silent) {
+  // Atualiza card visualmente como "carregando"
+  const cardEl = document.getElementById('fav-card-' + ticker);
+  if (cardEl) cardEl.style.opacity = '0.5';
+
+  try {
+    const data = await favFetchOne(ticker);
+    if (data) {
+      const arr = favGetAll().map(a => {
+        if (a.ticker === ticker) a.priceData = data;
+        return a;
+      });
+      favSaveAll(arr);
+      // Atualiza só esse card sem re-renderizar tudo
+      favUpdateCard(ticker, arr.find(a => a.ticker === ticker));
+    }
+  } catch(e) {
+    if (!silent && typeof toast==='function') toast('Erro ao buscar ' + ticker, false);
+  }
+  if (cardEl) cardEl.style.opacity = '1';
+}
+
+function favUpdateCard(ticker, ativo) {
+  if (!ativo) return;
+  const t = FAV_TIPOS[ativo.tipo];
+  const cardEl = document.getElementById('fav-card-' + ticker);
+  if (!cardEl || !t) return;
+  // Re-build the card in place
+  const newCard = favBuildCard(ativo, t);
+  newCard.style.animation = 'up .3s ease both';
+  cardEl.replaceWith(newCard);
+
+  // Update stats
+  const arr = favGetAll();
+  const withPrice = arr.filter(a => a.priceData);
+  const altas  = withPrice.filter(a => (a.priceData.regularMarketChangePercent||0) >= 0).length;
+  const quedas = withPrice.filter(a => (a.priceData.regularMarketChangePercent||0) < 0).length;
+  const el = id => document.getElementById(id);
+  if(el('fav-stat-alta'))  el('fav-stat-alta').textContent  = withPrice.length ? altas  : '—';
+  if(el('fav-stat-queda')) el('fav-stat-queda').textContent = withPrice.length ? quedas : '—';
+}
+
+function favExportCSV() {
+  const arr = favGetAll();
+  if (!arr.length) { if(typeof toast==='function') toast('Nenhum favorito para exportar.', false); return; }
+  const headers = ['Ticker','Tipo','Preço Atual','Var%','Mín 6m','Máx 6m','Volume','Mkt Cap','Nota','Adicionado em'];
+  const rows = arr.map(a => {
+    const d = a.priceData;
+    return [
+      a.ticker,
+      FAV_TIPOS[a.tipo]?.label || a.tipo,
+      d ? d.regularMarketPrice : '',
+      d ? d.regularMarketChangePercent?.toFixed(2) : '',
+      d ? (d.fiftyTwoWeekLow || '') : '',
+      d ? (d.fiftyTwoWeekHigh || '') : '',
+      d ? (d.regularMarketVolume || '') : '',
+      d ? (d.marketCap || '') : '',
+      a.nota || '',
+      new Date(a.addedAt).toLocaleDateString('pt-BR'),
+    ];
+  });
+  const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
+  const a2 = document.createElement('a');
+  a2.href = URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'}));
+  a2.download = 'favoritos.csv';
+  a2.click();
+  if(typeof toast==='function') toast('✅ CSV exportado!');
+}
+
+// ── Autocomplete para fav-inp-ticker ─────────────────────────────────────
+function favTickerAc(input) {
+  _acInput = input;
+  const q = (input.value||'').trim().toUpperCase();
+  _removeAcDD();
+  if (q.length < 2) { document.getElementById('fav-inp-badge').style.display='none'; return; }
+
+  const all = [
+    ..._AC_DATA.fii.map(([t,n])  => [t,n,'FII']),
+    ..._AC_DATA.acao.map(([t,n]) => [t,n,'AÇÃO']),
+    ...(_AC_DATA.etf||[]).map(([t,n]) => [t,n,'ETF']),
+  ];
+  const matches = all.filter(([t]) => t.startsWith(q)).slice(0,14);
+  if (!matches.length) return;
+
+  const typeColor = {'FII':'#34d399','AÇÃO':'#38bdf8','ETF':'#fb923c'};
+  const typeBg    = {'FII':'#34d39915','AÇÃO':'#38bdf815','ETF':'#fb923c15'};
+  const tipoMap   = {'FII':'fii','AÇÃO':'acao','ETF':'etf'};
+
+  const dd = document.createElement('div');
+  dd.id = '__acDD__'; dd.className = 'ticker-ac-dropdown'; dd.style.minWidth='260px';
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:.22rem .65rem .15rem;font-size:.44rem;color:var(--dim2);letter-spacing:.08em;border-bottom:1px solid var(--border);text-transform:uppercase';
+  hdr.textContent = matches.length + ' resultado' + (matches.length>1?'s':'') + ' · ↑↓ · Enter';
+  dd.appendChild(hdr);
+
+  matches.forEach(([t,n,tipo],i) => {
+    const item = document.createElement('div');
+    item.className = 'ticker-ac-item';
+    item.dataset.ticker=t; item.dataset.name=n; item.dataset.tipo=tipo; item.dataset.idx=i;
+    const hl = t.startsWith(q) ? `<span class="ac-match">${t.slice(0,q.length)}</span>${t.slice(q.length)}` : t;
+    item.innerHTML = `<span class="ac-ticker" style="color:${typeColor[tipo]}">${hl}</span><span class="ac-name" style="flex:1">${n}</span><span style="font-size:.44rem;font-weight:700;padding:1px 5px;border-radius:3px;color:${typeColor[tipo]};background:${typeBg[tipo]};flex-shrink:0">${tipo}</span>`;
+    item.addEventListener('mousedown', e=>e.preventDefault());
+    item.addEventListener('click', () => favTickerAcApply(t,n,tipo,tipoMap[tipo]));
+    dd.appendChild(item);
+  });
+
+  const rect = input.getBoundingClientRect();
+  dd.style.cssText = `position:fixed;top:${rect.bottom+3}px;left:${rect.left}px;min-width:${Math.max(rect.width,260)}px;z-index:99999;`;
+  document.body.appendChild(dd);
+  _acDD=dd; _acSelIdx=-1;
+}
+
+function favTickerAcApply(ticker,name,tipoLabel,tipoVal) {
+  const input = document.getElementById('fav-inp-ticker');
+  if(input) input.value = ticker;
+  if(tipoVal) { const sel=document.getElementById('fav-inp-tipo'); if(sel) sel.value=tipoVal; }
+  _removeAcDD();
+  const badge = document.getElementById('fav-inp-badge');
+  if(badge) {
+    const c={'FII':'#34d399','AÇÃO':'#38bdf8','ETF':'#fb923c'}[tipoLabel]||'var(--green)';
+    const bg={'FII':'#34d39915','AÇÃO':'#38bdf815','ETF':'#fb923c15'}[tipoLabel]||'#00e5a015';
+    badge.innerHTML=`<span style="font-family:'Bebas Neue',sans-serif;font-size:.75rem;color:${c};letter-spacing:.04em">${ticker}</span><span style="color:var(--border2);margin:0 .25rem">·</span><span style="font-size:.52rem;color:var(--dim)">${name}</span><span style="margin-left:.35rem;font-size:.44rem;font-weight:700;padding:1px 5px;border-radius:3px;color:${c};background:${bg}">${tipoLabel}</span>`;
+    badge.style.display='block';
+  }
+}
+
+function favTickerAcKey(e,input) {
+  if(!_acDD) return;
+  const items=_acDD.querySelectorAll('.ticker-ac-item');
+  if(!items.length) return;
+  if(e.key==='ArrowDown'){e.preventDefault();_acSelIdx=Math.min(_acSelIdx+1,items.length-1);items.forEach((it,i)=>it.classList.toggle('selected',i===_acSelIdx));}
+  else if(e.key==='ArrowUp'){e.preventDefault();_acSelIdx=Math.max(_acSelIdx-1,0);items.forEach((it,i)=>it.classList.toggle('selected',i===_acSelIdx));}
+  else if(e.key==='Enter'||e.key==='Tab'){
+    const tgt=_acSelIdx>=0?items[_acSelIdx]:items[0];
+    if(tgt){e.preventDefault();favTickerAcApply(tgt.dataset.ticker,tgt.dataset.name,tgt.dataset.tipo,{'FII':'fii','AÇÃO':'acao','ETF':'etf'}[tgt.dataset.tipo]||'acao');}
+  } else if(e.key==='Escape'){_removeAcDD();}
+}
+
+// Hook no goPage para carregar favoritos (integrado no hook principal abaixo)
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.getElementById('page-favoritos')?.classList.contains('on')) favRender();
+});
+</script>
+
 <!-- ══════════════ PAGE: WATCHLIST ══════════════ -->
 <div class="page" id="page-watchlist">
   <div class="sec-head">
@@ -19197,12 +19821,22 @@ function iaSalvarDiario(encodedTexto) {
 
 <!-- ── MODAL: Registrar Venda ────────────────────────────── -->
 <div id="modal-hv" style="display:none;position:fixed;inset:0;background:#00000099;z-index:7000;align-items:center;justify-content:center;padding:1rem">
-  <div class="card" style="width:min(520px,96vw);display:flex;flex-direction:column;gap:.75rem;border:1px solid #f8717140;box-shadow:0 0 40px #f8717115;max-height:90vh;overflow-y:auto">
+  <div class="card" style="width:min(560px,96vw);display:flex;flex-direction:column;gap:.75rem;border:1.5px solid #f8717140;box-shadow:0 0 40px #f8717118;max-height:90vh;overflow-y:auto">
+
+    <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--red);letter-spacing:.05em">💹 REGISTRAR VENDA</div>
-      <button class="btn-icon" onclick="hvFecharModal()">✕</button>
+      <button class="btn-icon" onclick="hvFecharModal()" style="font-size:1rem">✕</button>
     </div>
 
+    <!-- Selecionar da carteira -->
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:.7rem .85rem">
+      <div style="font-size:.48rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.45rem;font-weight:700">📂 Selecionar da minha carteira</div>
+      <div style="display:flex;gap:.35rem;flex-wrap:wrap;max-height:90px;overflow-y:auto" id="hv-carteira-chips"></div>
+      <div style="font-size:.48rem;color:var(--dim2);margin-top:.4rem">Clique em um ativo para preencher automaticamente</div>
+    </div>
+
+    <!-- Data + Tipo -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">DATA DA VENDA *</div>
@@ -19210,7 +19844,7 @@ function iaSalvarDiario(encodedTexto) {
       </div>
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">TIPO *</div>
-        <select id="hv-tipo">
+        <select id="hv-tipo" style="width:100%">
           <option value="Ação">Ação</option>
           <option value="ETF">ETF</option>
           <option value="FII">FII</option>
@@ -19218,73 +19852,88 @@ function iaSalvarDiario(encodedTexto) {
       </div>
     </div>
 
+    <!-- Ticker com autocomplete -->
     <div>
       <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">TICKER *</div>
-      <input type="text" id="hv-ticker" placeholder="ex: VALE3" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" />
+      <div style="position:relative">
+        <input type="text" id="hv-ticker" placeholder="ex: VALE3 — ou selecione acima"
+          autocomplete="off"
+          oninput="this.value=this.value.toUpperCase();hvTickerAc(this)"
+          onfocus="hvTickerAc(this)"
+          onblur="tickerAcClose()"
+          onkeydown="hvTickerAcKey(event,this)"
+          style="text-transform:uppercase;width:100%" />
+      </div>
+      <div id="hv-ticker-badge" style="display:none;margin-top:.25rem;font-size:.52rem;color:var(--dim)"></div>
     </div>
 
+    <!-- Qtd + P.Médio -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">QUANTIDADE *</div>
-        <input type="number" id="hv-qtd" placeholder="0" min="1" step="1" oninput="hvCalcResultado()" />
+        <input type="number" id="hv-qtd" placeholder="0" min="1" step="1" oninput="hvCalcResultado()" style="width:100%" />
       </div>
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">PREÇO MÉDIO COMPRA (R$) *</div>
-        <input type="number" id="hv-pmedio" placeholder="0.00" min="0" step="0.01" oninput="hvCalcResultado()" />
+        <input type="number" id="hv-pmedio" placeholder="0.00" min="0" step="0.01" oninput="hvCalcResultado()" style="width:100%" />
       </div>
     </div>
 
+    <!-- P.Venda + Custos -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">PREÇO DE VENDA (R$) *</div>
-        <input type="number" id="hv-pvenda" placeholder="0.00" min="0" step="0.01" oninput="hvCalcResultado()" />
+        <input type="number" id="hv-pvenda" placeholder="0.00" min="0" step="0.01" oninput="hvCalcResultado()" style="width:100%" />
       </div>
       <div>
-        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">CUSTOS (R$)</div>
-        <input type="number" id="hv-custos" placeholder="0.00" min="0" step="0.01" oninput="hvCalcResultado()" />
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">CUSTOS / TAXAS (R$)</div>
+        <input type="number" id="hv-custos" placeholder="0.00" min="0" step="0.01" oninput="hvCalcResultado()" style="width:100%" />
       </div>
     </div>
 
+    <!-- Corretora + Obs -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">CORRETORA</div>
-        <input type="text" id="hv-corretora" placeholder="ex: XP, Clear, Rico..." />
+        <input type="text" id="hv-corretora" placeholder="ex: XP, Clear, Rico..." style="width:100%" />
       </div>
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">OBSERVAÇÃO</div>
-        <input type="text" id="hv-obs" placeholder="ex: Stop loss, realização..." />
+        <input type="text" id="hv-obs" placeholder="ex: Stop loss, realização..." style="width:100%" />
       </div>
     </div>
 
     <!-- Preview resultado -->
-    <div id="hv-preview" style="display:none;border-radius:8px;padding:.75rem .9rem;border:1.5px solid">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:.5rem">
+    <div id="hv-preview" style="display:none;border-radius:10px;padding:.8rem 1rem;border:1.5px solid">
+      <div style="font-size:.48rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.5rem;font-weight:700">Prévia do Resultado</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.5rem;margin-bottom:.55rem">
         <div>
-          <div style="font-size:.45rem;color:var(--dim)">CUSTO TOTAL</div>
-          <div id="hv-prev-custo" class="num" style="font-size:.9rem;color:var(--dim)">R$ 0,00</div>
+          <div style="font-size:.44rem;color:var(--dim)">CUSTO TOTAL</div>
+          <div id="hv-prev-custo" class="num" style="font-size:.85rem;color:var(--dim)">—</div>
         </div>
         <div>
-          <div style="font-size:.45rem;color:var(--dim)">TOTAL RECEBIDO</div>
-          <div id="hv-prev-recebido" class="num" style="font-size:.9rem;color:var(--hi)">R$ 0,00</div>
+          <div style="font-size:.44rem;color:var(--dim)">TOTAL RECEBIDO</div>
+          <div id="hv-prev-recebido" class="num" style="font-size:.85rem;color:var(--hi)">—</div>
         </div>
         <div>
-          <div style="font-size:.45rem;color:var(--dim)">RESULTADO LÍQUIDO</div>
-          <div id="hv-prev-resultado" class="num" style="font-size:1.1rem;font-weight:700">R$ 0,00</div>
+          <div style="font-size:.44rem;color:var(--dim)">RESULTADO</div>
+          <div id="hv-prev-resultado" class="num" style="font-size:1rem;font-weight:700">—</div>
+        </div>
+        <div>
+          <div style="font-size:.44rem;color:var(--dim)">VARIAÇÃO</div>
+          <div id="hv-prev-pct" style="font-size:1rem;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em">—</div>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:.6rem">
-        <div id="hv-prev-pct-bar-wrap" style="flex:1;height:6px;background:var(--bg);border-radius:3px;overflow:hidden">
-          <div id="hv-prev-pct-bar" style="height:100%;border-radius:3px;width:0%;transition:width .4s"></div>
-        </div>
-        <div id="hv-prev-pct" style="font-size:.75rem;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;min-width:55px;text-align:right">0,00%</div>
+      <div style="height:6px;background:var(--bg);border-radius:3px;overflow:hidden">
+        <div id="hv-prev-pct-bar" style="height:100%;border-radius:3px;width:0%;transition:width .5s cubic-bezier(.34,1.56,.64,1)"></div>
       </div>
     </div>
 
     <div id="hv-modal-erro" style="display:none;font-size:.58rem;color:var(--red);background:#f8717115;border:1px solid #f8717130;border-radius:6px;padding:.4rem .6rem"></div>
 
     <div style="display:flex;gap:.5rem;justify-content:flex-end">
-      <button class="btn btn-dim" onclick="hvFecharModal()">Cancelar</button>
-      <button class="btn" style="background:#f8717118;color:var(--red);border:1px solid #f8717150;font-weight:700" onclick="hvSalvar()">💾 Salvar Venda</button>
+      <button class="btn" style="background:var(--bg3);color:var(--dim);border:1px solid var(--border2)" onclick="hvFecharModal()">Cancelar</button>
+      <button class="btn" style="background:#f8717118;color:var(--red);border:1px solid #f8717150;font-weight:700;position:relative;z-index:1" onclick="try{hvSalvar()}catch(e){alert('Erro: '+e.message)}">💾 Salvar Venda</button>
     </div>
   </div>
 </div>
@@ -19295,11 +19944,19 @@ function iaSalvarDiario(encodedTexto) {
 // ═══════════════════════════════════════════════════════
 
 function hcGetAll() {
-  try { return JSON.parse(localStorage.getItem('hist-compras') || '[]'); } catch(e) { return []; }
+  try {
+    let raw = localStorage.getItem('hist-compras') || '[]';
+    let parsed = JSON.parse(raw);
+    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch(e) { return []; }
 }
 function hcSaveAll(arr) {
+  if (!Array.isArray(arr)) arr = [];
   localStorage.setItem('hist-compras', JSON.stringify(arr));
-  if (typeof fbWrite === 'function') fbWrite('hist-compras', JSON.stringify(arr));
+  if (typeof fbWrite === 'function') {
+    try { fbWrite('hist-compras', arr); } catch(e) {}
+  }
 }
 
 function hcAbrirModal(id) {
@@ -19487,122 +20144,236 @@ function hcExportar() {
 //  HISTÓRICO DE VENDAS — lógica completa
 // ═══════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════
+//  HISTÓRICO DE VENDAS — funções completas (corrigido)
+// ═══════════════════════════════════════════════════════
+
 function hvGetAll() {
-  try { return JSON.parse(localStorage.getItem('hist-vendas') || '[]'); } catch(e) { return []; }
+  try {
+    let raw = localStorage.getItem('hist-vendas') || '[]';
+    let parsed = JSON.parse(raw);
+    // Se veio double-stringified (string em vez de array), parseia de novo
+    if (typeof parsed === 'string') parsed = JSON.parse(parsed);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch(e) { return []; }
 }
 function hvSaveAll(arr) {
-  localStorage.setItem('hist-vendas', JSON.stringify(arr));
-  if (typeof fbWrite === 'function') fbWrite('hist-vendas', JSON.stringify(arr));
+  if (!Array.isArray(arr)) arr = [];
+  const json = JSON.stringify(arr);
+  localStorage.setItem('hist-vendas', json);
+  if (typeof fbWrite === 'function') {
+    try { fbWrite('hist-vendas', arr); } catch(e) {}
+  }
+}
+
+// ── Popula chips da carteira no modal ──────────────────────────────────────
+function hvPopularChips() {
+  const wrap = document.getElementById('hv-carteira-chips');
+  if (!wrap) return;
+
+  // Coleta ativos de todas as carteiras
+  const todos = [];
+  try {
+    const fiis  = (typeof carteira     !== 'undefined' ? carteira     : []) || [];
+    const acoes = (typeof carteiraAcoes!== 'undefined' ? carteiraAcoes: []) || [];
+    const etfs  = (typeof carteiraEtfs !== 'undefined' ? carteiraEtfs : []) || [];
+    fiis .forEach(a => todos.push({ ticker: a.ticker, tipo: 'FII',  pmedio: a.pMedio || a.preco || 0, cotas: a.cotas || 0 }));
+    acoes.forEach(a => todos.push({ ticker: a.ticker, tipo: 'Ação', pmedio: a.pMedio || a.pAtual || 0, cotas: a.qtd   || 0 }));
+    etfs .forEach(a => todos.push({ ticker: a.ticker, tipo: 'ETF',  pmedio: a.pMedio || a.pAtual || 0, cotas: a.qtd   || 0 }));
+  } catch(e) {}
+
+  if (!todos.length) {
+    wrap.innerHTML = '<span style="font-size:.55rem;color:var(--dim2)">Nenhum ativo nas carteiras ainda.</span>';
+    return;
+  }
+
+  const typeColor = { 'FII':'#34d399', 'Ação':'#38bdf8', 'ETF':'#fb923c' };
+  const typeBg    = { 'FII':'#34d39915', 'Ação':'#38bdf815', 'ETF':'#fb923c15' };
+
+  wrap.innerHTML = todos.map(a => {
+    const bg    = typeBg[a.tipo]    || '#ffffff10';
+    const color = typeColor[a.tipo] || '#ffffff30';
+    const txtColor = typeColor[a.tipo] || 'var(--dim)';
+    const cotasSpan = a.cotas ? '<span style="font-size:.44rem;opacity:.6;margin-left:.3rem">' + a.cotas + 'u</span>' : '';
+    return '<button onclick="hvSelecionarAtivo(\''+a.ticker+'\',\''+a.tipo+'\','+a.pmedio+','+a.cotas+')"'
+      + ' style="cursor:pointer;background:'+bg+';border:1.5px solid '+color+';border-radius:6px;'
+      + 'padding:.28rem .6rem;font-size:.58rem;color:'+txtColor+';transition:all .15s;white-space:nowrap">'
+      + '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:.8rem;letter-spacing:.04em">' + a.ticker + '</span>'
+      + '<span style="font-size:.44rem;opacity:.7;margin-left:.2rem">' + a.tipo + '</span>'
+      + cotasSpan
+      + '</button>';
+  }).join('');
+}
+
+function hvSelecionarAtivo(ticker, tipo, pmedio, cotas) {
+  // Preenche o modal com os dados do ativo
+  const tipoMap = { 'FII': 'FII', 'Ação': 'Ação', 'ETF': 'ETF' };
+  document.getElementById('hv-ticker').value  = ticker;
+  document.getElementById('hv-tipo').value    = tipoMap[tipo] || 'Ação';
+  if (pmedio > 0) document.getElementById('hv-pmedio').value = pmedio.toFixed(2);
+  if (cotas  > 0) document.getElementById('hv-qtd').value    = cotas;
+
+  // Badge
+  const badge = document.getElementById('hv-ticker-badge');
+  if (badge) {
+    const typeColor = { 'FII':'#34d399', 'Ação':'#38bdf8', 'ETF':'#fb923c' };
+    const c = typeColor[tipo] || 'var(--green)';
+    badge.innerHTML = `<span style="font-family:'Bebas Neue',sans-serif;font-size:.78rem;color:${c};letter-spacing:.04em">${ticker}</span>
+      <span style="color:var(--border2);margin:0 .25rem">·</span>
+      <span style="color:var(--dim)">${tipo}</span>
+      ${pmedio > 0 ? ' · <span style="color:var(--dim)">P.Médio: R$ '+pmedio.toFixed(2).replace('.',',')+'</span>' : ''}
+      ${cotas  > 0 ? ' · <span style="color:var(--dim)">'+cotas+' unidades</span>' : ''}`;
+    badge.style.display = 'block';
+  }
+
+  // Highlight chip
+  document.querySelectorAll('#hv-carteira-chips button').forEach(b => b.style.outline = '');
+  event?.target?.closest('button')?.style && (event.target.closest('button').style.outline = '2px solid var(--green)');
+
+  hvCalcResultado();
 }
 
 function hvAbrirModal(id) {
   const el = document.getElementById('modal-hv');
+  if (!el) return;
+
+  // Popula chips da carteira
+  hvPopularChips();
+
   if (id !== undefined) {
     const arr = hvGetAll();
     const r = arr.find(x => x.id === id);
     if (!r) return;
-    document.getElementById('hv-data').value = r.data;
-    document.getElementById('hv-tipo').value = r.tipo;
-    document.getElementById('hv-ticker').value = r.ticker;
-    document.getElementById('hv-qtd').value = r.qtd;
-    document.getElementById('hv-pmedio').value = r.pmedio;
-    document.getElementById('hv-pvenda').value = r.pvenda;
-    document.getElementById('hv-custos').value = r.custos || 0;
+    document.getElementById('hv-data').value      = r.data      || '';
+    document.getElementById('hv-tipo').value      = r.tipo      || 'Ação';
+    document.getElementById('hv-ticker').value    = r.ticker    || '';
+    document.getElementById('hv-qtd').value       = r.qtd       || '';
+    document.getElementById('hv-pmedio').value    = r.pmedio    || '';
+    document.getElementById('hv-pvenda').value    = r.pvenda    || '';
+    document.getElementById('hv-custos').value    = r.custos    || '';
     document.getElementById('hv-corretora').value = r.corretora || '';
-    document.getElementById('hv-obs').value = r.obs || '';
+    document.getElementById('hv-obs').value       = r.obs       || '';
     el.dataset.editId = id;
+    const badge = document.getElementById('hv-ticker-badge');
+    if (badge && r.ticker) {
+      badge.textContent = r.ticker + ' — editando registro';
+      badge.style.display = 'block';
+    }
   } else {
     delete el.dataset.editId;
-    document.getElementById('hv-data').value = new Date().toISOString().slice(0,10);
-    document.getElementById('hv-tipo').value = 'Ação';
-    document.getElementById('hv-ticker').value = '';
-    document.getElementById('hv-qtd').value = '';
-    document.getElementById('hv-pmedio').value = '';
-    document.getElementById('hv-pvenda').value = '';
-    document.getElementById('hv-custos').value = '';
+    // Data de hoje
+    document.getElementById('hv-data').value      = new Date().toISOString().slice(0,10);
+    document.getElementById('hv-tipo').value      = 'Ação';
+    document.getElementById('hv-ticker').value    = '';
+    document.getElementById('hv-qtd').value       = '';
+    document.getElementById('hv-pmedio').value    = '';
+    document.getElementById('hv-pvenda').value    = '';
+    document.getElementById('hv-custos').value    = '';
     document.getElementById('hv-corretora').value = '';
-    document.getElementById('hv-obs').value = '';
+    document.getElementById('hv-obs').value       = '';
     document.getElementById('hv-preview').style.display = 'none';
+    const badge = document.getElementById('hv-ticker-badge');
+    if (badge) badge.style.display = 'none';
   }
+
   document.getElementById('hv-modal-erro').style.display = 'none';
   hvCalcResultado();
-  el.style.display = 'flex';
+  el.style.display = 'flex'; // CRITICAL: must be flex not block
 }
+
 function hvFecharModal() {
-  document.getElementById('modal-hv').style.display = 'none';
+  const el = document.getElementById('modal-hv');
+  if (el) el.style.display = 'none';
 }
 
 function hvCalcResultado() {
-  const qtd    = parseFloat(document.getElementById('hv-qtd').value) || 0;
-  const pmedio = parseFloat(document.getElementById('hv-pmedio').value) || 0;
-  const pvenda = parseFloat(document.getElementById('hv-pvenda').value) || 0;
-  const custos = parseFloat(document.getElementById('hv-custos').value) || 0;
+  const qtd    = parseFloat(document.getElementById('hv-qtd')?.value)    || 0;
+  const pmedio = parseFloat(document.getElementById('hv-pmedio')?.value) || 0;
+  const pvenda = parseFloat(document.getElementById('hv-pvenda')?.value) || 0;
+  const custos = parseFloat(document.getElementById('hv-custos')?.value) || 0;
+
+  const prevEl = document.getElementById('hv-preview');
+  if (!prevEl) return;
 
   if (qtd > 0 && pmedio > 0 && pvenda > 0) {
-    const custo    = qtd * pmedio + custos;
-    const recebido = qtd * pvenda;
+    const custo     = qtd * pmedio + custos;
+    const recebido  = qtd * pvenda;
     const resultado = recebido - custo;
-    const pct = pmedio > 0 ? ((pvenda - pmedio) / pmedio * 100) : 0;
-    const isLucro = resultado >= 0;
+    const pct       = ((pvenda - pmedio) / pmedio * 100);
+    const isLucro   = resultado >= 0;
+    const cor       = isLucro ? 'var(--green)' : 'var(--red)';
+    const fmt       = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
 
-    const fmt = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-    const cor = isLucro ? 'var(--green)' : 'var(--red)';
-
-    const prevEl = document.getElementById('hv-preview');
-    prevEl.style.display = 'block';
+    prevEl.style.display     = 'block';
     prevEl.style.borderColor = isLucro ? '#00e5a040' : '#f8717140';
-    prevEl.style.background = isLucro ? '#00e5a008' : '#f8717108';
+    prevEl.style.background  = isLucro ? '#00e5a008' : '#f8717108';
 
-    document.getElementById('hv-prev-custo').textContent = fmt(custo);
-    document.getElementById('hv-prev-recebido').textContent = fmt(recebido);
+    document.getElementById('hv-prev-custo').textContent     = fmt(custo);
+    document.getElementById('hv-prev-recebido').textContent  = fmt(recebido);
 
     const resEl = document.getElementById('hv-prev-resultado');
-    resEl.textContent = (isLucro ? '+' : '-') + fmt(resultado);
-    resEl.style.color = cor;
+    resEl.textContent  = (isLucro ? '+' : '-') + fmt(resultado);
+    resEl.style.color  = cor;
 
     const pctEl = document.getElementById('hv-prev-pct');
     pctEl.textContent = (isLucro ? '+' : '') + pct.toFixed(2).replace('.',',') + '%';
-    pctEl.style.color = cor;
+    pctEl.style.color  = cor;
 
     const barEl = document.getElementById('hv-prev-pct-bar');
     barEl.style.background = cor;
-    barEl.style.width = Math.min(Math.abs(pct), 100) + '%';
+    barEl.style.width      = Math.min(Math.abs(pct), 100) + '%';
   } else {
-    document.getElementById('hv-preview').style.display = 'none';
+    prevEl.style.display = 'none';
   }
 }
 
 function hvSalvar() {
-  const errEl = document.getElementById('hv-modal-erro');
-  errEl.style.display = 'none';
-  const data      = document.getElementById('hv-data').value;
-  const tipo      = document.getElementById('hv-tipo').value;
-  const ticker    = document.getElementById('hv-ticker').value.trim().toUpperCase();
-  const qtd       = parseFloat(document.getElementById('hv-qtd').value);
-  const pmedio    = parseFloat(document.getElementById('hv-pmedio').value);
-  const pvenda    = parseFloat(document.getElementById('hv-pvenda').value);
-  const custos    = parseFloat(document.getElementById('hv-custos').value) || 0;
-  const corretora = document.getElementById('hv-corretora').value.trim();
-  const obs       = document.getElementById('hv-obs').value.trim();
+  // Lê todos os campos com fallback seguro
+  const gv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
 
-  if (!data || !ticker || isNaN(qtd) || qtd <= 0 || isNaN(pmedio) || pmedio <= 0 || isNaN(pvenda) || pvenda <= 0) {
-    errEl.textContent = '⚠ Preencha os campos obrigatórios: data, ticker, quantidade, preço médio e preço de venda.';
-    errEl.style.display = 'block';
+  const data      = gv('hv-data').trim();
+  const tipo      = gv('hv-tipo') || 'Ação';
+  const ticker    = gv('hv-ticker').trim().toUpperCase();
+  const qtd       = parseFloat(gv('hv-qtd'));
+  const pmedio    = parseFloat(gv('hv-pmedio'));
+  const pvenda    = parseFloat(gv('hv-pvenda'));
+  const custos    = parseFloat(gv('hv-custos'))    || 0;
+  const corretora = gv('hv-corretora').trim();
+  const obs       = gv('hv-obs').trim();
+
+  // Validação
+  const erros = [];
+  if (!data)                       erros.push('data');
+  if (!ticker)                     erros.push('ticker');
+  if (isNaN(qtd)    || qtd   <= 0) erros.push('quantidade');
+  if (isNaN(pmedio) || pmedio <= 0) erros.push('preço médio de compra');
+  if (isNaN(pvenda) || pvenda <= 0) erros.push('preço de venda');
+
+  const errEl = document.getElementById('hv-modal-erro');
+  if (erros.length) {
+    const msg = '⚠ Campos obrigatórios: ' + erros.join(', ') + '.';
+    if (errEl) { errEl.textContent = msg; errEl.style.display = 'block'; }
+    else { alert(msg); }
     return;
   }
+  if (errEl) errEl.style.display = 'none';
 
   const custo     = qtd * pmedio + custos;
   const recebido  = qtd * pvenda;
   const resultado = recebido - custo;
   const pct       = ((pvenda - pmedio) / pmedio * 100);
 
+  const modal  = document.getElementById('modal-hv');
+  const editId = modal?.dataset?.editId || null;
+
+  const reg = {
+    id: editId || Date.now().toString(),
+    data, tipo, ticker, qtd, pmedio, pvenda,
+    custos, custo, recebido, resultado, pct,
+    corretora, obs
+  };
+
   const arr = hvGetAll();
-  const modal = document.getElementById('modal-hv');
-  const editId = modal.dataset.editId;
-
-  const reg = { id: editId || Date.now().toString(), data, tipo, ticker, qtd, pmedio, pvenda, custos,
-    corretora, obs, custo, recebido, resultado, pct };
-
   if (editId) {
     const idx = arr.findIndex(x => x.id === editId);
     if (idx >= 0) arr[idx] = reg; else arr.push(reg);
@@ -19618,51 +20389,47 @@ function hvSalvar() {
 
 function hvDeletar(id) {
   if (!confirm('Remover esta venda?')) return;
-  const arr = hvGetAll().filter(x => x.id !== id);
-  hvSaveAll(arr);
+  hvSaveAll(hvGetAll().filter(x => x.id !== id));
   hvRenderTabela();
   if (typeof toast === 'function') toast('Venda removida.');
 }
 
 function hvLimparFiltros() {
-  document.getElementById('hv-filtro-ticker').value = '';
-  document.getElementById('hv-filtro-tipo').value = '';
-  document.getElementById('hv-filtro-result').value = '';
-  document.getElementById('hv-filtro-inicio').value = '';
-  document.getElementById('hv-filtro-fim').value = '';
+  ['hv-filtro-ticker','hv-filtro-tipo','hv-filtro-result','hv-filtro-inicio','hv-filtro-fim']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   hvRenderTabela();
 }
 
 function hvGetFiltrado() {
   let arr = hvGetAll();
-  const fTicker = (document.getElementById('hv-filtro-ticker') || {}).value || '';
-  const fTipo   = (document.getElementById('hv-filtro-tipo') || {}).value || '';
-  const fResult = (document.getElementById('hv-filtro-result') || {}).value || '';
-  const fIni    = (document.getElementById('hv-filtro-inicio') || {}).value || '';
-  const fFim    = (document.getElementById('hv-filtro-fim') || {}).value || '';
+  const fTicker = (document.getElementById('hv-filtro-ticker')||{}).value || '';
+  const fTipo   = (document.getElementById('hv-filtro-tipo')  ||{}).value || '';
+  const fResult = (document.getElementById('hv-filtro-result')||{}).value || '';
+  const fIni    = (document.getElementById('hv-filtro-inicio')||{}).value || '';
+  const fFim    = (document.getElementById('hv-filtro-fim')   ||{}).value || '';
   if (fTicker) arr = arr.filter(r => r.ticker.includes(fTicker));
   if (fTipo)   arr = arr.filter(r => r.tipo === fTipo);
   if (fResult === 'lucro')    arr = arr.filter(r => r.resultado >= 0);
   if (fResult === 'prejuizo') arr = arr.filter(r => r.resultado < 0);
   if (fIni)    arr = arr.filter(r => r.data >= fIni);
   if (fFim)    arr = arr.filter(r => r.data <= fFim);
-  return arr.sort((a,b) => b.data.localeCompare(a.data));
+  return arr.sort((a,b) => (b.data||'').localeCompare(a.data||''));
 }
 
 function hvRenderTabela() {
-  const all = hvGetAll();
+  const all      = hvGetAll();
   const filtrado = hvGetFiltrado();
-  const tbody = document.getElementById('tbody-historicovendas');
+  const tbody    = document.getElementById('tbody-historicovendas');
   if (!tbody) return;
 
-  const fmt = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const fmt     = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
   const fmtDate = d => d ? d.split('-').reverse().join('/') : '—';
 
   // Resumo cards
   const totalResultado = all.reduce((s,r) => s + (r.resultado||0), 0);
-  const totalVolume = all.reduce((s,r) => s + (r.recebido||0), 0);
-  const lucrativas = all.filter(r => r.resultado >= 0).length;
-  const taxaAcerto = all.length ? Math.round(lucrativas / all.length * 100) : null;
+  const totalVolume    = all.reduce((s,r) => s + (r.recebido  ||0), 0);
+  const lucrativas     = all.filter(r => r.resultado >= 0).length;
+  const taxaAcerto     = all.length ? Math.round(lucrativas / all.length * 100) : null;
 
   const setEl = (id, val, color) => {
     const el = document.getElementById(id);
@@ -19680,11 +20447,12 @@ function hvRenderTabela() {
   setEl('hv-taxa-acerto', taxaAcerto !== null ? taxaAcerto + '%' : '—',
     taxaAcerto !== null ? (taxaAcerto >= 50 ? 'var(--green)' : 'var(--red)') : '');
 
-  // Consolidado por dia
   hvRenderConsolidado();
 
   if (!filtrado.length) {
-    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--dim);padding:2rem;font-size:.65rem">Nenhuma venda encontrada com os filtros aplicados.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="12" style="text-align:center;color:var(--dim);padding:2rem;font-size:.65rem">' +
+      (all.length ? 'Nenhuma venda encontrada com os filtros aplicados.' : 'Nenhuma venda registrada ainda. Clique em "+ Registrar Venda".') +
+      '</td></tr>';
     return;
   }
 
@@ -19695,31 +20463,31 @@ function hvRenderTabela() {
   };
 
   tbody.innerHTML = filtrado.map(r => {
-    const isLucro = r.resultado >= 0;
-    const cor = isLucro ? 'var(--green)' : 'var(--red)';
+    const isLucro = (r.resultado||0) >= 0;
+    const cor   = isLucro ? 'var(--green)' : 'var(--red)';
     const sinal = isLucro ? '+' : '-';
     return `<tr>
       <td style="white-space:nowrap">${fmtDate(r.data)}</td>
-      <td><span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--red);letter-spacing:.04em">${r.ticker}</span></td>
-      <td>${tipoChip[r.tipo] || r.tipo}</td>
-      <td class="num" style="font-size:.8rem">${r.qtd.toLocaleString('pt-BR')}</td>
-      <td class="num" style="color:var(--dim)">${fmt(r.pmedio)}</td>
-      <td class="num">${fmt(r.pvenda)}</td>
-      <td class="num" style="color:var(--hi)">${fmt(r.recebido)}</td>
-      <td class="num" style="color:${cor};font-weight:700">${sinal}${fmt(r.resultado)}</td>
-      <td class="num" style="color:${cor}">${sinal}${Math.abs(r.pct).toFixed(2).replace('.',',')}%</td>
-      <td style="color:var(--dim)">${r.corretora || '—'}</td>
-      <td style="color:var(--dim);font-size:.58rem;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.obs || '—'}</td>
+      <td><span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--red);letter-spacing:.04em">${r.ticker||'—'}</span></td>
+      <td>${tipoChip[r.tipo] || r.tipo || '—'}</td>
+      <td class="num" style="font-size:.8rem">${(r.qtd||0).toLocaleString('pt-BR')}</td>
+      <td class="num" style="color:var(--dim)">${fmt(r.pmedio||0)}</td>
+      <td class="num">${fmt(r.pvenda||0)}</td>
+      <td class="num" style="color:var(--hi)">${fmt(r.recebido||0)}</td>
+      <td class="num" style="color:${cor};font-weight:700">${sinal}${fmt(r.resultado||0)}</td>
+      <td class="num" style="color:${cor}">${sinal}${Math.abs(r.pct||0).toFixed(2).replace('.',',')}%</td>
+      <td style="color:var(--dim)">${r.corretora||'—'}</td>
+      <td style="color:var(--dim);font-size:.58rem;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.obs||'—'}</td>
       <td style="white-space:nowrap">
-        <button class="btn-icon" title="Editar" onclick="hvAbrirModal('${r.id}')">✏️</button>
-        <button class="btn-icon" title="Remover" onclick="hvDeletar('${r.id}')">🗑</button>
+        <button class="btn-icon" title="Editar"   onclick="hvAbrirModal('${r.id}')">✏️</button>
+        <button class="btn-icon" title="Remover"  onclick="hvDeletar('${r.id}')">🗑</button>
       </td>
     </tr>`;
   }).join('');
 }
 
 function hvRenderConsolidado() {
-  const all = hvGetAll();
+  const all   = hvGetAll();
   const tbody = document.getElementById('tbody-consolidado-dia');
   if (!tbody) return;
 
@@ -19728,26 +20496,26 @@ function hvRenderConsolidado() {
     return;
   }
 
-  // Agrupar por data
   const porDia = {};
   all.forEach(r => {
-    if (!porDia[r.data]) porDia[r.data] = { data: r.data, ops: 0, volume: 0, resultado: 0, custoTotal: 0 };
+    if (!r.data) return;
+    if (!porDia[r.data]) porDia[r.data] = { data:r.data, ops:0, volume:0, resultado:0, custoTotal:0 };
     porDia[r.data].ops++;
-    porDia[r.data].volume += r.recebido || 0;
-    porDia[r.data].resultado += r.resultado || 0;
-    porDia[r.data].custoTotal += r.custo || 0;
+    porDia[r.data].volume     += r.recebido  || 0;
+    porDia[r.data].resultado  += r.resultado || 0;
+    porDia[r.data].custoTotal += r.custo     || 0;
   });
 
-  const dias = Object.values(porDia).sort((a,b) => b.data.localeCompare(a.data));
-  const fmt = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+  const dias    = Object.values(porDia).sort((a,b) => b.data.localeCompare(a.data));
+  const fmt     = v => 'R$ ' + Math.abs(v).toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
   const fmtDate = d => d ? d.split('-').reverse().join('/') : '—';
 
   tbody.innerHTML = dias.map(d => {
     const isLucro = d.resultado >= 0;
-    const cor = isLucro ? 'var(--green)' : 'var(--red)';
+    const cor   = isLucro ? 'var(--green)' : 'var(--red)';
     const sinal = isLucro ? '+' : '-';
-    const pct = d.custoTotal > 0 ? (d.resultado / d.custoTotal * 100) : 0;
-    const statusBadge = isLucro
+    const pct   = d.custoTotal > 0 ? (d.resultado / d.custoTotal * 100) : 0;
+    const badge = isLucro
       ? '<span style="background:#00e5a015;color:var(--green);border:1px solid #00e5a030;border-radius:4px;padding:1px 7px;font-size:.52rem;font-weight:700">✅ LUCRO</span>'
       : '<span style="background:#f8717115;color:var(--red);border:1px solid #f8717130;border-radius:4px;padding:1px 7px;font-size:.52rem;font-weight:700">📉 PREJUÍZO</span>';
     return `<tr>
@@ -19756,7 +20524,7 @@ function hvRenderConsolidado() {
       <td class="num" style="color:var(--papel)">${fmt(d.volume)}</td>
       <td class="num" style="color:${cor};font-weight:700">${sinal}${fmt(d.resultado)}</td>
       <td class="num" style="color:${cor}">${sinal}${Math.abs(pct).toFixed(2).replace('.',',')}%</td>
-      <td>${statusBadge}</td>
+      <td>${badge}</td>
     </tr>`;
   }).join('');
 }
@@ -19765,25 +20533,116 @@ function hvExportar() {
   const arr = hvGetAll();
   if (!arr.length) { if (typeof toast === 'function') toast('Nenhum dado para exportar.', false); return; }
   const headers = ['Data','Ticker','Tipo','Quantidade','P.Medio Compra','P.Venda','Total Recebido','Resultado','Pct%','Custos','Corretora','Observação'];
-  const rows = arr.map(r => [r.data, r.ticker, r.tipo, r.qtd, r.pmedio, r.pvenda, r.recebido,
-    r.resultado, r.pct.toFixed(2), r.custos||0, r.corretora||'', r.obs||'']);
-  const csv = [headers, ...rows].map(r => r.join(';')).join('\n');
+  const rows    = arr.map(r => [
+    r.data, r.ticker, r.tipo, r.qtd, r.pmedio, r.pvenda,
+    r.recebido, r.resultado, (r.pct||0).toFixed(2),
+    r.custos||0, r.corretora||'', r.obs||''
+  ]);
+  const csv  = [headers, ...rows].map(r => r.join(';')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = URL.createObjectURL(blob);
   a.download = 'historico-vendas.csv';
   a.click();
+  if (typeof toast === 'function') toast('✅ Exportado!');
 }
 
-// Inicializa tabelas quando página é aberta
+// ── Autocomplete no campo hv-ticker ──────────────────────────────────────────
+function hvTickerAc(input) {
+  _acInput = input;
+  const q = (input.value||'').trim().toUpperCase();
+  _removeAcDD();
+  if (q.length < 2) { document.getElementById('hv-ticker-badge').style.display='none'; return; }
+
+  const all = [
+    ..._AC_DATA.fii.map( ([t,n]) => [t,n,'FII']),
+    ..._AC_DATA.acao.map(([t,n]) => [t,n,'AÇÃO']),
+    ...(_AC_DATA.etf||[]).map(([t,n]) => [t,n,'ETF']),
+  ];
+  const matches = all.filter(([t]) => t.startsWith(q)).slice(0,14);
+  if (!matches.length) return;
+
+  const typeColor = {'FII':'#34d399','AÇÃO':'#38bdf8','ETF':'#fb923c'};
+  const typeBg    = {'FII':'#34d39915','AÇÃO':'#38bdf815','ETF':'#fb923c15'};
+  const tipoMap   = {'FII':'FII','AÇÃO':'Ação','ETF':'ETF'};
+
+  const dd = document.createElement('div');
+  dd.id = '__acDD__'; dd.className = 'ticker-ac-dropdown'; dd.style.minWidth = '260px';
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:.22rem .65rem .15rem;font-size:.44rem;color:var(--dim2);letter-spacing:.08em;border-bottom:1px solid var(--border);text-transform:uppercase';
+  hdr.textContent = matches.length + ' resultado' + (matches.length>1?'s':'') + ' · ↑↓ · Enter';
+  dd.appendChild(hdr);
+
+  matches.forEach(([t,n,tipo],i) => {
+    const item = document.createElement('div');
+    item.className='ticker-ac-item'; item.dataset.ticker=t; item.dataset.name=n; item.dataset.tipo=tipo; item.dataset.idx=i;
+    const hl = t.startsWith(q) ? `<span class="ac-match">${t.slice(0,q.length)}</span>${t.slice(q.length)}` : t;
+    item.innerHTML = `<span class="ac-ticker" style="color:${typeColor[tipo]}">${hl}</span><span class="ac-name" style="flex:1">${n}</span><span style="font-size:.44rem;font-weight:700;padding:1px 5px;border-radius:3px;color:${typeColor[tipo]};background:${typeBg[tipo]};flex-shrink:0">${tipo}</span>`;
+    item.addEventListener('mousedown',e=>e.preventDefault());
+    item.addEventListener('click',()=>hvTickerAcApply(t,n,tipo,tipoMap[tipo]));
+    dd.appendChild(item);
+  });
+
+  const rect = input.getBoundingClientRect();
+  dd.style.cssText = `position:fixed;top:${rect.bottom+3}px;left:${rect.left}px;min-width:${Math.max(rect.width,260)}px;z-index:99999;`;
+  document.body.appendChild(dd); _acDD=dd; _acSelIdx=-1;
+}
+
+function hvTickerAcApply(ticker, name, tipoLabel, tipoVal) {
+  const input = document.getElementById('hv-ticker');
+  if (input) input.value = ticker;
+  const sel = document.getElementById('hv-tipo');
+  if (sel && tipoVal) sel.value = tipoVal;
+  _removeAcDD();
+  const badge = document.getElementById('hv-ticker-badge');
+  if (badge) {
+    const c = {'FII':'#34d399','AÇÃO':'#38bdf8','ETF':'#fb923c'}[tipoLabel]||'var(--green)';
+    badge.innerHTML = `<span style="font-family:'Bebas Neue',sans-serif;font-size:.78rem;color:${c};letter-spacing:.04em">${ticker}</span> · <span style="color:var(--dim)">${name}</span>`;
+    badge.style.display = 'block';
+  }
+}
+
+function hvTickerAcKey(e, input) {
+  if (!_acDD) return;
+  const items = _acDD.querySelectorAll('.ticker-ac-item');
+  if (!items.length) return;
+  if      (e.key==='ArrowDown'){e.preventDefault();_acSelIdx=Math.min(_acSelIdx+1,items.length-1);items.forEach((it,i)=>it.classList.toggle('selected',i===_acSelIdx));}
+  else if (e.key==='ArrowUp')  {e.preventDefault();_acSelIdx=Math.max(_acSelIdx-1,0);             items.forEach((it,i)=>it.classList.toggle('selected',i===_acSelIdx));}
+  else if (e.key==='Enter'||e.key==='Tab'){
+    const tgt=_acSelIdx>=0?items[_acSelIdx]:items[0];
+    if(tgt){e.preventDefault();hvTickerAcApply(tgt.dataset.ticker,tgt.dataset.name,tgt.dataset.tipo,{'FII':'FII','AÇÃO':'Ação','ETF':'ETF'}[tgt.dataset.tipo]||'Ação');}
+  } else if(e.key==='Escape'){_removeAcDD();}
+}
+
+// Corrige dados corrompidos (double-stringify) no localStorage ao carregar
+(function fixCorruptedStorage() {
+  ['hist-vendas', 'hist-compras'].forEach(key => {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      // Se veio como string em vez de array, corrige
+      if (typeof parsed === 'string') {
+        const fixed = JSON.parse(parsed);
+        localStorage.setItem(key, JSON.stringify(Array.isArray(fixed) ? fixed : []));
+      } else if (!Array.isArray(parsed)) {
+        localStorage.setItem(key, '[]');
+      }
+    } catch(e) {
+      localStorage.setItem(key, '[]');
+    }
+  });
+})();
+
+// Hook único no goPage para todas as páginas com init
 document.addEventListener('DOMContentLoaded', function() {
-  // Hook no goPage para renderizar ao navegar
   const _origGoPage = window.goPage;
   if (typeof _origGoPage === 'function') {
     window.goPage = function(id) {
       _origGoPage(id);
       if (id === 'historicocompras') hcRenderTabela();
       if (id === 'historicovendas')  hvRenderTabela();
+      if (id === 'favoritos')        { try { favRender(); } catch(e) {} }
     };
   }
 });
