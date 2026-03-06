@@ -914,6 +914,7 @@
     <div class="nav-divider"></div>
     <div class="nav-section-label">Educação</div>
     <div class="nav-tab"   data-page="aprendizagem" onclick="goPage('aprendizagem')"><span class="nav-tab-icon">📚</span> Aprendizagem</div>
+    <div class="nav-tab"   data-page="diversificacao" onclick="goPage('diversificacao')"><span class="nav-tab-icon">🧠</span> IA Advisor</div>
 
     <div class="nav-divider"></div>
     <div class="nav-section-label">Operações</div>
@@ -2704,10 +2705,15 @@ function irSavePrej() {
     <div style="display:grid;grid-template-columns:repeat(3,1fr) repeat(3,1fr);gap:.65rem;margin-bottom:.7rem">
 
       <!-- Linha 1: ativo / posição -->
-      <div>
+      <div style="position:relative">
         <div style="font-size:.5rem;color:var(--dim);margin-bottom:.22rem;letter-spacing:.06em">TICKER / NOME</div>
-        <input type="text" id="vol-ticker" placeholder="ex: PETR4"
-          oninput="this.value=this.value.toUpperCase()" style="font-size:.78rem;text-transform:uppercase"/>
+        <input type="text" id="vol-ticker" placeholder="ex: PETR4" autocomplete="off"
+          oninput="this.value=this.value.toUpperCase();volTickerAc(this)"
+          onfocus="volTickerAc(this)"
+          onblur="tickerAcClose()"
+          onkeydown="volTickerAcKey(event,this)"
+          style="font-size:.78rem;text-transform:uppercase;width:100%"/>
+        <div id="vol-ticker-badge" style="display:none;margin-top:.3rem"></div>
       </div>
 
       <div>
@@ -15026,6 +15032,111 @@ function tickerAcClose() {
   }, 160);
 }
 
+// ── Autocomplete para campo vol-ticker (Volatilidade > Individual) ──────────
+function volTickerAc(input) {
+  _acInput = input;
+  const q = (input.value || '').trim().toUpperCase();
+  _removeAcDD();
+  if (q.length < 2) {
+    const badge = document.getElementById('vol-ticker-badge');
+    if (badge) badge.style.display = 'none';
+    return;
+  }
+
+  // Busca em todas as classes: FII, ação, ETF
+  const all = [
+    ..._AC_DATA.fii.map(([t,n])  => [t, n, 'FII']),
+    ..._AC_DATA.acao.map(([t,n]) => [t, n, 'AÇÃO']),
+    ...(_AC_DATA.etf||[]).map(([t,n]) => [t, n, 'ETF']),
+  ];
+  const matches = all.filter(([t]) => t.startsWith(q)).slice(0, 14);
+  if (!matches.length) return;
+
+  const typeColor = { 'FII':'#34d399', 'AÇÃO':'#38bdf8', 'ETF':'#fb923c' };
+  const typeBg    = { 'FII':'#34d39915', 'AÇÃO':'#38bdf815', 'ETF':'#fb923c15' };
+
+  const dd = document.createElement('div');
+  dd.id = '__acDD__';
+  dd.className = 'ticker-ac-dropdown';
+  dd.style.minWidth = '260px';
+
+  // Header
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:.22rem .65rem .15rem;font-size:.44rem;color:var(--dim2);letter-spacing:.08em;border-bottom:1px solid var(--border);text-transform:uppercase';
+  hdr.textContent = matches.length + ' resultado' + (matches.length > 1 ? 's' : '') + ' · ↑↓ navegar · Enter selecionar';
+  dd.appendChild(hdr);
+
+  matches.forEach(([t, n, tipo], i) => {
+    const item = document.createElement('div');
+    item.className = 'ticker-ac-item';
+    item.dataset.ticker = t;
+    item.dataset.name   = n;
+    item.dataset.tipo   = tipo;
+    item.dataset.idx    = i;
+    const hl = t.startsWith(q)
+      ? `<span class="ac-match">${t.slice(0, q.length)}</span>${t.slice(q.length)}`
+      : t;
+    item.innerHTML = `
+      <span class="ac-ticker" style="color:${typeColor[tipo]}">${hl}</span>
+      <span class="ac-name" style="flex:1">${n}</span>
+      <span style="font-size:.44rem;font-weight:700;letter-spacing:.04em;padding:1px 5px;border-radius:3px;color:${typeColor[tipo]};background:${typeBg[tipo]};flex-shrink:0">${tipo}</span>`;
+    item.addEventListener('mousedown', e => e.preventDefault());
+    item.addEventListener('click', () => { volTickerAcApply(t, n, tipo); });
+    dd.appendChild(item);
+  });
+
+  const rect = input.getBoundingClientRect();
+  dd.style.cssText = `position:fixed;top:${rect.bottom+3}px;left:${rect.left}px;min-width:${Math.max(rect.width,260)}px;z-index:99999;`;
+  document.body.appendChild(dd);
+  _acDD = dd;
+  _acSelIdx = -1;
+}
+
+function volTickerAcApply(ticker, name, tipo) {
+  const input = document.getElementById('vol-ticker');
+  if (input) {
+    input.value = ticker;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  _removeAcDD();
+  // Show badge
+  const badge = document.getElementById('vol-ticker-badge');
+  if (badge) {
+    const typeColor = { 'FII':'#34d399', 'AÇÃO':'#38bdf8', 'ETF':'#fb923c' };
+    const typeBg    = { 'FII':'#34d39915', 'AÇÃO':'#38bdf815', 'ETF':'#fb923c15' };
+    badge.innerHTML = `<span style="font-family:'Bebas Neue',sans-serif;font-size:.75rem;color:${typeColor[tipo]};letter-spacing:.04em">${ticker}</span>
+      <span style="color:var(--border2);margin:0 .25rem">·</span>
+      <span style="font-size:.52rem;color:var(--dim)">${name}</span>
+      <span style="margin-left:.35rem;font-size:.44rem;font-weight:700;padding:1px 5px;border-radius:3px;color:${typeColor[tipo]};background:${typeBg[tipo]}">${tipo}</span>`;
+    badge.style.display = 'block';
+    badge.style.marginTop = '.3rem';
+    badge.style.fontFamily = "'IBM Plex Mono',monospace";
+  }
+}
+
+function volTickerAcKey(e, input) {
+  if (!_acDD) return;
+  const items = _acDD.querySelectorAll('.ticker-ac-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _acSelIdx = Math.min(_acSelIdx + 1, items.length - 1);
+    items.forEach((it, i) => it.classList.toggle('selected', i === _acSelIdx));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _acSelIdx = Math.max(_acSelIdx - 1, 0);
+    items.forEach((it, i) => it.classList.toggle('selected', i === _acSelIdx));
+  } else if (e.key === 'Enter' || e.key === 'Tab') {
+    const target = _acSelIdx >= 0 ? items[_acSelIdx] : items[0];
+    if (target) {
+      e.preventDefault();
+      volTickerAcApply(target.dataset.ticker, target.dataset.name, target.dataset.tipo);
+    }
+  } else if (e.key === 'Escape') {
+    _removeAcDD();
+  }
+}
+
 function _acApply(ticker) {
   if (!_acInput) return;
   _acInput.value = ticker;
@@ -19676,6 +19787,1168 @@ document.addEventListener('DOMContentLoaded', function() {
     };
   }
 });
+</script>
+
+<!-- ══════════════ PAGE: DIVERSIFICAÇÃO / IA ADVISOR ══════════════ -->
+<div class="page" id="page-diversificacao">
+<style>
+/* ── IA ADVISOR PAGE STYLES ── */
+.adv-hero {
+  background: linear-gradient(135deg, #07080f 0%, #0d0f1e 40%, #0a0c18 100%);
+  border: 1.5px solid var(--border2);
+  border-radius: 16px;
+  padding: 1.5rem 1.8rem;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.adv-hero::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 180px; height: 180px;
+  background: radial-gradient(circle, #818cf820 0%, transparent 70%);
+  pointer-events: none;
+}
+.adv-hero::after {
+  content: '';
+  position: absolute;
+  bottom: -30px; left: 30%;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, #00e5a012 0%, transparent 70%);
+  pointer-events: none;
+}
+.adv-hero-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2rem;
+  letter-spacing: .08em;
+  color: var(--white);
+  line-height: 1;
+}
+.adv-hero-sub {
+  font-size: .6rem;
+  color: var(--dim);
+  letter-spacing: .06em;
+  margin-top: .3rem;
+}
+.adv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  background: #818cf815;
+  border: 1px solid #818cf830;
+  border-radius: 20px;
+  padding: .2rem .65rem;
+  font-size: .52rem;
+  color: #818cf8;
+  font-weight: 700;
+  letter-spacing: .06em;
+  margin-bottom: .6rem;
+}
+
+/* Profile selector */
+.adv-profile-row {
+  display: flex;
+  gap: .65rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.adv-profile-card {
+  flex: 1;
+  min-width: 140px;
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  cursor: pointer;
+  transition: all .2s;
+  position: relative;
+  overflow: hidden;
+}
+.adv-profile-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.adv-profile-card.selected { transform: translateY(-3px); }
+.adv-profile-card.moderado.selected { border-color: #38bdf8; box-shadow: 0 0 18px #38bdf820; }
+.adv-profile-card.agressivo.selected { border-color: #f87171; box-shadow: 0 0 18px #f8717120; }
+.adv-profile-card.conservador.selected { border-color: #00e5a0; box-shadow: 0 0 18px #00e5a020; }
+.adv-profile-glow {
+  position: absolute;
+  top: -20px; right: -20px;
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  opacity: .15;
+  pointer-events: none;
+}
+.adv-profile-icon { font-size: 1.6rem; margin-bottom: .4rem; }
+.adv-profile-name {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1rem;
+  letter-spacing: .06em;
+  color: var(--white);
+}
+.adv-profile-desc { font-size: .52rem; color: var(--dim); margin-top: .15rem; line-height: 1.5; }
+.adv-profile-check {
+  position: absolute;
+  top: .6rem; right: .6rem;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .6rem;
+  transition: all .2s;
+}
+.adv-profile-card.selected .adv-profile-check { background: var(--green); border-color: var(--green); color: #000; }
+
+/* Allocation donut area */
+.adv-alloc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .7rem;
+  margin-bottom: 1rem;
+}
+.adv-donut-wrap {
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.adv-donut-title {
+  font-size: .55rem;
+  color: var(--dim);
+  letter-spacing: .1em;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-bottom: .8rem;
+  align-self: flex-start;
+}
+.adv-donut-svg { width: 150px; height: 150px; }
+.adv-legend-list { width: 100%; margin-top: .75rem; display: flex; flex-direction: column; gap: .3rem; }
+.adv-legend-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: .58rem;
+}
+.adv-legend-left { display: flex; align-items: center; gap: .4rem; }
+.adv-legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.adv-legend-name { color: var(--text); }
+.adv-legend-pct { font-family: 'Bebas Neue', sans-serif; font-size: .8rem; letter-spacing: .04em; }
+
+/* Segments breakdown */
+.adv-segments-card {
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 1.1rem;
+  margin-bottom: 1rem;
+}
+.adv-seg-row {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: .5rem;
+}
+.adv-seg-icon { font-size: .9rem; width: 22px; text-align: center; flex-shrink: 0; }
+.adv-seg-name { font-size: .6rem; color: var(--text); flex: 1; min-width: 80px; }
+.adv-seg-bar-wrap { flex: 2; position: relative; }
+.adv-seg-bar-bg { height: 6px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.adv-seg-bar-fill { height: 100%; border-radius: 4px; transition: width .8s cubic-bezier(.34,1.56,.64,1); }
+.adv-seg-pct { font-family: 'Bebas Neue', sans-serif; font-size: .78rem; min-width: 32px; text-align: right; flex-shrink: 0; }
+.adv-seg-tag {
+  font-size: .46rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* AI Chat */
+.adv-chat-wrap {
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  padding: 1.1rem;
+  margin-bottom: 1rem;
+}
+.adv-chat-msgs {
+  min-height: 120px;
+  max-height: 340px;
+  overflow-y: auto;
+  margin-bottom: .7rem;
+  display: flex;
+  flex-direction: column;
+  gap: .55rem;
+  padding-right: .2rem;
+}
+.adv-chat-msgs::-webkit-scrollbar { width: 3px; }
+.adv-chat-msgs::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.adv-msg {
+  max-width: 88%;
+  padding: .6rem .8rem;
+  border-radius: 12px;
+  font-size: .63rem;
+  line-height: 1.6;
+  animation: up .25s ease both;
+}
+.adv-msg-ai {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  align-self: flex-start;
+  border-radius: 4px 12px 12px 12px;
+}
+.adv-msg-user {
+  background: #818cf820;
+  border: 1px solid #818cf830;
+  color: var(--hi);
+  align-self: flex-end;
+  border-radius: 12px 4px 12px 12px;
+}
+.adv-msg-typing {
+  display: flex;
+  gap: .25rem;
+  align-items: center;
+  padding: .6rem .8rem;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 4px 12px 12px 12px;
+  align-self: flex-start;
+  width: 54px;
+}
+.adv-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--dim); animation: adv-blink 1.2s infinite; }
+.adv-dot:nth-child(2) { animation-delay: .2s; }
+.adv-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes adv-blink { 0%,80%,100%{opacity:.3} 40%{opacity:1} }
+
+.adv-chat-input-row {
+  display: flex;
+  gap: .5rem;
+  align-items: center;
+}
+.adv-chat-input {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--hi);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .65rem;
+  padding: .4rem .65rem;
+  outline: none;
+  transition: border-color .15s;
+}
+.adv-chat-input:focus { border-color: #818cf8; }
+.adv-send-btn {
+  background: linear-gradient(135deg, #818cf8, #6366f1);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  cursor: pointer;
+  font-size: .75rem;
+  padding: .38rem .7rem;
+  transition: filter .15s, transform .15s;
+  flex-shrink: 0;
+}
+.adv-send-btn:hover { filter: brightness(1.15); transform: translateY(-1px); }
+
+/* Quick questions */
+.adv-quick-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem;
+  margin-bottom: .65rem;
+}
+.adv-quick-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  color: var(--dim);
+  cursor: pointer;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: .52rem;
+  padding: .22rem .6rem;
+  transition: all .15s;
+}
+.adv-quick-btn:hover { color: var(--hi); border-color: #818cf8; background: #818cf810; }
+
+/* KPI strip */
+.adv-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .55rem;
+  margin-bottom: 1rem;
+}
+.adv-kpi {
+  background: var(--bg2);
+  border: 1.5px solid var(--border);
+  border-radius: 12px;
+  padding: .8rem .9rem;
+}
+.adv-kpi-label { font-size: .5rem; color: var(--dim); letter-spacing: .08em; font-weight: 600; text-transform: uppercase; margin-bottom: .3rem; }
+.adv-kpi-val { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: .04em; line-height: 1; }
+.adv-kpi-sub { font-size: .5rem; color: var(--dim); margin-top: .15rem; }
+
+/* Renda Fixa detail */
+.adv-rf-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: .55rem; }
+.adv-rf-card {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: .75rem;
+  transition: all .2s;
+}
+.adv-rf-card:hover { border-color: var(--yellow); }
+.adv-rf-icon { font-size: 1.1rem; margin-bottom: .3rem; }
+.adv-rf-name { font-size: .6rem; font-weight: 700; color: var(--hi); }
+.adv-rf-desc { font-size: .52rem; color: var(--dim); margin-top: .15rem; line-height: 1.5; }
+.adv-rf-pct { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; margin-top: .3rem; }
+
+@media(max-width:680px) {
+  .adv-alloc-grid { grid-template-columns: 1fr !important; }
+  .adv-kpi-strip { grid-template-columns: 1fr 1fr !important; }
+  .adv-rf-grid { grid-template-columns: 1fr 1fr !important; }
+  .adv-profile-row { flex-direction: column !important; }
+}
+</style>
+
+<div class="sec-head">
+  <div class="sec-title">IA ADVISOR</div>
+  <div class="frow" style="gap:.5rem">
+    <span class="adv-badge">✨ Powered by Claude AI</span>
+  </div>
+</div>
+
+<!-- HERO -->
+<div class="adv-hero">
+  <div class="adv-badge">🤖 Inteligência Artificial</div>
+  <div class="adv-hero-title">SIMULADOR DE DIVERSIFICAÇÃO</div>
+  <div class="adv-hero-sub">Selecione seu perfil de investidor e receba uma alocação personalizada gerada por IA</div>
+</div>
+
+<!-- PROFILE SELECTOR -->
+<div style="font-size:.55rem;color:var(--dim);letter-spacing:.1em;font-weight:700;text-transform:uppercase;margin-bottom:.5rem">ESCOLHA SEU PERFIL</div>
+<div class="adv-profile-row" id="adv-profiles">
+  <div class="adv-profile-card conservador" onclick="advSelectProfile('conservador')">
+    <div class="adv-profile-glow" style="background:#00e5a0"></div>
+    <div class="adv-profile-check" id="adv-check-conservador"></div>
+    <div class="adv-profile-icon">🛡️</div>
+    <div class="adv-profile-name">CONSERVADOR</div>
+    <div class="adv-profile-desc">Prioriza segurança e preservação de capital. Menor volatilidade, retorno estável.</div>
+  </div>
+  <div class="adv-profile-card moderado" onclick="advSelectProfile('moderado')">
+    <div class="adv-profile-glow" style="background:#38bdf8"></div>
+    <div class="adv-profile-check" id="adv-check-moderado"></div>
+    <div class="adv-profile-icon">⚖️</div>
+    <div class="adv-profile-name">MODERADO</div>
+    <div class="adv-profile-desc">Equilíbrio entre segurança e crescimento. Aceita volatilidade moderada por retornos maiores.</div>
+  </div>
+  <div class="adv-profile-card agressivo" onclick="advSelectProfile('agressivo')">
+    <div class="adv-profile-glow" style="background:#f87171"></div>
+    <div class="adv-profile-check" id="adv-check-agressivo"></div>
+    <div class="adv-profile-icon">🚀</div>
+    <div class="adv-profile-name">AGRESSIVO</div>
+    <div class="adv-profile-desc">Foco em crescimento máximo no longo prazo. Alta tolerância a volatilidade e risco.</div>
+  </div>
+</div>
+
+<!-- KPI STRIP -->
+<div class="adv-kpi-strip" id="adv-kpis">
+  <div class="adv-kpi">
+    <div class="adv-kpi-label">Risco Estimado</div>
+    <div class="adv-kpi-val" id="adv-kpi-risco" style="color:var(--dim)">—</div>
+    <div class="adv-kpi-sub" id="adv-kpi-risco-sub">selecione um perfil</div>
+  </div>
+  <div class="adv-kpi">
+    <div class="adv-kpi-label">Retorno Esperado</div>
+    <div class="adv-kpi-val" id="adv-kpi-retorno" style="color:var(--dim)">—</div>
+    <div class="adv-kpi-sub">ao ano (histórico)</div>
+  </div>
+  <div class="adv-kpi">
+    <div class="adv-kpi-label">Horizonte Ideal</div>
+    <div class="adv-kpi-val" id="adv-kpi-horizonte" style="color:var(--dim)">—</div>
+    <div class="adv-kpi-sub">anos mínimo</div>
+  </div>
+  <div class="adv-kpi">
+    <div class="adv-kpi-label">Ativos na Carteira</div>
+    <div class="adv-kpi-val" id="adv-kpi-ativos" style="color:var(--dim)">—</div>
+    <div class="adv-kpi-sub">classes de ativos</div>
+  </div>
+</div>
+
+<!-- ALLOC GRID: Donut + Segments -->
+<div class="adv-alloc-grid">
+
+  <!-- Donut -->
+  <div class="adv-donut-wrap">
+    <div class="adv-donut-title">ALOCAÇÃO MACRO</div>
+    <svg class="adv-donut-svg" viewBox="0 0 150 150" id="adv-donut-svg">
+      <circle cx="75" cy="75" r="55" fill="none" stroke="var(--bg3)" stroke-width="22"/>
+      <text x="75" y="72" text-anchor="middle" font-family="Bebas Neue,sans-serif" font-size="14" fill="var(--dim)" id="adv-donut-label1">SELECIONE</text>
+      <text x="75" y="87" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="8" fill="var(--dim2)" id="adv-donut-label2">um perfil</text>
+    </svg>
+    <div class="adv-legend-list" id="adv-legend"></div>
+  </div>
+
+  <!-- Segments breakdown -->
+  <div style="display:flex;flex-direction:column;gap:.6rem">
+    <!-- FIIs -->
+    <div class="adv-segments-card" style="padding:.8rem;margin-bottom:0">
+      <div style="font-size:.52rem;color:var(--dim);letter-spacing:.08em;font-weight:700;text-transform:uppercase;margin-bottom:.55rem">🏢 FIIs — Segmentos</div>
+      <div id="adv-seg-fiis"></div>
+    </div>
+    <!-- Ações -->
+    <div class="adv-segments-card" style="padding:.8rem;margin-bottom:0">
+      <div style="font-size:.52rem;color:var(--dim);letter-spacing:.08em;font-weight:700;text-transform:uppercase;margin-bottom:.55rem">📈 AÇÕES — Setores</div>
+      <div id="adv-seg-acoes"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ETFs + Renda Fixa -->
+<div class="g2" style="margin-bottom:1rem">
+  <div class="adv-segments-card" style="margin-bottom:0">
+    <div style="font-size:.52rem;color:var(--dim);letter-spacing:.08em;font-weight:700;text-transform:uppercase;margin-bottom:.55rem">🌍 ETFs RECOMENDADOS</div>
+    <div id="adv-seg-etfs"></div>
+  </div>
+  <div class="adv-segments-card" style="margin-bottom:0">
+    <div style="font-size:.52rem;color:var(--dim);letter-spacing:.08em;font-weight:700;text-transform:uppercase;margin-bottom:.55rem">💰 RENDA FIXA</div>
+    <div class="adv-rf-grid" id="adv-rf-cards"></div>
+  </div>
+</div>
+
+<!-- AI CHAT -->
+<div class="adv-chat-wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem">
+    <div style="display:flex;align-items:center;gap:.5rem">
+      <div style="width:8px;height:8px;border-radius:50%;background:#818cf8;animation:pulse 2s infinite"></div>
+      <span style="font-size:.55rem;color:var(--dim);letter-spacing:.08em;font-weight:700;text-transform:uppercase">Assistente IA — Pergunte sobre sua carteira</span>
+    </div>
+    <button class="btn" style="background:transparent;color:var(--dim2);border:1px solid var(--border);font-size:.52rem;padding:.2rem .5rem" onclick="advClearChat()">🗑 Limpar</button>
+  </div>
+  <div class="adv-quick-btns" id="adv-quick-btns">
+    <button class="adv-quick-btn" onclick="advSendQuick(this)">📊 Explique minha alocação</button>
+    <button class="adv-quick-btn" onclick="advSendQuick(this)">🏢 Melhores FIIs por segmento</button>
+    <button class="adv-quick-btn" onclick="advSendQuick(this)">📈 Top ações para meu perfil</button>
+    <button class="adv-quick-btn" onclick="advSendQuick(this)">💰 Como diversificar renda fixa?</button>
+    <button class="adv-quick-btn" onclick="advSendQuick(this)">🌍 Qual ETF global escolher?</button>
+    <button class="adv-quick-btn" onclick="advSendQuick(this)">⚠️ Quais riscos devo monitorar?</button>
+  </div>
+  <div class="adv-chat-msgs" id="adv-chat-msgs">
+    <div class="adv-msg adv-msg-ai">👋 Olá! Sou seu assistente de diversificação de carteira. Selecione seu perfil acima e farei uma análise personalizada. Você também pode me fazer qualquer pergunta sobre investimentos!</div>
+  </div>
+  <div class="adv-chat-input-row">
+    <input class="adv-chat-input" id="adv-chat-input" type="text" placeholder="Pergunte sobre sua estratégia de investimentos..." onkeydown="if(event.key==='Enter')advSend()"/>
+    <button class="adv-send-btn" onclick="advSend()">➤</button>
+  </div>
+</div>
+
+<!-- ══ SIMULADOR DE APORTES MENSAIS ══ -->
+<div style="margin-bottom:1rem">
+  <div style="font-size:.55rem;color:var(--dim);letter-spacing:.1em;font-weight:700;text-transform:uppercase;margin-bottom:.6rem">💸 SIMULADOR DE APORTES MENSAIS</div>
+
+  <!-- Inputs -->
+  <div class="card" style="margin-bottom:.7rem">
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.7rem;margin-bottom:.8rem" id="sim-inputs-grid">
+      <div>
+        <div style="font-size:.5rem;color:var(--dim);letter-spacing:.07em;margin-bottom:.25rem;text-transform:uppercase">Patrimônio Atual (R$)</div>
+        <input type="number" id="sim-patrimonio" placeholder="0,00" min="0" oninput="simCalc()" style="width:100%"/>
+      </div>
+      <div>
+        <div style="font-size:.5rem;color:var(--dim);letter-spacing:.07em;margin-bottom:.25rem;text-transform:uppercase">Aporte Mensal (R$)</div>
+        <input type="number" id="sim-aporte" placeholder="500,00" min="0" oninput="simCalc()" style="width:100%"/>
+      </div>
+      <div>
+        <div style="font-size:.5rem;color:var(--dim);letter-spacing:.07em;margin-bottom:.25rem;text-transform:uppercase">Período (anos)</div>
+        <input type="number" id="sim-anos" placeholder="10" min="1" max="40" oninput="simCalc()" style="width:100%"/>
+      </div>
+      <div>
+        <div style="font-size:.5rem;color:var(--dim);letter-spacing:.07em;margin-bottom:.25rem;text-transform:uppercase">Rentabilidade a.a. (%)</div>
+        <input type="number" id="sim-rentab" placeholder="12" min="0" max="50" step="0.1" oninput="simCalc()" style="width:100%"/>
+      </div>
+    </div>
+
+    <!-- Rentab presets -->
+    <div style="display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-bottom:.8rem">
+      <span style="font-size:.5rem;color:var(--dim2);letter-spacing:.06em">Atalhos:</span>
+      <button class="adv-quick-btn" onclick="simSetRentab(this,8,'Conservador ~8%')">🛡️ Conservador 8%</button>
+      <button class="adv-quick-btn" onclick="simSetRentab(this,13,'Moderado ~13%')">⚖️ Moderado 13%</button>
+      <button class="adv-quick-btn" onclick="simSetRentab(this,20,'Agressivo ~20%')">🚀 Agressivo 20%</button>
+      <button class="adv-quick-btn" onclick="simSetRentab(this,6.5,'CDI ~6.5%')">💰 CDI 6,5%</button>
+      <button class="adv-quick-btn" onclick="simSetRentab(this,11,'IPCA+ ~11%')">📈 IPCA+ 11%</button>
+    </div>
+
+    <!-- KPI results strip -->
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem" id="sim-kpi-strip">
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:.7rem .8rem">
+        <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.2rem">Patrimônio Final</div>
+        <div class="num" style="font-size:1.2rem;color:var(--green)" id="sim-res-total">—</div>
+        <div style="font-size:.48rem;color:var(--dim2)" id="sim-res-total-sub"></div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:.7rem .8rem">
+        <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.2rem">Total Investido</div>
+        <div class="num" style="font-size:1.2rem;color:var(--papel)" id="sim-res-investido">—</div>
+        <div style="font-size:.48rem;color:var(--dim2)" id="sim-res-investido-sub"></div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:.7rem .8rem">
+        <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.2rem">Juros Compostos</div>
+        <div class="num" style="font-size:1.2rem;color:var(--tijolo)" id="sim-res-juros">—</div>
+        <div style="font-size:.48rem;color:var(--dim2)">rendimento acumulado</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:.7rem .8rem">
+        <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.2rem">Renda Mensal Est.</div>
+        <div class="num" style="font-size:1.2rem;color:var(--yellow)" id="sim-res-renda">—</div>
+        <div style="font-size:.48rem;color:var(--dim2)">0,6% a.m. do patrimônio</div>
+      </div>
+      <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:.7rem .8rem">
+        <div style="font-size:.48rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.2rem">Multiplicador</div>
+        <div class="num" style="font-size:1.2rem;color:#a78bfa" id="sim-res-mult">—</div>
+        <div style="font-size:.48rem;color:var(--dim2)">vezes o valor investido</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Distribuição do aporte por classe -->
+  <div class="g2" style="margin-bottom:.7rem">
+    <div class="card">
+      <div style="font-size:.52rem;color:var(--dim);letter-spacing:.08em;font-weight:700;text-transform:uppercase;margin-bottom:.7rem">📦 DISTRIBUIÇÃO DO APORTE</div>
+      <div id="sim-distrib-rows" style="display:flex;flex-direction:column;gap:.45rem">
+        <div style="font-size:.6rem;color:var(--dim2);text-align:center;padding:1rem">Selecione um perfil e informe o aporte mensal</div>
+      </div>
+    </div>
+
+    <!-- Gráfico de evolução SVG simples -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.7rem">
+        <div style="font-size:.52rem;color:var(--dim);letter-spacing:.08em;font-weight:700;text-transform:uppercase">📊 EVOLUÇÃO DO PATRIMÔNIO</div>
+        <div style="display:flex;gap:.4rem">
+          <span style="display:flex;align-items:center;gap:.25rem;font-size:.5rem;color:var(--dim)"><span style="width:10px;height:3px;background:var(--green);display:inline-block;border-radius:2px"></span>Patrimônio</span>
+          <span style="display:flex;align-items:center;gap:.25rem;font-size:.5rem;color:var(--dim)"><span style="width:10px;height:3px;background:var(--papel);display:inline-block;border-radius:2px"></span>Investido</span>
+        </div>
+      </div>
+      <div style="position:relative;width:100%;height:160px">
+        <svg id="sim-chart-svg" width="100%" height="160" style="overflow:visible">
+          <text x="50%" y="80" text-anchor="middle" font-family="IBM Plex Mono,monospace" font-size="10" fill="var(--dim2)" id="sim-chart-placeholder">Preencha os campos para ver a evolução</text>
+        </svg>
+      </div>
+      <div id="sim-chart-years" style="display:flex;justify-content:space-between;font-size:.48rem;color:var(--dim2);margin-top:.15rem;padding:0 4px"></div>
+    </div>
+  </div>
+
+  <!-- Tabela de evolução anual -->
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+      <div style="font-size:.52rem;color:var(--dim);letter-spacing:.08em;font-weight:700;text-transform:uppercase">📋 EVOLUÇÃO ANUAL DETALHADA</div>
+      <button class="btn btn-green" style="font-size:.52rem;padding:.25rem .6rem" onclick="simExportCSV()">⬇ CSV</button>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl" id="sim-tabela" style="min-width:560px">
+        <thead>
+          <tr>
+            <th>ANO</th>
+            <th>APORTE ANUAL</th>
+            <th>TOTAL INVEST.</th>
+            <th>RENDIMENTO ANO</th>
+            <th>PATRIMÔNIO</th>
+            <th>RENDA MENSAL EST.</th>
+            <th>% JUROS</th>
+          </tr>
+        </thead>
+        <tbody id="sim-tbody">
+          <tr><td colspan="7" style="text-align:center;color:var(--dim);padding:1.5rem;font-size:.63rem">Preencha os campos acima para simular</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</div><!-- /page-diversificacao -->
+
+<script>
+// ══ SIMULADOR DE APORTES ══
+function simFmt(v) {
+  return 'R$ ' + v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+function simFmtK(v) {
+  if (v >= 1e6) return 'R$ ' + (v/1e6).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}) + 'M';
+  if (v >= 1e3) return 'R$ ' + (v/1e3).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}) + 'k';
+  return simFmt(v);
+}
+
+function simSetRentab(btn, val, label) {
+  document.getElementById('sim-rentab').value = val;
+  document.querySelectorAll('.adv-quick-btn').forEach(b => b.style.borderColor = '');
+  btn.style.borderColor = 'var(--green)';
+  simCalc();
+}
+
+function simCalc() {
+  const pat0   = parseFloat(document.getElementById('sim-patrimonio').value) || 0;
+  const aporte = parseFloat(document.getElementById('sim-aporte').value) || 0;
+  const anos   = Math.min(parseInt(document.getElementById('sim-anos').value) || 0, 40);
+  const rentAA = parseFloat(document.getElementById('sim-rentab').value) || 0;
+
+  if (anos < 1 || (aporte === 0 && pat0 === 0)) {
+    document.getElementById('sim-res-total').textContent = '—';
+    document.getElementById('sim-res-investido').textContent = '—';
+    document.getElementById('sim-res-juros').textContent = '—';
+    document.getElementById('sim-res-renda').textContent = '—';
+    document.getElementById('sim-res-mult').textContent = '—';
+    return;
+  }
+
+  const taxaMensal = Math.pow(1 + rentAA/100, 1/12) - 1;
+  const meses = anos * 12;
+
+  // Evolução mês a mês
+  let pat = pat0;
+  const anuais = [];
+  let totalInvestido = pat0;
+
+  for (let a = 1; a <= anos; a++) {
+    let rendAno = 0;
+    const patIni = pat;
+    for (let m = 0; m < 12; m++) {
+      const rend = pat * taxaMensal;
+      rendAno += rend;
+      pat = pat + rend + aporte;
+      if (a <= anos) totalInvestido += (m === 0 && a === 1 ? 0 : aporte);
+    }
+    // Corrige total investido
+    anuais.push({
+      ano: a,
+      aporteAnual: aporte * 12,
+      totalInvest: pat0 + aporte * 12 * a,
+      rendAno,
+      pat,
+      rendaMensal: pat * 0.006,
+      pctJuros: ((pat - (pat0 + aporte*12*a)) / (pat0 + aporte*12*a || 1)) * 100
+    });
+  }
+
+  const final = anuais[anuais.length - 1];
+  const totalInvest = pat0 + aporte * 12 * anos;
+  const juros = final.pat - totalInvest;
+  const mult = totalInvest > 0 ? (final.pat / totalInvest) : 0;
+
+  // KPIs
+  document.getElementById('sim-res-total').textContent = simFmtK(final.pat);
+  document.getElementById('sim-res-total-sub').textContent = 'em ' + anos + ' ano' + (anos>1?'s':'');
+  document.getElementById('sim-res-investido').textContent = simFmtK(totalInvest);
+  document.getElementById('sim-res-investido-sub').textContent = simFmt(aporte) + '/mês';
+  document.getElementById('sim-res-juros').textContent = simFmtK(juros);
+  document.getElementById('sim-res-renda').textContent = simFmtK(final.rendaMensal);
+  document.getElementById('sim-res-mult').textContent = mult.toFixed(1) + 'x';
+
+  // Distribuição do aporte
+  simRenderDistrib(aporte);
+
+  // Tabela
+  simRenderTabela(anuais, totalInvest);
+
+  // Gráfico
+  simRenderChart(anuais, pat0);
+}
+
+function simRenderDistrib(aporte) {
+  const el = document.getElementById('sim-distrib-rows');
+  if (!advCurrentProfile || aporte <= 0) {
+    el.innerHTML = '<div style="font-size:.6rem;color:var(--dim2);text-align:center;padding:1rem">Selecione um perfil e informe o aporte mensal</div>';
+    return;
+  }
+  const p = ADV_PROFILES[advCurrentProfile];
+  const classes = [
+    { key: 'fiis',      label: 'FIIs',        color: ADV_COLORS.fiis,      icon: '🏢' },
+    { key: 'acoes',     label: 'Ações',        color: ADV_COLORS.acoes,     icon: '📈' },
+    { key: 'etfs',      label: 'ETFs',         color: ADV_COLORS.etfs,      icon: '🌍' },
+    { key: 'rendafixa', label: 'Renda Fixa',   color: ADV_COLORS.rendafixa, icon: '💰' },
+  ];
+  el.innerHTML = classes.map(c => {
+    const pct = p.alloc[c.key];
+    const val = aporte * pct / 100;
+    return `<div style="display:flex;align-items:center;gap:.55rem">
+      <span style="font-size:.85rem;width:20px;text-align:center;flex-shrink:0">${c.icon}</span>
+      <span style="font-size:.6rem;color:var(--text);flex:1;min-width:70px">${c.label}</span>
+      <div style="flex:2;background:var(--bg3);border-radius:4px;height:6px;overflow:hidden">
+        <div style="width:${pct}%;height:100%;background:${c.color};border-radius:4px;transition:width .6s cubic-bezier(.34,1.56,.64,1)"></div>
+      </div>
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:.85rem;color:${c.color};min-width:30px;text-align:right">${pct}%</span>
+      <span style="font-size:.6rem;color:var(--hi);min-width:72px;text-align:right">${simFmt(val)}</span>
+    </div>`;
+  }).join('');
+}
+
+function simRenderTabela(anuais, totalInvestFinal) {
+  const tbody = document.getElementById('sim-tbody');
+  tbody.innerHTML = anuais.map((r, i) => {
+    const isLast = i === anuais.length - 1;
+    const pctJuros = r.totalInvest > 0 ? ((r.pat - r.totalInvest) / r.totalInvest * 100) : 0;
+    return `<tr style="${isLast ? 'font-weight:700;background:var(--bg3)' : ''}">
+      <td class="num" style="color:var(--dim);font-size:.75rem">${r.ano}</td>
+      <td class="num" style="color:var(--papel)">${simFmt(r.aporteAnual)}</td>
+      <td class="num" style="color:var(--dim)">${simFmtK(r.totalInvest)}</td>
+      <td class="num" style="color:var(--tijolo)">+${simFmt(r.rendAno)}</td>
+      <td class="num" style="color:var(--green);font-size:.8rem">${simFmtK(r.pat)}</td>
+      <td class="num" style="color:var(--yellow)">${simFmt(r.rendaMensal)}</td>
+      <td class="num" style="color:${pctJuros>0?'var(--green)':'var(--dim)'}">${pctJuros > 0 ? '+'+pctJuros.toFixed(1)+'%' : '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function simRenderChart(anuais, pat0) {
+  const svg = document.getElementById('sim-chart-svg');
+  const placeholder = document.getElementById('sim-chart-placeholder');
+  if (placeholder) placeholder.remove();
+
+  // Remove old paths
+  svg.querySelectorAll('.sim-path,.sim-area,.sim-dot,.sim-grid').forEach(e => e.remove());
+
+  const W = svg.clientWidth || 320;
+  const H = 150;
+  const PAD = { top: 12, right: 8, bottom: 20, left: 8 };
+  const w = W - PAD.left - PAD.right;
+  const h = H - PAD.top - PAD.bottom;
+
+  const maxVal = Math.max(...anuais.map(a => a.pat));
+  const minVal = 0;
+  const range = maxVal - minVal || 1;
+
+  const xs = anuais.map((_, i) => PAD.left + (i / (anuais.length - 1 || 1)) * w);
+  const ysP = anuais.map(a => PAD.top + h - ((a.pat - minVal) / range) * h);
+  const ysI = anuais.map(a => PAD.top + h - ((a.totalInvest - minVal) / range) * h);
+
+  // Grid lines (3)
+  for (let g = 0; g <= 3; g++) {
+    const y = PAD.top + (g / 3) * h;
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('class','sim-grid');
+    line.setAttribute('x1', PAD.left); line.setAttribute('x2', PAD.left + w);
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke','var(--border)'); line.setAttribute('stroke-width','1');
+    svg.appendChild(line);
+  }
+
+  // Area fill patrimônio
+  const areaD = `M${xs[0]},${PAD.top+h} ${xs.map((x,i)=>`L${x},${ysP[i]}`).join(' ')} L${xs[xs.length-1]},${PAD.top+h} Z`;
+  const area = document.createElementNS('http://www.w3.org/2000/svg','path');
+  area.setAttribute('class','sim-area');
+  area.setAttribute('d', areaD);
+  area.setAttribute('fill','url(#sim-grad)');
+  area.setAttribute('opacity','0.18');
+  svg.appendChild(area);
+
+  // Gradient def
+  if (!document.getElementById('sim-grad')) {
+    const defs = document.createElementNS('http://www.w3.org/2000/svg','defs');
+    defs.innerHTML = `<linearGradient id="sim-grad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5a0" stop-opacity="1"/><stop offset="100%" stop-color="#00e5a0" stop-opacity="0"/></linearGradient>`;
+    svg.insertBefore(defs, svg.firstChild);
+  }
+
+  // Path investido
+  const pathI = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+  pathI.setAttribute('class','sim-path');
+  pathI.setAttribute('points', xs.map((x,i)=>`${x},${ysI[i]}`).join(' '));
+  pathI.setAttribute('fill','none');
+  pathI.setAttribute('stroke','#38bdf8');
+  pathI.setAttribute('stroke-width','1.5');
+  pathI.setAttribute('stroke-dasharray','4 3');
+  pathI.setAttribute('opacity','0.7');
+  svg.appendChild(pathI);
+
+  // Path patrimônio
+  const pathP = document.createElementNS('http://www.w3.org/2000/svg','polyline');
+  pathP.setAttribute('class','sim-path');
+  pathP.setAttribute('points', xs.map((x,i)=>`${x},${ysP[i]}`).join(' '));
+  pathP.setAttribute('fill','none');
+  pathP.setAttribute('stroke','#00e5a0');
+  pathP.setAttribute('stroke-width','2');
+  svg.appendChild(pathP);
+
+  // Dots a cada 5 anos
+  anuais.forEach((a, i) => {
+    if ((a.ano % 5 === 0 || i === anuais.length-1)) {
+      const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('class','sim-dot');
+      dot.setAttribute('cx', xs[i]); dot.setAttribute('cy', ysP[i]);
+      dot.setAttribute('r', '4');
+      dot.setAttribute('fill','#00e5a0');
+      dot.setAttribute('stroke','var(--bg2)');
+      dot.setAttribute('stroke-width','2');
+      svg.appendChild(dot);
+      // Label value
+      const lbl = document.createElementNS('http://www.w3.org/2000/svg','text');
+      lbl.setAttribute('class','sim-dot');
+      lbl.setAttribute('x', xs[i]);
+      lbl.setAttribute('y', ysP[i] - 8);
+      lbl.setAttribute('text-anchor','middle');
+      lbl.setAttribute('font-family',"'IBM Plex Mono',monospace");
+      lbl.setAttribute('font-size','8');
+      lbl.setAttribute('fill','var(--green)');
+      lbl.textContent = simFmtK(a.pat);
+      svg.appendChild(lbl);
+    }
+  });
+
+  // Year labels
+  const yearsEl = document.getElementById('sim-chart-years');
+  const step = Math.ceil(anuais.length / 5);
+  yearsEl.innerHTML = anuais
+    .filter((a,i) => i % step === 0 || i === anuais.length-1)
+    .map(a => `<span>Ano ${a.ano}</span>`)
+    .join('');
+}
+
+function simExportCSV() {
+  const pat0   = parseFloat(document.getElementById('sim-patrimonio').value) || 0;
+  const aporte = parseFloat(document.getElementById('sim-aporte').value) || 0;
+  const anos   = Math.min(parseInt(document.getElementById('sim-anos').value) || 0, 40);
+  const rentAA = parseFloat(document.getElementById('sim-rentab').value) || 0;
+  if (!anos || (!aporte && !pat0)) { if(typeof toast==='function') toast('Preencha os campos para exportar.', false); return; }
+
+  const rows = [['Ano','Aporte Anual','Total Investido','Rendimento Ano','Patrimônio','Renda Mensal Est.']];
+  const taxaMensal = Math.pow(1 + rentAA/100, 1/12) - 1;
+  let pat = pat0;
+  for (let a = 1; a <= anos; a++) {
+    let rendAno = 0;
+    for (let m = 0; m < 12; m++) { const r = pat * taxaMensal; rendAno += r; pat = pat + r + aporte; }
+    rows.push([a, aporte*12, pat0+aporte*12*a, rendAno.toFixed(2), pat.toFixed(2), (pat*0.006).toFixed(2)]);
+  }
+  const csv = rows.map(r => r.join(';')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'}));
+  a.download = 'simulacao-aportes.csv';
+  a.click();
+  if(typeof toast==='function') toast('✅ CSV exportado!');
+}
+</script>
+
+<script>
+// ══════════════════════════════════════════════
+//  IA ADVISOR — Simulador de Diversificação
+// ══════════════════════════════════════════════
+
+const ADV_PROFILES = {
+  conservador: {
+    label: 'CONSERVADOR',
+    color: '#00e5a0',
+    risco: 'BAIXO',
+    riscoColor: 'var(--green)',
+    retorno: '8–11%',
+    horizonte: '2+',
+    ativos: 4,
+    alloc: { fiis: 20, acoes: 15, etfs: 10, rendafixa: 55 },
+    fiis: [
+      { seg: 'Logística', pct: 35, tag: '⭐ Indicado', tagColor: '#00e5a0', tagBg: '#00e5a015' },
+      { seg: 'Renda Urbana', pct: 25, tag: 'Estável', tagColor: '#38bdf8', tagBg: '#38bdf815' },
+      { seg: 'CRI/CRA', pct: 25, tag: 'Defensivo', tagColor: '#a78bfa', tagBg: '#a78bfa15' },
+      { seg: 'Escritórios', pct: 15, tag: 'Leve exposição', tagColor: '#64748b', tagBg: '#64748b15' },
+    ],
+    acoes: [
+      { seg: 'Utilities (Energia/Saneamento)', pct: 35, tag: '⭐ Top Conservador', tagColor: '#00e5a0', tagBg: '#00e5a015', icon: '⚡' },
+      { seg: 'Bancos & Financeiro', pct: 30, tag: 'Dividendos', tagColor: '#38bdf8', tagBg: '#38bdf815', icon: '🏦' },
+      { seg: 'Consumo Básico', pct: 20, tag: 'Defensivo', tagColor: '#a78bfa', tagBg: '#a78bfa15', icon: '🛒' },
+      { seg: 'Telecomunicações', pct: 15, tag: 'Estável', tagColor: '#64748b', tagBg: '#64748b15', icon: '📡' },
+    ],
+    etfs: [
+      { ticker: 'IMAB11', desc: 'Renda fixa IPCA+, baixo risco', rec: '⭐', color: '#00e5a0' },
+      { ticker: 'BOVA11', desc: 'Índice Bovespa amplo, exposição controlada', rec: '✅', color: '#38bdf8' },
+      { ticker: 'FIXA11', desc: 'Pós-fixado CDI, liquidez diária', rec: '✅', color: '#fbbf24' },
+    ],
+    rf: [
+      { icon: '🏛️', name: 'Tesouro Selic', desc: 'Liquidez diária, risco soberano', pct: '50%', color: '#00e5a0' },
+      { icon: '📊', name: 'CDB 100%+ CDI', desc: 'Bancos médios com FGC', pct: '30%', color: '#38bdf8' },
+      { icon: '🔒', name: 'LCI/LCA', desc: 'Isento IR, curto prazo', pct: '20%', color: '#fbbf24' },
+    ],
+    chatContext: 'Perfil CONSERVADOR: 55% Renda Fixa, 20% FIIs, 15% Ações, 10% ETFs. Foco em Tesouro Selic, FIIs de logística e CRI, ações defensivas (utilities, bancos). Baixo risco, retorno esperado 8-11% a.a.',
+  },
+  moderado: {
+    label: 'MODERADO',
+    color: '#38bdf8',
+    risco: 'MÉDIO',
+    riscoColor: '#38bdf8',
+    retorno: '12–16%',
+    horizonte: '5+',
+    ativos: 4,
+    alloc: { fiis: 30, acoes: 30, etfs: 15, rendafixa: 25 },
+    fiis: [
+      { seg: 'Logística', pct: 30, tag: '⭐ Top Moderado', tagColor: '#38bdf8', tagBg: '#38bdf815' },
+      { seg: 'Shoppings', pct: 25, tag: 'Crescimento', tagColor: '#fbbf24', tagBg: '#fbbf2415' },
+      { seg: 'Escritórios AAA', pct: 20, tag: 'Valorização', tagColor: '#a78bfa', tagBg: '#a78bfa15' },
+      { seg: 'FoFs', pct: 15, tag: 'Diversificação', tagColor: '#00e5a0', tagBg: '#00e5a015' },
+      { seg: 'Renda Urbana', pct: 10, tag: 'Renda', tagColor: '#64748b', tagBg: '#64748b15' },
+    ],
+    acoes: [
+      { seg: 'Bancos & Financeiro', pct: 25, tag: '⭐ Top Moderado', tagColor: '#38bdf8', tagBg: '#38bdf815', icon: '🏦' },
+      { seg: 'Commodities', pct: 20, tag: 'Hedge global', tagColor: '#fbbf24', tagBg: '#fbbf2415', icon: '⛏️' },
+      { seg: 'Varejo & Consumo', pct: 20, tag: 'Crescimento', tagColor: '#fb923c', tagBg: '#fb923c15', icon: '🛍️' },
+      { seg: 'Utilities', pct: 20, tag: 'Defensivo', tagColor: '#00e5a0', tagBg: '#00e5a015', icon: '⚡' },
+      { seg: 'Saúde', pct: 15, tag: 'Tendência', tagColor: '#a78bfa', tagBg: '#a78bfa15', icon: '🏥' },
+    ],
+    etfs: [
+      { ticker: 'BOVA11', desc: 'Índice Bovespa, exposição Brasil', rec: '⭐', color: '#38bdf8' },
+      { ticker: 'IVVB11', desc: 'S&P 500 em reais, hedge cambial', rec: '⭐', color: '#00e5a0' },
+      { ticker: 'HASH11', desc: 'Criptoativos diversificado', rec: '⚡', color: '#a78bfa' },
+    ],
+    rf: [
+      { icon: '📈', name: 'Tesouro IPCA+', desc: 'Proteção inflação, longo prazo', pct: '40%', color: '#38bdf8' },
+      { icon: '🏛️', name: 'Tesouro Selic', desc: 'Reserva de emergência', pct: '30%', color: '#00e5a0' },
+      { icon: '💼', name: 'Debêntures IPCA', desc: 'Isentas IR, alta rentabilidade', pct: '30%', color: '#fbbf24' },
+    ],
+    chatContext: 'Perfil MODERADO: 30% FIIs, 30% Ações, 25% Renda Fixa, 15% ETFs. Equilíbrio crescimento/renda. FIIs de logística e shoppings, ações de bancos, commodities, varejo. Retorno esperado 12-16% a.a.',
+  },
+  agressivo: {
+    label: 'AGRESSIVO',
+    color: '#f87171',
+    risco: 'ALTO',
+    riscoColor: '#f87171',
+    retorno: '18–28%',
+    horizonte: '10+',
+    ativos: 4,
+    alloc: { fiis: 20, acoes: 50, etfs: 25, rendafixa: 5 },
+    fiis: [
+      { seg: 'Desenvolvimento/CRI', pct: 40, tag: '⭐ Alto Potencial', tagColor: '#f87171', tagBg: '#f8717115' },
+      { seg: 'Shoppings Premium', pct: 30, tag: 'Valorização', tagColor: '#fb923c', tagBg: '#fb923c15' },
+      { seg: 'Logística', pct: 20, tag: 'Crescimento', tagColor: '#fbbf24', tagBg: '#fbbf2415' },
+      { seg: 'Residencial', pct: 10, tag: 'Emerging', tagColor: '#a78bfa', tagBg: '#a78bfa15' },
+    ],
+    acoes: [
+      { seg: 'Tecnologia & Growth', pct: 30, tag: '🚀 Top Agressivo', tagColor: '#f87171', tagBg: '#f8717115', icon: '💻' },
+      { seg: 'Commodities Globais', pct: 25, tag: 'Ciclo longo', tagColor: '#fbbf24', tagBg: '#fbbf2415', icon: '⛏️' },
+      { seg: 'Small Caps Brasil', pct: 20, tag: '⚡ Alto Risco/Retorno', tagColor: '#fb923c', tagBg: '#fb923c15', icon: '📊' },
+      { seg: 'Saúde & Biotech', pct: 15, tag: 'Tendência Secular', tagColor: '#a78bfa', tagBg: '#a78bfa15', icon: '🔬' },
+      { seg: 'Construção Civil', pct: 10, tag: 'Ciclo imobiliário', tagColor: '#38bdf8', tagBg: '#38bdf815', icon: '🏗️' },
+    ],
+    etfs: [
+      { ticker: 'IVVB11', desc: 'S&P 500, maior mercado do mundo', rec: '🚀', color: '#f87171' },
+      { ticker: 'NASD11', desc: 'Nasdaq 100, concentração em tech', rec: '🚀', color: '#fb923c' },
+      { ticker: 'HASH11', desc: 'Criptoativos — altíssimo risco/retorno', rec: '⚡', color: '#a78bfa' },
+      { ticker: 'SMAL11', desc: 'Small Caps Brasil, potencial de alpha', rec: '⚡', color: '#fbbf24' },
+    ],
+    rf: [
+      { icon: '💰', name: 'CDB Pós Curto', desc: 'Apenas reserva emergência', pct: '60%', color: '#f87171' },
+      { icon: '🏛️', name: 'Tesouro Selic', desc: 'Liquidez para oportunidades', pct: '40%', color: '#64748b' },
+    ],
+    chatContext: 'Perfil AGRESSIVO: 50% Ações (tech, commodities, small caps), 25% ETFs (IVVB11, NASD11, HASH11), 20% FIIs (desenvolvimento/CRI), 5% Renda Fixa. Foco em crescimento máximo longo prazo. Retorno esperado 18-28% a.a.',
+  }
+};
+
+let advCurrentProfile = null;
+let advChatHistory = [];
+
+const ADV_COLORS = {
+  fiis: '#34d399',
+  acoes: '#38bdf8',
+  etfs: '#fb923c',
+  rendafixa: '#fbbf24'
+};
+
+const ADV_LABELS = {
+  fiis: 'FIIs',
+  acoes: 'Ações',
+  etfs: 'ETFs',
+  rendafixa: 'Renda Fixa'
+};
+
+function advSelectProfile(key) {
+  advCurrentProfile = key;
+  const p = ADV_PROFILES[key];
+
+  // Update profile cards
+  document.querySelectorAll('.adv-profile-card').forEach(c => c.classList.remove('selected'));
+  document.querySelector('.adv-profile-card.' + key).classList.add('selected');
+  ['conservador','moderado','agressivo'].forEach(k => {
+    const el = document.getElementById('adv-check-' + k);
+    if (el) el.textContent = k === key ? '✓' : '';
+  });
+
+  // KPIs
+  document.getElementById('adv-kpi-risco').textContent = p.risco;
+  document.getElementById('adv-kpi-risco').style.color = p.riscoColor;
+  document.getElementById('adv-kpi-risco-sub').textContent = 'nível de risco';
+  document.getElementById('adv-kpi-retorno').textContent = p.retorno;
+  document.getElementById('adv-kpi-retorno').style.color = p.color;
+  document.getElementById('adv-kpi-horizonte').textContent = p.horizonte;
+  document.getElementById('adv-kpi-horizonte').style.color = p.color;
+  document.getElementById('adv-kpi-ativos').textContent = p.ativos;
+  document.getElementById('adv-kpi-ativos').style.color = p.color;
+
+  // Donut
+  advRenderDonut(p.alloc, p.color);
+
+  // Segments
+  advRenderSegments('adv-seg-fiis', p.fiis, ADV_COLORS.fiis);
+  advRenderSegments('adv-seg-acoes', p.acoes, ADV_COLORS.acoes, true);
+  advRenderEtfs(p.etfs);
+  advRenderRF(p.rf);
+
+  // Auto AI message
+  advAddMsg('ai', `📊 <strong>Perfil ${p.label} ativado!</strong><br>Com base nesse perfil, recomendo: <strong>${p.alloc.rendafixa}% Renda Fixa</strong>, <strong>${p.alloc.fiis}% FIIs</strong>, <strong>${p.alloc.acoes}% Ações</strong> e <strong>${p.alloc.etfs}% ETFs</strong>.<br><br>Retorno esperado: <strong>${p.retorno} a.a.</strong> • Horizonte mínimo: <strong>${p.horizonte} anos</strong><br><br>Quer que eu explique alguma classe de ativos em detalhe? 🤖`);
+}
+
+function advRenderDonut(alloc, mainColor) {
+  const svg = document.getElementById('adv-donut-svg');
+  const cx = 75, cy = 75, r = 55, sw = 22;
+  const circum = 2 * Math.PI * r;
+  const keys = ['fiis','acoes','etfs','rendafixa'];
+  let offset = 0;
+  // Remove old segments
+  svg.querySelectorAll('.adv-arc').forEach(e => e.remove());
+  keys.forEach(k => {
+    const pct = alloc[k] / 100;
+    const dash = pct * circum;
+    const gap = circum - dash;
+    const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    circle.setAttribute('class','adv-arc');
+    circle.setAttribute('cx', cx); circle.setAttribute('cy', cy); circle.setAttribute('r', r);
+    circle.setAttribute('fill','none');
+    circle.setAttribute('stroke', ADV_COLORS[k]);
+    circle.setAttribute('stroke-width', sw);
+    circle.setAttribute('stroke-dasharray', dash + ' ' + gap);
+    circle.setAttribute('stroke-dashoffset', -offset * circum);
+    circle.style.transition = 'stroke-dasharray .7s cubic-bezier(.34,1.56,.64,1)';
+    svg.insertBefore(circle, svg.querySelector('text'));
+    offset += pct;
+  });
+  document.getElementById('adv-donut-label1').textContent = advCurrentProfile ? ADV_PROFILES[advCurrentProfile].label : '';
+  document.getElementById('adv-donut-label2').textContent = 'perfil';
+
+  // Legend
+  const leg = document.getElementById('adv-legend');
+  leg.innerHTML = keys.map(k => `
+    <div class="adv-legend-item">
+      <div class="adv-legend-left">
+        <div class="adv-legend-dot" style="background:${ADV_COLORS[k]}"></div>
+        <span class="adv-legend-name">${ADV_LABELS[k]}</span>
+      </div>
+      <span class="adv-legend-pct" style="color:${ADV_COLORS[k]}">${alloc[k]}%</span>
+    </div>`).join('');
+}
+
+function advRenderSegments(containerId, segs, barColor, hasIcon) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const maxPct = Math.max(...segs.map(s => s.pct));
+  el.innerHTML = segs.map(s => `
+    <div class="adv-seg-row">
+      ${hasIcon ? `<span class="adv-seg-icon">${s.icon||'📌'}</span>` : ''}
+      <span class="adv-seg-name">${s.seg}</span>
+      <div class="adv-seg-bar-wrap">
+        <div class="adv-seg-bar-bg">
+          <div class="adv-seg-bar-fill" style="width:${(s.pct/maxPct*100)}%;background:${barColor}"></div>
+        </div>
+      </div>
+      <span class="adv-seg-pct" style="color:${barColor}">${s.pct}%</span>
+      <span class="adv-seg-tag" style="color:${s.tagColor};background:${s.tagBg}">${s.tag}</span>
+    </div>`).join('');
+}
+
+function advRenderEtfs(etfs) {
+  const el = document.getElementById('adv-seg-etfs');
+  if (!el) return;
+  el.innerHTML = etfs.map(e => `
+    <div class="adv-seg-row" style="margin-bottom:.4rem;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:.5rem .65rem">
+      <span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:${e.color};letter-spacing:.04em;min-width:58px">${e.ticker}</span>
+      <span style="font-size:.55rem;color:var(--dim);flex:1">${e.desc}</span>
+      <span style="font-size:.85rem">${e.rec}</span>
+    </div>`).join('');
+}
+
+function advRenderRF(rf) {
+  const el = document.getElementById('adv-rf-cards');
+  if (!el) return;
+  el.innerHTML = rf.map(r => `
+    <div class="adv-rf-card">
+      <div class="adv-rf-icon">${r.icon}</div>
+      <div class="adv-rf-name">${r.name}</div>
+      <div class="adv-rf-desc">${r.desc}</div>
+      <div class="adv-rf-pct" style="color:${r.color}">${r.pct}</div>
+    </div>`).join('');
+}
+
+function advAddMsg(role, text) {
+  const msgs = document.getElementById('adv-chat-msgs');
+  const div = document.createElement('div');
+  div.className = 'adv-msg adv-msg-' + role;
+  div.innerHTML = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  advChatHistory.push({ role: role === 'ai' ? 'assistant' : 'user', content: text.replace(/<[^>]*>/g,'') });
+}
+
+function advShowTyping() {
+  const msgs = document.getElementById('adv-chat-msgs');
+  const div = document.createElement('div');
+  div.className = 'adv-msg-typing';
+  div.id = 'adv-typing';
+  div.innerHTML = '<div class="adv-dot"></div><div class="adv-dot"></div><div class="adv-dot"></div>';
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function advHideTyping() {
+  const el = document.getElementById('adv-typing');
+  if (el) el.remove();
+}
+
+async function advSend() {
+  const input = document.getElementById('adv-chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  advAddMsg('user', text);
+  await advCallAI(text);
+}
+
+function advSendQuick(btn) {
+  const text = btn.textContent.trim();
+  document.getElementById('adv-chat-input').value = text;
+  advSend();
+}
+
+async function advCallAI(userMsg) {
+  advShowTyping();
+  const profileCtx = advCurrentProfile
+    ? 'Contexto da carteira do usuário: ' + ADV_PROFILES[advCurrentProfile].chatContext
+    : 'O usuário ainda não selecionou um perfil de investidor.';
+
+  const systemPrompt = `Você é um consultor financeiro especializado em investimentos brasileiros. ${profileCtx}
+
+Responda de forma concisa (máx 150 palavras), prática e objetiva. Use emojis relevantes. Foque no mercado brasileiro: B3, FIIs, Tesouro Direto, ações brasileiras. Quando mencionar tickers, use formato padrão B3. Não dê garantias de retorno. Sempre lembre que investimentos têm risco.`;
+
+  const messages = [
+    ...advChatHistory.slice(-6),
+    { role: 'user', content: userMsg }
+  ];
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        system: systemPrompt,
+        messages
+      })
+    });
+    const data = await res.json();
+    advHideTyping();
+    const reply = data.content?.[0]?.text || 'Desculpe, não consegui processar sua pergunta.';
+    advAddMsg('ai', reply);
+  } catch(e) {
+    advHideTyping();
+    advAddMsg('ai', '⚠️ Erro ao conectar com a IA. Verifique sua conexão e tente novamente.');
+  }
+}
+
+function advClearChat() {
+  advChatHistory = [];
+  const msgs = document.getElementById('adv-chat-msgs');
+  msgs.innerHTML = '<div class="adv-msg adv-msg-ai">👋 Chat limpo! Selecione um perfil ou faça uma pergunta.</div>';
+}
 </script>
 
 <!-- ─── Botão flutuante do Assistente ────────────────────────────────────── -->
