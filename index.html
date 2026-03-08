@@ -23631,20 +23631,19 @@ function ckFmtPreview(fieldId, rawVal) {
 
 <script>
 // ══════════════════════════════════════════════════════════
-//  TESTE — ENERGIA CVM × BRAPI
+//  TESTE — ENERGIA: dados históricos 5 anos via Brapi
+//  (incomeStatementHistory + balanceSheetHistory + cashflowStatementHistory)
 // ══════════════════════════════════════════════════════════
 
 const TESTE_EMPRESAS = [
-  { nome: 'Engie Brasil',   ticker: 'EGIE3',  cnpj: '02.474.103/0001-19', cor: '#00e5a0' },
-  { nome: 'Taesa',          ticker: 'TAEE11', cnpj: '07.859.971/0001-30', cor: '#38bdf8' },
-  { nome: 'Copel',          ticker: 'CPLE6',  cnpj: '76.483.817/0001-20', cor: '#fb923c' },
-  { nome: 'Cemig',          ticker: 'CMIG4',  cnpj: '17.155.730/0001-64', cor: '#a78bfa' },
-  { nome: 'Auren Energia',  ticker: 'AURE3',  cnpj: '08.821.055/0001-94', cor: '#fbbf24' },
+  { nome: 'Engie Brasil',  ticker: 'EGIE3',  cnpj: '02.474.103/0001-19', cor: '#00e5a0' },
+  { nome: 'Taesa',         ticker: 'TAEE11', cnpj: '07.859.971/0001-30', cor: '#38bdf8' },
+  { nome: 'Copel',         ticker: 'CPLE6',  cnpj: '76.483.817/0001-20', cor: '#fb923c' },
+  { nome: 'Cemig',         ticker: 'CMIG4',  cnpj: '17.155.730/0001-64', cor: '#a78bfa' },
+  { nome: 'Auren Energia', ticker: 'AURE3',  cnpj: '08.821.055/0001-94', cor: '#fbbf24' },
 ];
 
 const TESTE_ANOS = 5;
-
-// Estado
 let testeResultados = {};
 
 function testeBrapiToken() {
@@ -23653,230 +23652,199 @@ function testeBrapiToken() {
 
 function testeFmtMoeda(v) {
   if (v == null || isNaN(v)) return '—';
-  const abs = Math.abs(v);
-  if (abs >= 1e9)  return 'R$ ' + (v/1e9).toFixed(2).replace('.',',') + 'B';
-  if (abs >= 1e6)  return 'R$ ' + (v/1e6).toFixed(2).replace('.',',') + 'M';
-  if (abs >= 1e3)  return 'R$ ' + (v/1e3).toFixed(1).replace('.',',') + 'k';
-  return 'R$ ' + v.toFixed(2).replace('.',',');
+  const s = v < 0 ? '-' : '';
+  const a = Math.abs(v);
+  if (a >= 1e9)  return s + 'R$ ' + (a/1e9).toFixed(2).replace('.',',') + 'B';
+  if (a >= 1e6)  return s + 'R$ ' + (a/1e6).toFixed(2).replace('.',',') + 'M';
+  if (a >= 1e3)  return s + 'R$ ' + (a/1e3).toFixed(1).replace('.',',') + 'k';
+  return s + 'R$ ' + a.toFixed(0);
 }
-
-function testeFmtPct(v, decimals=1) {
+function testeFmtPct(v, d=1) {
   if (v == null || isNaN(v)) return '—';
-  const s = v >= 0 ? '+' : '';
-  return s + v.toFixed(decimals).replace('.',',') + '%';
+  return (v>=0?'+':'') + v.toFixed(d).replace('.',',') + '%';
 }
-
 function testeCorPct(v) {
   if (v == null || isNaN(v)) return 'var(--dim)';
   return v >= 0 ? 'var(--green)' : 'var(--red)';
 }
 
-// Renderiza cards de empresa (status individual)
-function testeRenderCards() {
-  const wrap = document.getElementById('teste-empresa-cards');
-  wrap.innerHTML = TESTE_EMPRESAS.map(e => {
-    const r = testeResultados[e.ticker];
-    const status = !r ? 'idle' : r.loading ? 'loading' : r.erro ? 'erro' : 'ok';
-    const statusHtml = {
-      idle:    `<span style="color:var(--dim2)">Aguardando...</span>`,
-      loading: `<span style="color:var(--yellow);animation:pulse 1s infinite">⟳ Buscando...</span>`,
-      erro:    `<span style="color:var(--red)">⚠ ${r.erro}</span>`,
-      ok:      `<span style="color:var(--green)">✓ OK — Brapi + CVM</span>`,
-    }[status];
-    return `
-    <div class="card" style="border-left:3px solid ${e.cor}">
-      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${e.cor};letter-spacing:.06em">${e.ticker}</div>
-        <div style="font-size:.55rem;color:var(--dim)">${e.nome}</div>
-      </div>
-      <div style="font-size:.52rem;color:var(--dim2);margin-bottom:.3rem">CNPJ: ${e.cnpj}</div>
-      <div style="font-size:.58rem">${statusHtml}</div>
-      ${status==='ok' ? `
-        <hr style="margin:.5rem 0">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">
-          <div><div style="font-size:.44rem;color:var(--dim)">PREÇO</div><div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--hi)">${r.brapi?.preco ? 'R$ '+r.brapi.preco.toFixed(2).replace('.',',') : '—'}</div></div>
-          <div><div style="font-size:.44rem;color:var(--dim)">DY</div><div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--green)">${r.brapi?.dy ? r.brapi.dy.toFixed(2).replace('.',',')+' %' : '—'}</div></div>
-          <div><div style="font-size:.44rem;color:var(--dim)">P/L</div><div style="font-size:.75rem;color:var(--hi)">${r.brapi?.pl != null ? r.brapi.pl.toFixed(1) : '—'}</div></div>
-          <div><div style="font-size:.44rem;color:var(--dim)">ROE CVM</div><div style="font-size:.75rem;color:var(--papel)">${r.cvm?.roe != null ? r.cvm.roe.toFixed(1)+'%' : '—'}</div></div>
-        </div>` : ''}
-    </div>`;
-  }).join('');
-}
-
-// Busca dados Brapi de um ticker
-async function testeBuscarBrapi(ticker) {
+// ── Busca tudo em uma única chamada Brapi (cotação + fundamentals + histórico)
+async function testeBuscarEmpresa(ticker) {
   const token = testeBrapiToken();
-  const base = 'https://brapi.dev/api/quote/';
-  const params = 'modules=financialData,defaultKeyStatistics,summaryDetail' + (token ? `&token=${token}` : '');
-  const url = `${base}${ticker}?${params}`;
+  const modulos = [
+    'financialData',
+    'defaultKeyStatistics',
+    'summaryDetail',
+    'incomeStatementHistory',
+    'balanceSheetHistory',
+    'cashflowStatementHistory',
+  ].join(',');
+  const url = `https://brapi.dev/api/quote/${ticker}?modules=${modulos}&fundamental=true${token ? '&token='+token : ''}`;
+
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Brapi HTTP ${res.status}`);
-  const data = await res.json();
-  const r = data.results?.[0];
-  if (!r) throw new Error('Sem dados Brapi');
-  const fd = r.financialData || {};
-  const ks = r.defaultKeyStatistics || {};
-  const sd = r.summaryDetail || {};
-  return {
-    preco:        r.regularMarketPrice ?? null,
-    varHoje:      r.regularMarketChangePercent ?? null,
-    pl:           r.priceEarningsRatio ?? ks.trailingPE ?? null,
-    pvp:          ks.priceToBook ?? null,
-    dy:           (sd.dividendYield ?? r.dividendYield ?? 0) * (sd.dividendYield > 1 ? 1 : 100),
-    roe:          fd.returnOnEquity != null ? fd.returnOnEquity * 100 : null,
-    margemLiq:    fd.profitMargins  != null ? fd.profitMargins * 100  : null,
-    ebitda:       fd.ebitda ?? null,
-    receitaTotal: fd.totalRevenue ?? null,
-    lucroLiq:     fd.netIncome ?? r.netIncome ?? null,
-  };
-}
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const json = await res.json();
+  const r = json.results?.[0];
+  if (!r) throw new Error('Ativo não encontrado');
 
-// Busca dados históricos CVM (5 anos)
-async function testeBuscarCvm(cnpj, anos) {
-  const cnpjLimpo = cnpj.replace(/\D/g, '');
+  const fd  = r.financialData          || {};
+  const ks  = r.defaultKeyStatistics   || {};
+  const sd  = r.summaryDetail          || {};
+  const ish = r.incomeStatementHistory || {};
+  const bsh = r.balanceSheetHistory    || {};
+  const csh = r.cashflowStatementHistory || {};
+
+  // ── Cotação e indicadores atuais
+  const atual = {
+    preco:     r.regularMarketPrice ?? null,
+    varHoje:   r.regularMarketChangePercent ?? null,
+    pl:        r.priceEarningsRatio ?? ks.trailingPE ?? null,
+    pvp:       ks.priceToBook ?? null,
+    dy:        (() => {
+      const raw = sd.dividendYield ?? r.dividendYield ?? null;
+      if (raw == null) return null;
+      return raw > 1 ? raw : raw * 100;
+    })(),
+    roe:       fd.returnOnEquity  != null ? fd.returnOnEquity  * 100 : null,
+    margemLiq: fd.profitMargins   != null ? fd.profitMargins   * 100 : null,
+    ebitda:    fd.ebitda ?? null,
+    receita:   fd.totalRevenue ?? null,
+    lucro:     fd.netIncome ?? null,
+    roic:      ks.returnOnCapital != null ? ks.returnOnCapital * 100 : null,
+    dlEbitda:  (fd.totalDebt && fd.ebitda > 0)
+                 ? ((fd.totalDebt - (fd.totalCash||0)) / fd.ebitda).toFixed(2)
+                 : null,
+  };
+
+  // ── Histórico anual (últimos TESTE_ANOS anos)
+  const stmts    = ish.incomeStatementHistory    || [];
+  const balances = bsh.balanceSheetStatements    || [];
+  const flows    = csh.cashflowStatements        || [];
+
+  // Mapeia por ano (endDate)
+  const toAno = ep => {
+    if (!ep) return null;
+    const d = typeof ep === 'number' ? new Date(ep * 1000) : new Date(ep);
+    return isNaN(d) ? null : d.getFullYear();
+  };
+
+  const histMap = {};
   const anoAtual = new Date().getFullYear();
-  const anoInicio = anoAtual - anos;
+  const anoMin   = anoAtual - TESTE_ANOS;
 
-  // Endpoints CVM dados abertos
-  const urls = [];
-  for (let a = anoInicio; a < anoAtual; a++) {
-    // DRE anual
-    urls.push(`https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_DRE_con_${a}.csv`);
+  // DRE
+  for (const s of stmts) {
+    const ano = toAno(s.endDate?.raw ?? s.endDate);
+    if (!ano || ano < anoMin) continue;
+    histMap[ano] = histMap[ano] || {};
+    histMap[ano].receita  = s.totalRevenue?.raw    ?? s.totalRevenue    ?? null;
+    histMap[ano].lucro    = s.netIncome?.raw        ?? s.netIncome        ?? null;
+    histMap[ano].ebit     = s.ebit?.raw             ?? s.ebit             ?? null;
+    histMap[ano].grossP   = s.grossProfit?.raw      ?? s.grossProfit      ?? null;
+  }
+  // Balanço
+  for (const s of balances) {
+    const ano = toAno(s.endDate?.raw ?? s.endDate);
+    if (!ano || ano < anoMin) continue;
+    histMap[ano] = histMap[ano] || {};
+    histMap[ano].pl       = s.totalStockholderEquity?.raw ?? s.totalStockholderEquity ?? null;
+    histMap[ano].ativo    = s.totalAssets?.raw             ?? s.totalAssets             ?? null;
+    histMap[ano].divida   = s.longTermDebt?.raw            ?? s.longTermDebt            ?? null;
+  }
+  // Fluxo de caixa
+  for (const s of flows) {
+    const ano = toAno(s.endDate?.raw ?? s.endDate);
+    if (!ano || ano < anoMin) continue;
+    histMap[ano] = histMap[ano] || {};
+    histMap[ano].fcl      = s.freeCashflow?.raw            ?? s.freeCashflow            ?? null;
+    histMap[ano].fco      = s.totalCashFromOperatingActivities?.raw
+                            ?? s.totalCashFromOperatingActivities ?? null;
   }
 
-  const dadosAnuais = {};
-
-  // Busca cada ano
-  for (let a = anoInicio; a < anoAtual; a++) {
-    try {
-      // DRE
-      const urlDRE = `https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_DRE_con_${a}.csv`;
-      const resDRE = await fetch(urlDRE);
-      if (!resDRE.ok) continue;
-      const txtDRE = await resDRE.text();
-      const dreLinhas = txtDRE.split('\n');
-      const cabDRE = dreLinhas[0].split(';');
-      const iCNPJ = cabDRE.indexOf('CNPJ_CIA');
-      const iConta = cabDRE.indexOf('CD_CONTA');
-      const iDescr = cabDRE.indexOf('DS_CONTA');
-      const iValor = cabDRE.indexOf('VL_CONTA');
-      const iOrdem = cabDRE.indexOf('ORDEM_EXERC');
-
-      let receitaLiq = null, lucroLiq = null, ebit = null;
-      for (let i = 1; i < dreLinhas.length; i++) {
-        const cols = dreLinhas[i].split(';');
-        if (!cols[iCNPJ]) continue;
-        const cnpjLinha = cols[iCNPJ].replace(/\D/g, '');
-        if (cnpjLinha !== cnpjLimpo) continue;
-        if (cols[iOrdem] && cols[iOrdem].trim() !== 'ÚLTIMO') continue;
-        const conta = cols[iConta]?.trim();
-        const vl = parseFloat(cols[iValor]?.replace(',','.'));
-        if (isNaN(vl)) continue;
-        if (conta === '3.01')  receitaLiq = vl;
-        if (conta === '3.11')  lucroLiq   = vl;
-        if (conta === '3.05')  ebit       = vl;
-      }
-
-      // BPA (Balanço Ativo) para patrimônio
-      const urlBPA = `https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_BPA_con_${a}.csv`;
-      const resBPA = await fetch(urlBPA);
-      let totalAtivo = null, patrimonioLiq = null;
-      if (resBPA.ok) {
-        const txtBPA = await resBPA.text();
-        const bpaLinhas = txtBPA.split('\n');
-        const cabBPA = bpaLinhas[0].split(';');
-        const iBcnpj  = cabBPA.indexOf('CNPJ_CIA');
-        const iBconta = cabBPA.indexOf('CD_CONTA');
-        const iBvalor = cabBPA.indexOf('VL_CONTA');
-        const iBordem = cabBPA.indexOf('ORDEM_EXERC');
-        for (let i = 1; i < bpaLinhas.length; i++) {
-          const cols = bpaLinhas[i].split(';');
-          if (!cols[iBcnpj]) continue;
-          const cnpjLinha = cols[iBcnpj].replace(/\D/g, '');
-          if (cnpjLinha !== cnpjLimpo) continue;
-          if (cols[iBordem] && cols[iBordem].trim() !== 'ÚLTIMO') continue;
-          const conta = cols[iBconta]?.trim();
-          const vl = parseFloat(cols[iBvalor]?.replace(',','.'));
-          if (isNaN(vl)) continue;
-          if (conta === '1')   totalAtivo = vl;
-        }
-      }
-
-      // BPP (Passivo) para PL
-      const urlBPP = `https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_BPP_con_${a}.csv`;
-      const resBPP = await fetch(urlBPP);
-      if (resBPP.ok) {
-        const txtBPP = await resBPP.text();
-        const bppLinhas = txtBPP.split('\n');
-        const cabBPP = bppLinhas[0].split(';');
-        const iPcnpj  = cabBPP.indexOf('CNPJ_CIA');
-        const iPconta = cabBPP.indexOf('CD_CONTA');
-        const iPvalor = cabBPP.indexOf('VL_CONTA');
-        const iPordem = cabBPP.indexOf('ORDEM_EXERC');
-        for (let i = 1; i < bppLinhas.length; i++) {
-          const cols = bppLinhas[i].split(';');
-          if (!cols[iPcnpj]) continue;
-          const cnpjLinha = cols[iPcnpj].replace(/\D/g, '');
-          if (cnpjLinha !== cnpjLimpo) continue;
-          if (cols[iPordem] && cols[iPordem].trim() !== 'ÚLTIMO') continue;
-          const conta = cols[iPconta]?.trim();
-          const vl = parseFloat(cols[iPvalor]?.replace(',','.'));
-          if (isNaN(vl)) continue;
-          if (conta === '2.03') patrimonioLiq = vl;
-        }
-      }
-
-      if (receitaLiq || lucroLiq) {
-        dadosAnuais[a] = {
-          receitaLiq,
-          lucroLiq,
-          ebit,
-          totalAtivo,
-          patrimonioLiq,
-          roe: (lucroLiq && patrimonioLiq && patrimonioLiq > 0) ? (lucroLiq / patrimonioLiq) * 100 : null,
-          margemLiq: (lucroLiq && receitaLiq && receitaLiq > 0) ? (lucroLiq / receitaLiq) * 100 : null,
-        };
-      }
-    } catch(e) {
-      console.warn(`CVM ${cnpj} ${a}:`, e.message);
-    }
+  // Calcula derivados por ano
+  for (const ano of Object.keys(histMap)) {
+    const d = histMap[ano];
+    d.roe      = (d.lucro != null && d.pl   > 0) ? (d.lucro / d.pl)   * 100 : null;
+    d.roic     = (d.ebit  != null && d.ativo> 0) ? (d.ebit  / d.ativo)* 100 : null;
+    d.margemLiq= (d.lucro != null && d.receita>0) ? (d.lucro / d.receita)*100 : null;
+    d.margemBruta= (d.grossP!=null && d.receita>0)? (d.grossP/d.receita)*100 : null;
   }
 
-  // Calcula ROE e margem médios
-  const anos5 = Object.values(dadosAnuais);
-  const roeVals  = anos5.map(d => d.roe).filter(v => v != null);
-  const margVals = anos5.map(d => d.margemLiq).filter(v => v != null);
-  const recVals  = anos5.map(d => d.receitaLiq).filter(v => v != null);
-  const lucVals  = anos5.map(d => d.lucroLiq).filter(v => v != null);
-
-  const media = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
-
-  // Crescimento: (último - primeiro) / |primeiro| * 100
-  const crescimento = arr => {
+  // Estatísticas 5 anos
+  const anosOrdem = Object.keys(histMap).sort();
+  const recArr = anosOrdem.map(a => histMap[a].receita).filter(v=>v!=null);
+  const lucArr = anosOrdem.map(a => histMap[a].lucro).filter(v=>v!=null);
+  const roeArr = anosOrdem.map(a => histMap[a].roe).filter(v=>v!=null);
+  const margArr= anosOrdem.map(a => histMap[a].margemLiq).filter(v=>v!=null);
+  const media  = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+  const cresce = arr => {
     if (arr.length < 2) return null;
-    const f = arr[0], l = arr[arr.length-1];
-    if (!f || f === 0) return null;
-    return ((l - f) / Math.abs(f)) * 100;
+    const f=arr[0], l=arr[arr.length-1];
+    return (!f||f===0) ? null : ((l-f)/Math.abs(f))*100;
   };
 
   return {
-    anos: dadosAnuais,
-    roe:         media(roeVals),
-    margemLiq:   media(margVals),
-    crescReceita: crescimento(recVals),
-    crescLucro:   crescimento(lucVals),
-    receitaInicio: recVals[0] ?? null,
-    receitaFim:    recVals[recVals.length-1] ?? null,
-    lucroInicio:   lucVals[0] ?? null,
-    lucroFim:      lucVals[lucVals.length-1] ?? null,
+    atual,
+    hist: histMap,
+    anosOrdem,
+    stats: {
+      roeMedia:    media(roeArr),
+      margemMedia: media(margArr),
+      crescReceita: cresce(recArr),
+      crescLucro:   cresce(lucArr),
+      receitaInicio: recArr[0] ?? null,
+      receitaFim:    recArr[recArr.length-1] ?? null,
+      lucroInicio:   lucArr[0] ?? null,
+      lucroFim:      lucArr[lucArr.length-1] ?? null,
+    }
   };
 }
 
-// Atualiza status log
+// ── UI helpers
 function testeLog(msg) {
   const el = document.getElementById('teste-status');
   el.style.display = 'block';
   el.innerHTML += `<span>▸ ${msg}</span><br>`;
+  el.scrollTop = el.scrollHeight;
+}
+
+function testeRenderCards() {
+  const wrap = document.getElementById('teste-empresa-cards');
+  wrap.innerHTML = TESTE_EMPRESAS.map(e => {
+    const r = testeResultados[e.ticker];
+    const st = !r ? 'idle' : r.loading ? 'loading' : r.erro ? 'erro' : 'ok';
+    const stHtml = {
+      idle:    `<span style="color:var(--dim2)">Aguardando...</span>`,
+      loading: `<span style="color:var(--yellow);animation:pulse 1s infinite">⟳ Buscando...</span>`,
+      erro:    `<span style="color:var(--red)">⚠ ${r.erro}</span>`,
+      ok:      `<span style="color:var(--green)">✓ OK</span>`,
+    }[st];
+    const a = r?.atual;
+    return `
+    <div class="card" style="border-left:3px solid ${e.cor}">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${e.cor}">${e.ticker}</div>
+        <div style="font-size:.52rem;color:var(--dim)">${e.nome}</div>
+      </div>
+      <div style="font-size:.58rem;margin-bottom:.35rem">${stHtml}</div>
+      ${st==='ok' && a ? `
+      <hr style="margin:.4rem 0">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .5rem">
+        <div><div style="font-size:.42rem;color:var(--dim)">PREÇO</div>
+             <div style="font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--hi)">${a.preco!=null?'R$ '+a.preco.toFixed(2).replace('.',','):'—'}</div></div>
+        <div><div style="font-size:.42rem;color:var(--dim)">DY</div>
+             <div style="font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--green)">${a.dy!=null?a.dy.toFixed(2).replace('.',',')+' %':'—'}</div></div>
+        <div><div style="font-size:.42rem;color:var(--dim)">P/L</div>
+             <div style="font-size:.72rem;color:var(--hi)">${a.pl!=null?a.pl.toFixed(1):'—'}</div></div>
+        <div><div style="font-size:.42rem;color:var(--dim)">ROE</div>
+             <div style="font-size:.72rem;color:var(--papel)">${a.roe!=null?a.roe.toFixed(1)+'%':'—'}</div></div>
+        <div><div style="font-size:.42rem;color:var(--dim)">P/VP</div>
+             <div style="font-size:.72rem;color:var(--hi)">${a.pvp!=null?a.pvp.toFixed(2):'—'}</div></div>
+        <div><div style="font-size:.42rem;color:var(--dim)">DL/EBITDA</div>
+             <div style="font-size:.72rem;color:var(--yellow)">${a.dlEbitda??'—'}</div></div>
+      </div>` : ''}
+    </div>`;
+  }).join('');
 }
 
 function testeLimpar() {
@@ -23897,51 +23865,26 @@ async function testeBuscarTodos() {
   document.getElementById('teste-tabela-wrap').style.display = 'none';
   document.getElementById('teste-historico-wrap').innerHTML = '';
 
-  testeLog('Iniciando busca para 5 empresas de energia...');
+  testeLog('Iniciando busca — 5 empresas de energia (Brapi, histórico 5 anos)...');
 
   for (const emp of TESTE_EMPRESAS) {
     testeResultados[emp.ticker] = { loading: true };
     testeRenderCards();
     testeLog(`Buscando <strong style="color:${emp.cor}">${emp.ticker}</strong> — ${emp.nome}...`);
-
     try {
-      // Brapi
-      testeLog(`  [Brapi] Cotação e indicadores de ${emp.ticker}...`);
-      let brapiData = null;
-      try {
-        brapiData = await testeBuscarBrapi(emp.ticker);
-        testeLog(`  [Brapi] ✓ ${emp.ticker}: R$ ${brapiData.preco?.toFixed(2) ?? '?'}`);
-      } catch(e) {
-        testeLog(`  [Brapi] ⚠ ${emp.ticker}: ${e.message}`);
-      }
-
-      // CVM
-      testeLog(`  [CVM] Buscando ${TESTE_ANOS} anos de demonstrações para CNPJ ${emp.cnpj}...`);
-      let cvmData = null;
-      try {
-        cvmData = await testeBuscarCvm(emp.cnpj, TESTE_ANOS);
-        const qtdAnos = Object.keys(cvmData.anos).length;
-        testeLog(`  [CVM] ✓ ${emp.ticker}: ${qtdAnos} anos encontrados. ROE médio: ${cvmData.roe?.toFixed(1) ?? '—'}%`);
-      } catch(e) {
-        testeLog(`  [CVM] ⚠ ${emp.ticker}: ${e.message}`);
-      }
-
-      testeResultados[emp.ticker] = {
-        loading: false,
-        brapi: brapiData,
-        cvm: cvmData,
-        emp,
-      };
-
+      const dados = await testeBuscarEmpresa(emp.ticker);
+      testeResultados[emp.ticker] = { loading: false, ...dados, emp };
+      const a = dados.atual;
+      const s = dados.stats;
+      testeLog(`  ✓ ${emp.ticker} | Preço: R$ ${a.preco?.toFixed(2)??'?'} | ROE: ${a.roe?.toFixed(1)??'—'}% | Cresc. Receita ${TESTE_ANOS}a: ${testeFmtPct(s.crescReceita)} | Anos hist.: ${dados.anosOrdem.length}`);
     } catch(e) {
       testeResultados[emp.ticker] = { loading: false, erro: e.message, emp };
-      testeLog(`  ✗ Erro geral ${emp.ticker}: ${e.message}`);
+      testeLog(`  ✗ ${emp.ticker}: ${e.message}`);
     }
-
     testeRenderCards();
   }
 
-  testeLog('✅ Busca concluída! Renderizando tabela...');
+  testeLog('✅ Concluído! Renderizando análise...');
   testeRenderTabela();
   testeRenderHistorico();
   btn.disabled = false; btn.textContent = '🔄 Buscar Dados';
@@ -23950,114 +23893,85 @@ async function testeBuscarTodos() {
 function testeRenderTabela() {
   const tbody = document.getElementById('teste-tbody');
   tbody.innerHTML = '';
-
   for (const emp of TESTE_EMPRESAS) {
     const r = testeResultados[emp.ticker];
-    if (!r || r.loading || r.erro) continue;
-    const b = r.brapi || {};
-    const c = r.cvm   || {};
-
-    // Fonte
-    const temBrapi = !!r.brapi;
-    const temCvm   = c.roe != null || c.margemLiq != null;
-    const fonte = [temBrapi && '<span style="color:var(--papel)">Brapi</span>', temCvm && '<span style="color:var(--green)">CVM</span>'].filter(Boolean).join(' + ');
-
-    // Crescimento receita/lucro
-    const cRec = c.crescReceita;
-    const cLuc = c.crescLucro;
-
-    // ROE: preferir CVM, fallback Brapi
-    const roe = c.roe ?? b.roe;
-    const marg = c.margemLiq ?? b.margemLiq;
-
+    if (!r || r.loading || r.erro || !r.atual) continue;
+    const a = r.atual, s = r.stats;
     tbody.innerHTML += `
     <tr>
-      <td><span style="font-weight:700;color:var(--hi)">${emp.nome}</span></td>
+      <td><strong style="color:var(--hi)">${emp.nome}</strong></td>
       <td><span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:${emp.cor}">${emp.ticker}</span></td>
-      <td><span style="font-family:'Bebas Neue',sans-serif;color:var(--hi)">${b.preco != null ? 'R$ '+b.preco.toFixed(2).replace('.',',') : '—'}</span></td>
-      <td style="color:${testeCorPct(b.varHoje)}">${testeFmtPct(b.varHoje)}</td>
-      <td>${b.pl != null ? b.pl.toFixed(1) : '—'}</td>
-      <td>${b.pvp != null ? b.pvp.toFixed(2) : '—'}</td>
-      <td style="color:var(--green)">${b.dy != null ? b.dy.toFixed(2).replace('.',',')+'%' : '—'}</td>
-      <td style="color:${roe!=null?(roe>10?'var(--green)':'var(--yellow)'):'var(--dim)'}">${roe != null ? roe.toFixed(1)+'%' : '—'}</td>
-      <td style="color:${marg!=null?(marg>10?'var(--green)':'var(--yellow)'):'var(--dim)'}">${marg != null ? marg.toFixed(1)+'%' : '—'}</td>
-      <td style="font-size:.58rem">${c.receitaFim != null ? testeFmtMoeda(c.receitaFim*1000) : '—'}</td>
-      <td style="font-size:.58rem">${c.lucroFim   != null ? testeFmtMoeda(c.lucroFim*1000)   : '—'}</td>
-      <td style="color:${testeCorPct(cRec)}">${testeFmtPct(cRec)}</td>
-      <td style="color:${testeCorPct(cLuc)}">${testeFmtPct(cLuc)}</td>
-      <td style="font-size:.52rem">${fonte || '—'}</td>
+      <td><strong>${a.preco!=null?'R$ '+a.preco.toFixed(2).replace('.',','):'—'}</strong></td>
+      <td style="color:${testeCorPct(a.varHoje)}">${testeFmtPct(a.varHoje)}</td>
+      <td>${a.pl!=null?a.pl.toFixed(1):'—'}</td>
+      <td>${a.pvp!=null?a.pvp.toFixed(2):'—'}</td>
+      <td style="color:var(--green)">${a.dy!=null?a.dy.toFixed(2)+'%':'—'}</td>
+      <td style="color:${(s.roeMedia??0)>10?'var(--green)':'var(--yellow)'}">${s.roeMedia!=null?s.roeMedia.toFixed(1)+'%':'—'}</td>
+      <td style="color:${(s.margemMedia??0)>10?'var(--green)':'var(--yellow)'}">${s.margemMedia!=null?s.margemMedia.toFixed(1)+'%':'—'}</td>
+      <td style="font-size:.58rem">${s.receitaFim!=null?testeFmtMoeda(s.receitaFim):'—'}</td>
+      <td style="font-size:.58rem">${s.lucroFim!=null?testeFmtMoeda(s.lucroFim):'—'}</td>
+      <td style="color:${testeCorPct(s.crescReceita)}">${testeFmtPct(s.crescReceita)}</td>
+      <td style="color:${testeCorPct(s.crescLucro)}">${testeFmtPct(s.crescLucro)}</td>
+      <td style="font-size:.48rem;color:var(--papel)">Brapi</td>
     </tr>`;
   }
-
   document.getElementById('teste-tabela-wrap').style.display = '';
 }
 
 function testeRenderHistorico() {
   const wrap = document.getElementById('teste-historico-wrap');
   wrap.innerHTML = '';
-
   for (const emp of TESTE_EMPRESAS) {
     const r = testeResultados[emp.ticker];
-    if (!r || r.loading || r.erro || !r.cvm) continue;
-    const anos = r.cvm.anos;
-    const anosKeys = Object.keys(anos).sort();
-    if (!anosKeys.length) continue;
+    if (!r || r.loading || r.erro || !r.hist) continue;
+    const anos = r.anosOrdem;
+    if (!anos.length) continue;
 
-    const linhas = anosKeys.map(a => {
-      const d = anos[a];
-      const roe  = d.roe  != null ? d.roe.toFixed(1)+'%'  : '—';
-      const marg = d.margemLiq != null ? d.margemLiq.toFixed(1)+'%' : '—';
-      const rec  = d.receitaLiq != null ? testeFmtMoeda(d.receitaLiq*1000) : '—';
-      const luc  = d.lucroLiq   != null ? testeFmtMoeda(d.lucroLiq*1000)   : '—';
-      const pl   = d.patrimonioLiq != null ? testeFmtMoeda(d.patrimonioLiq*1000) : '—';
-      const lucColor = d.lucroLiq != null ? (d.lucroLiq >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--dim)';
+    const linhas = anos.map(a => {
+      const d = r.hist[a];
+      const lucColor = d.lucro!=null?(d.lucro>=0?'var(--green)':'var(--red)'):'var(--dim)';
+      const roeColor = d.roe!=null?(d.roe>12?'var(--green)':d.roe>6?'var(--yellow)':'var(--red)'):'var(--dim)';
       return `<tr>
         <td style="color:var(--dim);font-weight:700">${a}</td>
-        <td>${rec}</td>
-        <td style="color:${lucColor}">${luc}</td>
-        <td style="color:${d.roe!=null?(d.roe>10?'var(--green)':'var(--yellow)'):'var(--dim)'}">${roe}</td>
-        <td style="color:${d.margemLiq!=null?(d.margemLiq>10?'var(--green)':'var(--yellow)'):'var(--dim)'}">${marg}</td>
-        <td style="color:var(--papel)">${pl}</td>
+        <td>${d.receita!=null?testeFmtMoeda(d.receita):'—'}</td>
+        <td style="color:${lucColor}">${d.lucro!=null?testeFmtMoeda(d.lucro):'—'}</td>
+        <td style="color:${roeColor}">${d.roe!=null?d.roe.toFixed(1)+'%':'—'}</td>
+        <td style="color:${d.margemLiq!=null?(d.margemLiq>15?'var(--green)':'var(--yellow)'):'var(--dim)'}">${d.margemLiq!=null?d.margemLiq.toFixed(1)+'%':'—'}</td>
+        <td style="color:var(--papel)">${d.pl!=null?testeFmtMoeda(d.pl):'—'}</td>
+        <td style="color:var(--dim2)">${d.fcl!=null?testeFmtMoeda(d.fcl):'—'}</td>
       </tr>`;
     }).join('');
 
+    const s = r.stats;
     wrap.innerHTML += `
     <div class="card" style="margin-bottom:.8rem;border-left:3px solid ${emp.cor}">
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;flex-wrap:wrap">
         <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${emp.cor}">${emp.ticker}</div>
-        <div style="font-size:.58rem;color:var(--dim)">${emp.nome}</div>
-        <span style="font-size:.48rem;background:${emp.cor}18;color:${emp.cor};border:1px solid ${emp.cor}30;border-radius:4px;padding:1px 6px">CVM · ${anosKeys.length} anos</span>
+        <div style="font-size:.55rem;color:var(--dim)">${emp.nome}</div>
+        <span style="font-size:.46rem;background:${emp.cor}18;color:${emp.cor};border:1px solid ${emp.cor}30;border-radius:4px;padding:1px 6px">Brapi · ${anos.length} anos</span>
       </div>
       <div style="overflow-x:auto">
-        <table class="tbl" style="min-width:560px">
+        <table class="tbl" style="min-width:580px">
           <thead><tr>
-            <th>ANO</th><th>RECEITA LÍQ.</th><th>LUCRO LÍQ.</th><th>ROE</th><th>MARGEM LÍQ.</th><th>PATR. LÍQ.</th>
+            <th>ANO</th><th>RECEITA</th><th>LUCRO LÍQ.</th><th>ROE</th><th>MARG. LÍQ.</th><th>PATR. LÍQ.</th><th>FCL</th>
           </tr></thead>
           <tbody>${linhas}</tbody>
         </table>
       </div>
-      ${r.cvm.crescReceita != null ? `
-      <div style="margin-top:.6rem;display:flex;gap:1rem;flex-wrap:wrap">
-        <div style="font-size:.55rem">
-          <span style="color:var(--dim)">Cresc. Receita ${TESTE_ANOS}a: </span>
-          <span style="font-weight:700;color:${testeCorPct(r.cvm.crescReceita)}">${testeFmtPct(r.cvm.crescReceita)}</span>
-        </div>
-        <div style="font-size:.55rem">
-          <span style="color:var(--dim)">Cresc. Lucro ${TESTE_ANOS}a: </span>
-          <span style="font-weight:700;color:${testeCorPct(r.cvm.crescLucro)}">${testeFmtPct(r.cvm.crescLucro)}</span>
-        </div>
-        ${r.brapi?.dy != null ? `<div style="font-size:.55rem"><span style="color:var(--dim)">DY atual: </span><span style="font-weight:700;color:var(--green)">${r.brapi.dy.toFixed(2)}%</span></div>` : ''}
-        ${r.brapi?.pl != null ? `<div style="font-size:.55rem"><span style="color:var(--dim)">P/L atual: </span><span style="font-weight:700;color:var(--hi)">${r.brapi.pl.toFixed(1)}</span></div>` : ''}
-      </div>` : ''}
+      <div style="margin-top:.6rem;display:flex;gap:1rem;flex-wrap:wrap;font-size:.55rem">
+        <div><span style="color:var(--dim)">Cresc. Receita ${TESTE_ANOS}a: </span><strong style="color:${testeCorPct(s.crescReceita)}">${testeFmtPct(s.crescReceita)}</strong></div>
+        <div><span style="color:var(--dim)">Cresc. Lucro ${TESTE_ANOS}a: </span><strong style="color:${testeCorPct(s.crescLucro)}">${testeFmtPct(s.crescLucro)}</strong></div>
+        <div><span style="color:var(--dim)">ROE médio: </span><strong style="color:var(--papel)">${s.roeMedia!=null?s.roeMedia.toFixed(1)+'%':'—'}</strong></div>
+        <div><span style="color:var(--dim)">Marg. média: </span><strong style="color:var(--green)">${s.margemMedia!=null?s.margemMedia.toFixed(1)+'%':'—'}</strong></div>
+        ${r.atual?.dy!=null?`<div><span style="color:var(--dim)">DY atual: </span><strong style="color:var(--green)">${r.atual.dy.toFixed(2)}%</strong></div>`:''}
+        ${r.atual?.dlEbitda!=null?`<div><span style="color:var(--dim)">DL/EBITDA: </span><strong style="color:var(--yellow)">${r.atual.dlEbitda}x</strong></div>`:''}
+      </div>
     </div>`;
   }
 }
 
-// Inicializa cards ao entrar na aba
-(function() {
-  // Renderiza cards vazios ao carregar
-  setTimeout(testeRenderCards, 100);
-})();
+(function(){ setTimeout(testeRenderCards, 150); })();
+
 </script>
 
 </body>
