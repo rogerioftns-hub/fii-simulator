@@ -23575,26 +23575,39 @@ function ckFmtPreview(fieldId, rawVal) {
 <!-- ══════════════ PAGE: TESTE — ENERGIA CVM ══════════════ -->
 <div class="page" id="page-teste">
   <div class="sec-head">
-    <div class="sec-title">⚡ ENERGIA — CVM × BRAPI</div>
+    <div class="sec-title">⚡ ENERGIA — BRAPI HISTÓRICO</div>
     <div class="frow" style="gap:.5rem;flex-wrap:wrap">
       <button class="btn btn-green" onclick="testeBuscarTodos()" id="btn-teste-buscar">🔄 Buscar Dados</button>
       <button class="btn" style="background:#818cf818;color:#818cf8;border:1px solid #818cf830" onclick="testeLimpar()">🗑 Limpar</button>
+      <button class="btn" style="background:#f8717118;color:var(--red);border:1px solid #f8717130" onclick="testeDebugRaw()">🔬 Debug Raw</button>
     </div>
   </div>
 
   <div style="font-size:.58rem;color:var(--dim);margin-bottom:.9rem;line-height:1.7">
-    Cruza dados históricos (5 anos) da <strong style="color:var(--green)">API CVM</strong> com cotações e indicadores da <strong style="color:var(--papel)">API Brapi</strong>
-    para 5 empresas do segmento <strong style="color:var(--yellow)">Energia Elétrica</strong> listadas na B3.
-    Token Brapi configurado na aba <strong>Token</strong>.
+    Busca histórico financeiro (5 anos) via <strong style="color:var(--papel)">API Brapi</strong> para 5 empresas do segmento
+    <strong style="color:var(--yellow)">Energia Elétrica</strong>. Token na aba <strong>Token</strong>.
+    Use <strong style="color:var(--red)">Debug Raw</strong> se não retornar dados.
   </div>
 
   <!-- empresas fixas -->
-  <div class="g3" style="margin-bottom:1rem" id="teste-empresa-cards">
-    <!-- gerado por JS -->
-  </div>
+  <div class="g3" style="margin-bottom:1rem" id="teste-empresa-cards"></div>
 
-  <!-- status -->
-  <div id="teste-status" style="display:none;font-size:.6rem;color:var(--dim);padding:.5rem .8rem;background:var(--bg3);border-radius:8px;border:1px solid var(--border2);margin-bottom:.9rem;line-height:1.9"></div>
+  <!-- status log -->
+  <div id="teste-status" style="display:none;font-size:.6rem;color:var(--dim);padding:.5rem .8rem;background:var(--bg3);border-radius:8px;border:1px solid var(--border2);margin-bottom:.9rem;line-height:1.9;max-height:200px;overflow-y:auto"></div>
+
+  <!-- debug raw -->
+  <div id="teste-debug-wrap" style="display:none;margin-bottom:1rem">
+    <div class="card" style="border:1px solid #f8717130">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+        <div class="card-label" style="color:var(--red);margin-bottom:0">🔬 RESPOSTA RAW — EGIE3</div>
+        <button class="btn" style="font-size:.5rem;background:#f8717110;color:var(--red);border:1px solid #f8717130" onclick="document.getElementById('teste-debug-wrap').style.display='none'">✕ Fechar</button>
+      </div>
+      <div style="font-size:.5rem;color:var(--dim);margin-bottom:.4rem">URL usada: <span id="teste-debug-url" style="color:var(--papel)"></span></div>
+      <div style="font-size:.5rem;color:var(--dim);margin-bottom:.4rem">Status HTTP: <span id="teste-debug-status" style="color:var(--hi)"></span></div>
+      <div style="font-size:.5rem;color:var(--dim);margin-bottom:.4rem">Campos no results[0]: <span id="teste-debug-campos" style="color:var(--green)"></span></div>
+      <pre id="teste-debug-json" style="font-size:.48rem;color:var(--text);background:var(--bg);border-radius:6px;padding:.6rem;overflow:auto;max-height:300px;border:1px solid var(--border)"></pre>
+    </div>
+  </div>
 
   <!-- tabela comparativa -->
   <div class="card" id="teste-tabela-wrap" style="display:none">
@@ -23603,20 +23616,12 @@ function ckFmtPreview(fieldId, rawVal) {
       <table class="tbl" id="teste-tbl" style="min-width:900px">
         <thead>
           <tr>
-            <th>EMPRESA</th>
-            <th>TICKER</th>
-            <th>PREÇO ATUAL</th>
-            <th>VAR. HOJE</th>
-            <th>P/L</th>
-            <th>P/VP</th>
-            <th>DY</th>
-            <th>ROE (CVM)</th>
-            <th>MARGEM LÍQ (CVM)</th>
-            <th>RECEITA 5A (R$)</th>
-            <th>LUCRO 5A (R$)</th>
-            <th>CRESC. RECEITA</th>
-            <th>CRESC. LUCRO</th>
-            <th>FONTE</th>
+            <th>EMPRESA</th><th>TICKER</th><th>PREÇO</th><th>VAR.</th>
+            <th>P/L</th><th>P/VP</th><th>DY</th>
+            <th>ROE médio</th><th>MARG. LÍQ.</th>
+            <th>RECEITA (último)</th><th>LUCRO (último)</th>
+            <th>CRESC. RECEITA</th><th>CRESC. LUCRO</th>
+            <th>ANOS</th>
           </tr>
         </thead>
         <tbody id="teste-tbody"></tbody>
@@ -23624,270 +23629,267 @@ function ckFmtPreview(fieldId, rawVal) {
     </div>
   </div>
 
-  <!-- cards individuais com histórico CVM -->
+  <!-- histórico por empresa -->
   <div id="teste-historico-wrap" style="margin-top:1rem"></div>
 
 </div><!-- /page-teste -->
 
 <script>
 // ══════════════════════════════════════════════════════════
-//  TESTE — ENERGIA: dados históricos 5 anos via Brapi
-//  (incomeStatementHistory + balanceSheetHistory + cashflowStatementHistory)
+//  TESTE — ENERGIA: Yahoo Finance (gratuito, sem token)
+//  Cotação atual: Brapi summaryProfile (plano free)
+//  Histórico 5a: Yahoo Finance via allorigins proxy
 // ══════════════════════════════════════════════════════════
 
 const TESTE_EMPRESAS = [
-  { nome: 'Engie Brasil',  ticker: 'EGIE3',  cnpj: '02.474.103/0001-19', cor: '#00e5a0' },
-  { nome: 'Taesa',         ticker: 'TAEE11', cnpj: '07.859.971/0001-30', cor: '#38bdf8' },
-  { nome: 'Copel',         ticker: 'CPLE6',  cnpj: '76.483.817/0001-20', cor: '#fb923c' },
-  { nome: 'Cemig',         ticker: 'CMIG4',  cnpj: '17.155.730/0001-64', cor: '#a78bfa' },
-  { nome: 'Auren Energia', ticker: 'AURE3',  cnpj: '08.821.055/0001-94', cor: '#fbbf24' },
+  { nome: 'Engie Brasil',  ticker: 'EGIE3',  yahoo: 'EGIE3.SA',  cor: '#00e5a0' },
+  { nome: 'Taesa',         ticker: 'TAEE11', yahoo: 'TAEE11.SA', cor: '#38bdf8' },
+  { nome: 'Copel',         ticker: 'CPLE6',  yahoo: 'CPLE6.SA',  cor: '#fb923c' },
+  { nome: 'Cemig',         ticker: 'CMIG4',  yahoo: 'CMIG4.SA',  cor: '#a78bfa' },
+  { nome: 'Auren Energia', ticker: 'AURE3',  yahoo: 'AURE3.SA',  cor: '#fbbf24' },
 ];
-
 const TESTE_ANOS = 5;
 let testeResultados = {};
 
 function testeBrapiToken() {
   return localStorage.getItem('brapi-token') || localStorage.getItem('brapiToken') || '';
 }
-
-function testeFmtMoeda(v) {
-  if (v == null || isNaN(v)) return '—';
-  const s = v < 0 ? '-' : '';
-  const a = Math.abs(v);
-  if (a >= 1e9)  return s + 'R$ ' + (a/1e9).toFixed(2).replace('.',',') + 'B';
-  if (a >= 1e6)  return s + 'R$ ' + (a/1e6).toFixed(2).replace('.',',') + 'M';
-  if (a >= 1e3)  return s + 'R$ ' + (a/1e3).toFixed(1).replace('.',',') + 'k';
-  return s + 'R$ ' + a.toFixed(0);
+function testeFmt(v) {
+  if (v==null||isNaN(v)) return '—';
+  const s=v<0?'-':'', a=Math.abs(v);
+  if (a>=1e9) return s+'R$ '+(a/1e9).toFixed(2).replace('.',',')+'B';
+  if (a>=1e6) return s+'R$ '+(a/1e6).toFixed(2).replace('.',',')+'M';
+  if (a>=1e3) return s+'R$ '+(a/1e3).toFixed(1).replace('.',',')+'k';
+  return s+'R$ '+a.toFixed(0);
 }
-function testeFmtPct(v, d=1) {
-  if (v == null || isNaN(v)) return '—';
-  return (v>=0?'+':'') + v.toFixed(d).replace('.',',') + '%';
+function testePct(v,d=1){ if(v==null||isNaN(v))return'—'; return(v>=0?'+':'')+v.toFixed(d).replace('.',',')+'%'; }
+function testeCor(v){ return v==null?'var(--dim)':v>=0?'var(--green)':'var(--red)'; }
+function raw(v){ if(v==null)return null; if(typeof v==='object'&&'raw'in v)return v.raw??null; return typeof v==='number'?v:null; }
+
+// ── Fetch via allorigins (contorna CORS)
+async function proxyFetch(url) {
+  const proxy = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+  const r = await fetch(proxy, { signal: AbortSignal.timeout(25000) });
+  if (!r.ok) throw new Error('Proxy HTTP ' + r.status);
+  const j = await r.json();
+  if (!j.contents) throw new Error('Proxy sem conteúdo');
+  return j.contents;
 }
-function testeCorPct(v) {
-  if (v == null || isNaN(v)) return 'var(--dim)';
-  return v >= 0 ? 'var(--green)' : 'var(--red)';
-}
 
-// ── Busca tudo em uma única chamada Brapi (cotação + fundamentals + histórico)
-async function testeBuscarEmpresa(ticker) {
-  const token = testeBrapiToken();
-  const modulos = [
-    'financialData',
-    'defaultKeyStatistics',
-    'summaryDetail',
-    'incomeStatementHistory',
-    'balanceSheetHistory',
-    'cashflowStatementHistory',
-  ].join(',');
-  const url = `https://brapi.dev/api/quote/${ticker}?modules=${modulos}&fundamental=true${token ? '&token='+token : ''}`;
-
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const json = await res.json();
-  const r = json.results?.[0];
-  if (!r) throw new Error('Ativo não encontrado');
-
-  const fd  = r.financialData          || {};
-  const ks  = r.defaultKeyStatistics   || {};
-  const sd  = r.summaryDetail          || {};
-  const ish = r.incomeStatementHistory || {};
-  const bsh = r.balanceSheetHistory    || {};
-  const csh = r.cashflowStatementHistory || {};
-
-  // ── Cotação e indicadores atuais
-  const atual = {
-    preco:     r.regularMarketPrice ?? null,
-    varHoje:   r.regularMarketChangePercent ?? null,
-    pl:        r.priceEarningsRatio ?? ks.trailingPE ?? null,
-    pvp:       ks.priceToBook ?? null,
-    dy:        (() => {
-      const raw = sd.dividendYield ?? r.dividendYield ?? null;
-      if (raw == null) return null;
-      return raw > 1 ? raw : raw * 100;
-    })(),
-    roe:       fd.returnOnEquity  != null ? fd.returnOnEquity  * 100 : null,
-    margemLiq: fd.profitMargins   != null ? fd.profitMargins   * 100 : null,
-    ebitda:    fd.ebitda ?? null,
-    receita:   fd.totalRevenue ?? null,
-    lucro:     fd.netIncome ?? null,
-    roic:      ks.returnOnCapital != null ? ks.returnOnCapital * 100 : null,
-    dlEbitda:  (fd.totalDebt && fd.ebitda > 0)
-                 ? ((fd.totalDebt - (fd.totalCash||0)) / fd.ebitda).toFixed(2)
-                 : null,
+// ── Yahoo Finance: cotação + fundamentals atuais
+async function yahooQuote(yahooTicker) {
+  const url = 'https://query1.finance.yahoo.com/v10/finance/quoteSummary/' + yahooTicker +
+    '?modules=price,financialData,defaultKeyStatistics,summaryDetail';
+  const txt = await proxyFetch(url);
+  const j = JSON.parse(txt);
+  const res = j.quoteSummary?.result?.[0];
+  if (!res) throw new Error('Yahoo: sem dados para ' + yahooTicker);
+  const pr = res.price              || {};
+  const fd = res.financialData      || {};
+  const ks = res.defaultKeyStatistics || {};
+  const sd = res.summaryDetail      || {};
+  return {
+    preco:    raw(pr.regularMarketPrice),
+    varHoje:  raw(pr.regularMarketChangePercent),
+    pl:       raw(pr.priceEarningsRatio) ?? raw(ks.trailingPE) ?? raw(ks.forwardPE),
+    pvp:      raw(ks.priceToBook),
+    dy:       (()=>{ const v=raw(sd.dividendYield)??raw(pr.dividendYield); if(v==null)return null; return v>1?v:v*100; })(),
+    roe:      raw(fd.returnOnEquity)!=null  ? raw(fd.returnOnEquity)*100  : null,
+    marg:     raw(fd.profitMargins)!=null   ? raw(fd.profitMargins)*100   : null,
+    ebitda:   raw(fd.ebitda),
+    divida:   raw(fd.totalDebt),
+    caixa:    raw(fd.totalCash),
+    dlEbitda: (raw(fd.totalDebt)&&raw(fd.ebitda)>0)
+                ? ((raw(fd.totalDebt)-(raw(fd.totalCash)||0))/raw(fd.ebitda)).toFixed(2)
+                : null,
   };
+}
 
-  // ── Histórico anual (últimos TESTE_ANOS anos)
-  const stmts    = ish.incomeStatementHistory    || [];
-  const balances = bsh.balanceSheetStatements    || [];
-  const flows    = csh.cashflowStatements        || [];
+// ── Yahoo Finance: histórico anual (income + balance + cashflow)
+async function yahooHistorico(yahooTicker) {
+  const url = 'https://query1.finance.yahoo.com/v10/finance/quoteSummary/' + yahooTicker +
+    '?modules=incomeStatementHistory,balanceSheetHistory,cashflowStatementHistory';
+  const txt = await proxyFetch(url);
+  const j = JSON.parse(txt);
+  const res = j.quoteSummary?.result?.[0];
+  if (!res) throw new Error('Yahoo histórico: sem dados');
 
-  // Mapeia por ano (endDate)
   const toAno = ep => {
-    if (!ep) return null;
-    const d = typeof ep === 'number' ? new Date(ep * 1000) : new Date(ep);
+    const v = ep?.raw ?? ep;
+    if (!v) return null;
+    const d = typeof v==='number' ? new Date(v*1000) : new Date(v);
     return isNaN(d) ? null : d.getFullYear();
   };
 
-  const histMap = {};
-  const anoAtual = new Date().getFullYear();
-  const anoMin   = anoAtual - TESTE_ANOS;
+  const anoMin = new Date().getFullYear() - TESTE_ANOS;
+  const hist = {};
 
-  // DRE
+  const stmts = res.incomeStatementHistory?.incomeStatementHistory || [];
   for (const s of stmts) {
-    const ano = toAno(s.endDate?.raw ?? s.endDate);
-    if (!ano || ano < anoMin) continue;
-    histMap[ano] = histMap[ano] || {};
-    histMap[ano].receita  = s.totalRevenue?.raw    ?? s.totalRevenue    ?? null;
-    histMap[ano].lucro    = s.netIncome?.raw        ?? s.netIncome        ?? null;
-    histMap[ano].ebit     = s.ebit?.raw             ?? s.ebit             ?? null;
-    histMap[ano].grossP   = s.grossProfit?.raw      ?? s.grossProfit      ?? null;
+    const ano = toAno(s.endDate); if (!ano||ano<anoMin) continue;
+    hist[ano] = hist[ano]||{};
+    hist[ano].receita = raw(s.totalRevenue);
+    hist[ano].lucro   = raw(s.netIncome);
+    hist[ano].ebit    = raw(s.ebit);
+    hist[ano].grossP  = raw(s.grossProfit);
   }
-  // Balanço
-  for (const s of balances) {
-    const ano = toAno(s.endDate?.raw ?? s.endDate);
-    if (!ano || ano < anoMin) continue;
-    histMap[ano] = histMap[ano] || {};
-    histMap[ano].pl       = s.totalStockholderEquity?.raw ?? s.totalStockholderEquity ?? null;
-    histMap[ano].ativo    = s.totalAssets?.raw             ?? s.totalAssets             ?? null;
-    histMap[ano].divida   = s.longTermDebt?.raw            ?? s.longTermDebt            ?? null;
+
+  const bals = res.balanceSheetHistory?.balanceSheetStatements || [];
+  for (const s of bals) {
+    const ano = toAno(s.endDate); if (!ano||ano<anoMin) continue;
+    hist[ano] = hist[ano]||{};
+    hist[ano].pl    = raw(s.totalStockholderEquity);
+    hist[ano].ativo = raw(s.totalAssets);
+    hist[ano].div   = raw(s.longTermDebt);
   }
-  // Fluxo de caixa
+
+  const flows = res.cashflowStatementHistory?.cashflowStatements || [];
   for (const s of flows) {
-    const ano = toAno(s.endDate?.raw ?? s.endDate);
-    if (!ano || ano < anoMin) continue;
-    histMap[ano] = histMap[ano] || {};
-    histMap[ano].fcl      = s.freeCashflow?.raw            ?? s.freeCashflow            ?? null;
-    histMap[ano].fco      = s.totalCashFromOperatingActivities?.raw
-                            ?? s.totalCashFromOperatingActivities ?? null;
+    const ano = toAno(s.endDate); if (!ano||ano<anoMin) continue;
+    hist[ano] = hist[ano]||{};
+    const fco = raw(s.totalCashFromOperatingActivities);
+    const cap = raw(s.capitalExpenditures);
+    hist[ano].fcl = raw(s.freeCashflow) ?? (fco!=null&&cap!=null ? fco+cap : null);
   }
 
-  // Calcula derivados por ano
-  for (const ano of Object.keys(histMap)) {
-    const d = histMap[ano];
-    d.roe      = (d.lucro != null && d.pl   > 0) ? (d.lucro / d.pl)   * 100 : null;
-    d.roic     = (d.ebit  != null && d.ativo> 0) ? (d.ebit  / d.ativo)* 100 : null;
-    d.margemLiq= (d.lucro != null && d.receita>0) ? (d.lucro / d.receita)*100 : null;
-    d.margemBruta= (d.grossP!=null && d.receita>0)? (d.grossP/d.receita)*100 : null;
+  // Derivados
+  for (const d of Object.values(hist)) {
+    d.roe      = (d.lucro!=null&&d.pl>0)       ? (d.lucro/d.pl)*100      : null;
+    d.margemLiq= (d.lucro!=null&&d.receita>0)  ? (d.lucro/d.receita)*100 : null;
   }
 
-  // Estatísticas 5 anos
-  const anosOrdem = Object.keys(histMap).sort();
-  const recArr = anosOrdem.map(a => histMap[a].receita).filter(v=>v!=null);
-  const lucArr = anosOrdem.map(a => histMap[a].lucro).filter(v=>v!=null);
-  const roeArr = anosOrdem.map(a => histMap[a].roe).filter(v=>v!=null);
-  const margArr= anosOrdem.map(a => histMap[a].margemLiq).filter(v=>v!=null);
-  const media  = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
-  const cresce = arr => {
-    if (arr.length < 2) return null;
-    const f=arr[0], l=arr[arr.length-1];
-    return (!f||f===0) ? null : ((l-f)/Math.abs(f))*100;
-  };
+  return hist;
+}
+
+// ── Busca completa de uma empresa
+async function testeBuscarEmpresa(emp) {
+  // Cotação atual via Yahoo
+  const atual = await yahooQuote(emp.yahoo);
+
+  // Histórico via Yahoo
+  const hist = await yahooHistorico(emp.yahoo);
+  const anos = Object.keys(hist).sort();
+
+  const arr  = k => anos.map(a=>hist[a][k]).filter(v=>v!=null);
+  const med  = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : null;
+  const grw  = a => { if(a.length<2)return null; const f=a[0],l=a[a.length-1]; return !f?null:((l-f)/Math.abs(f))*100; };
+
+  const recArr=arr('receita'), lucArr=arr('lucro'), roeArr=arr('roe'), margArr=arr('margemLiq');
 
   return {
-    atual,
-    hist: histMap,
-    anosOrdem,
+    atual, hist, anos,
     stats: {
-      roeMedia:    media(roeArr),
-      margemMedia: media(margArr),
-      crescReceita: cresce(recArr),
-      crescLucro:   cresce(lucArr),
-      receitaInicio: recArr[0] ?? null,
-      receitaFim:    recArr[recArr.length-1] ?? null,
-      lucroInicio:   lucArr[0] ?? null,
-      lucroFim:      lucArr[lucArr.length-1] ?? null,
+      roeMedia:  med(roeArr),
+      margMedia: med(margArr),
+      crescRec:  grw(recArr),
+      crescLuc:  grw(lucArr),
+      recFim:    recArr[recArr.length-1] ?? null,
+      lucFim:    lucArr[lucArr.length-1] ?? null,
     }
   };
 }
 
-// ── UI helpers
+// ── Debug raw
+async function testeDebugRaw() {
+  const emp = TESTE_EMPRESAS[0];
+  const url = 'https://query1.finance.yahoo.com/v10/finance/quoteSummary/' + emp.yahoo +
+    '?modules=price,financialData,defaultKeyStatistics,summaryDetail,incomeStatementHistory,balanceSheetHistory,cashflowStatementHistory';
+  document.getElementById('teste-debug-url').textContent = url;
+  document.getElementById('teste-debug-status').textContent = 'Aguardando proxy...';
+  document.getElementById('teste-debug-json').textContent = '';
+  document.getElementById('teste-debug-campos').textContent = '';
+  document.getElementById('teste-debug-wrap').style.display = 'block';
+  try {
+    const txt = await proxyFetch(url);
+    const json = JSON.parse(txt);
+    document.getElementById('teste-debug-status').textContent = '200 OK (via proxy)';
+    const r = json.quoteSummary?.result?.[0] || {};
+    document.getElementById('teste-debug-campos').textContent = Object.keys(r).join(', ') || '(nenhum)';
+    const s = JSON.stringify(json, null, 2);
+    document.getElementById('teste-debug-json').textContent = s.length>5000 ? s.slice(0,5000)+'\n...[truncado]' : s;
+  } catch(e) {
+    document.getElementById('teste-debug-status').textContent = 'ERRO: ' + e.message;
+    document.getElementById('teste-debug-json').textContent = e.stack || e.message;
+  }
+}
+
+// ── UI
 function testeLog(msg) {
   const el = document.getElementById('teste-status');
   el.style.display = 'block';
-  el.innerHTML += `<span>▸ ${msg}</span><br>`;
+  el.innerHTML += '<span>▸ ' + msg + '</span><br>';
   el.scrollTop = el.scrollHeight;
 }
 
 function testeRenderCards() {
-  const wrap = document.getElementById('teste-empresa-cards');
-  wrap.innerHTML = TESTE_EMPRESAS.map(e => {
-    const r = testeResultados[e.ticker];
-    const st = !r ? 'idle' : r.loading ? 'loading' : r.erro ? 'erro' : 'ok';
-    const stHtml = {
-      idle:    `<span style="color:var(--dim2)">Aguardando...</span>`,
-      loading: `<span style="color:var(--yellow);animation:pulse 1s infinite">⟳ Buscando...</span>`,
-      erro:    `<span style="color:var(--red)">⚠ ${r.erro}</span>`,
-      ok:      `<span style="color:var(--green)">✓ OK</span>`,
+  document.getElementById('teste-empresa-cards').innerHTML = TESTE_EMPRESAS.map(e => {
+    const r=testeResultados[e.ticker];
+    const st=!r?'idle':r.loading?'load':r.erro?'erro':'ok';
+    const stHtml={
+      idle:'<span style="color:var(--dim2)">Aguardando...</span>',
+      load:'<span style="color:var(--yellow);animation:pulse 1s infinite">⟳ Buscando...</span>',
+      erro:'<span style="color:var(--red)">⚠ '+r?.erro+'</span>',
+      ok:  '<span style="color:var(--green)">✓ OK</span>',
     }[st];
-    const a = r?.atual;
-    return `
-    <div class="card" style="border-left:3px solid ${e.cor}">
-      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${e.cor}">${e.ticker}</div>
-        <div style="font-size:.52rem;color:var(--dim)">${e.nome}</div>
-      </div>
-      <div style="font-size:.58rem;margin-bottom:.35rem">${stHtml}</div>
-      ${st==='ok' && a ? `
-      <hr style="margin:.4rem 0">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.25rem .5rem">
-        <div><div style="font-size:.42rem;color:var(--dim)">PREÇO</div>
-             <div style="font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--hi)">${a.preco!=null?'R$ '+a.preco.toFixed(2).replace('.',','):'—'}</div></div>
-        <div><div style="font-size:.42rem;color:var(--dim)">DY</div>
-             <div style="font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--green)">${a.dy!=null?a.dy.toFixed(2).replace('.',',')+' %':'—'}</div></div>
-        <div><div style="font-size:.42rem;color:var(--dim)">P/L</div>
-             <div style="font-size:.72rem;color:var(--hi)">${a.pl!=null?a.pl.toFixed(1):'—'}</div></div>
-        <div><div style="font-size:.42rem;color:var(--dim)">ROE</div>
-             <div style="font-size:.72rem;color:var(--papel)">${a.roe!=null?a.roe.toFixed(1)+'%':'—'}</div></div>
-        <div><div style="font-size:.42rem;color:var(--dim)">P/VP</div>
-             <div style="font-size:.72rem;color:var(--hi)">${a.pvp!=null?a.pvp.toFixed(2):'—'}</div></div>
-        <div><div style="font-size:.42rem;color:var(--dim)">DL/EBITDA</div>
-             <div style="font-size:.72rem;color:var(--yellow)">${a.dlEbitda??'—'}</div></div>
-      </div>` : ''}
-    </div>`;
+    const a=r?.atual;
+    return '<div class="card" style="border-left:3px solid '+e.cor+'">'+
+      '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">'+
+      '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.1rem;color:'+e.cor+'">'+e.ticker+'</span>'+
+      '<span style="font-size:.5rem;color:var(--dim)">'+e.nome+'</span></div>'+
+      '<div style="font-size:.55rem;margin-bottom:.3rem">'+stHtml+'</div>'+
+      (st==='ok'&&a?
+        '<hr style="margin:.4rem 0">'+
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.2rem .5rem;font-size:.62rem">'+
+        '<div><span style="color:var(--dim);font-size:.42rem">PREÇO</span><br><b>'+(a.preco!=null?'R$ '+a.preco.toFixed(2).replace('.',','):'—')+'</b></div>'+
+        '<div><span style="color:var(--dim);font-size:.42rem">DY</span><br><b style="color:var(--green)">'+(a.dy!=null?a.dy.toFixed(2)+'%':'—')+'</b></div>'+
+        '<div><span style="color:var(--dim);font-size:.42rem">P/L</span><br>'+(a.pl!=null?a.pl.toFixed(1):'—')+'</div>'+
+        '<div><span style="color:var(--dim);font-size:.42rem">ROE</span><br><span style="color:var(--papel)">'+(a.roe!=null?a.roe.toFixed(1)+'%':'—')+'</span></div>'+
+        '<div><span style="color:var(--dim);font-size:.42rem">P/VP</span><br>'+(a.pvp!=null?a.pvp.toFixed(2):'—')+'</div>'+
+        '<div><span style="color:var(--dim);font-size:.42rem">DL/EBITDA</span><br><span style="color:var(--yellow)">'+(a.dlEbitda??'—')+'</span></div>'+
+        '</div>':'')+
+      '</div>';
   }).join('');
 }
 
 function testeLimpar() {
   testeResultados = {};
-  document.getElementById('teste-status').style.display = 'none';
-  document.getElementById('teste-status').innerHTML = '';
-  document.getElementById('teste-tabela-wrap').style.display = 'none';
-  document.getElementById('teste-tbody').innerHTML = '';
-  document.getElementById('teste-historico-wrap').innerHTML = '';
+  ['teste-status','teste-debug-wrap'].forEach(id=>{const el=document.getElementById(id);el.style.display='none';el.innerHTML='';});
+  document.getElementById('teste-tabela-wrap').style.display='none';
+  document.getElementById('teste-tbody').innerHTML='';
+  document.getElementById('teste-historico-wrap').innerHTML='';
   testeRenderCards();
 }
 
 async function testeBuscarTodos() {
   const btn = document.getElementById('btn-teste-buscar');
-  btn.disabled = true; btn.textContent = '⟳ Buscando...';
-  document.getElementById('teste-status').innerHTML = '';
-  document.getElementById('teste-status').style.display = 'block';
-  document.getElementById('teste-tabela-wrap').style.display = 'none';
-  document.getElementById('teste-historico-wrap').innerHTML = '';
-
-  testeLog('Iniciando busca — 5 empresas de energia (Brapi, histórico 5 anos)...');
+  btn.disabled=true; btn.textContent='⟳ Buscando...';
+  document.getElementById('teste-status').innerHTML='';
+  document.getElementById('teste-tabela-wrap').style.display='none';
+  document.getElementById('teste-historico-wrap').innerHTML='';
+  testeLog('Iniciando — Yahoo Finance (gratuito, sem token)...');
 
   for (const emp of TESTE_EMPRESAS) {
     testeResultados[emp.ticker] = { loading: true };
     testeRenderCards();
-    testeLog(`Buscando <strong style="color:${emp.cor}">${emp.ticker}</strong> — ${emp.nome}...`);
+    testeLog('Buscando <strong style="color:'+emp.cor+'">'+emp.ticker+'</strong> ('+emp.yahoo+')...');
     try {
-      const dados = await testeBuscarEmpresa(emp.ticker);
-      testeResultados[emp.ticker] = { loading: false, ...dados, emp };
-      const a = dados.atual;
-      const s = dados.stats;
-      testeLog(`  ✓ ${emp.ticker} | Preço: R$ ${a.preco?.toFixed(2)??'?'} | ROE: ${a.roe?.toFixed(1)??'—'}% | Cresc. Receita ${TESTE_ANOS}a: ${testeFmtPct(s.crescReceita)} | Anos hist.: ${dados.anosOrdem.length}`);
+      const d = await testeBuscarEmpresa(emp);
+      testeResultados[emp.ticker] = { loading:false, ...d, emp };
+      testeLog('  ✓ '+emp.ticker+
+        ' | Preço: '+(d.atual.preco!=null?'R$ '+d.atual.preco.toFixed(2):'?')+
+        ' | Anos hist.: '+d.anos.length+
+        ' | ROE médio: '+(d.stats.roeMedia!=null?d.stats.roeMedia.toFixed(1)+'%':'—'));
     } catch(e) {
-      testeResultados[emp.ticker] = { loading: false, erro: e.message, emp };
-      testeLog(`  ✗ ${emp.ticker}: ${e.message}`);
+      testeResultados[emp.ticker] = { loading:false, erro:e.message, emp };
+      testeLog('  ✗ '+emp.ticker+': <span style="color:var(--red)">'+e.message+'</span>');
     }
     testeRenderCards();
   }
 
-  testeLog('✅ Concluído! Renderizando análise...');
+  testeLog('✅ Concluído.');
   testeRenderTabela();
   testeRenderHistorico();
-  btn.disabled = false; btn.textContent = '🔄 Buscar Dados';
+  btn.disabled=false; btn.textContent='🔄 Buscar Dados';
 }
 
 function testeRenderTabela() {
@@ -23895,27 +23897,26 @@ function testeRenderTabela() {
   tbody.innerHTML = '';
   for (const emp of TESTE_EMPRESAS) {
     const r = testeResultados[emp.ticker];
-    if (!r || r.loading || r.erro || !r.atual) continue;
-    const a = r.atual, s = r.stats;
-    tbody.innerHTML += `
-    <tr>
-      <td><strong style="color:var(--hi)">${emp.nome}</strong></td>
-      <td><span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:${emp.cor}">${emp.ticker}</span></td>
-      <td><strong>${a.preco!=null?'R$ '+a.preco.toFixed(2).replace('.',','):'—'}</strong></td>
-      <td style="color:${testeCorPct(a.varHoje)}">${testeFmtPct(a.varHoje)}</td>
-      <td>${a.pl!=null?a.pl.toFixed(1):'—'}</td>
-      <td>${a.pvp!=null?a.pvp.toFixed(2):'—'}</td>
-      <td style="color:var(--green)">${a.dy!=null?a.dy.toFixed(2)+'%':'—'}</td>
-      <td style="color:${(s.roeMedia??0)>10?'var(--green)':'var(--yellow)'}">${s.roeMedia!=null?s.roeMedia.toFixed(1)+'%':'—'}</td>
-      <td style="color:${(s.margemMedia??0)>10?'var(--green)':'var(--yellow)'}">${s.margemMedia!=null?s.margemMedia.toFixed(1)+'%':'—'}</td>
-      <td style="font-size:.58rem">${s.receitaFim!=null?testeFmtMoeda(s.receitaFim):'—'}</td>
-      <td style="font-size:.58rem">${s.lucroFim!=null?testeFmtMoeda(s.lucroFim):'—'}</td>
-      <td style="color:${testeCorPct(s.crescReceita)}">${testeFmtPct(s.crescReceita)}</td>
-      <td style="color:${testeCorPct(s.crescLucro)}">${testeFmtPct(s.crescLucro)}</td>
-      <td style="font-size:.48rem;color:var(--papel)">Brapi</td>
-    </tr>`;
+    if (!r||r.loading||r.erro) continue;
+    const a=r.atual, s=r.stats;
+    tbody.innerHTML += '<tr>'+
+      '<td><b style="color:var(--hi)">'+emp.nome+'</b></td>'+
+      '<td><span style="font-family:\'Bebas Neue\',sans-serif;color:'+emp.cor+'">'+emp.ticker+'</span></td>'+
+      '<td><b>'+(a.preco!=null?'R$ '+a.preco.toFixed(2).replace('.',','):'—')+'</b></td>'+
+      '<td style="color:'+testeCor(a.varHoje)+'">'+testePct(a.varHoje)+'</td>'+
+      '<td>'+(a.pl!=null?a.pl.toFixed(1):'—')+'</td>'+
+      '<td>'+(a.pvp!=null?a.pvp.toFixed(2):'—')+'</td>'+
+      '<td style="color:var(--green)">'+(a.dy!=null?a.dy.toFixed(2)+'%':'—')+'</td>'+
+      '<td style="color:'+((s.roeMedia??0)>10?'var(--green)':'var(--yellow)')+'">'+(s.roeMedia!=null?s.roeMedia.toFixed(1)+'%':'—')+'</td>'+
+      '<td style="color:'+((s.margMedia??0)>10?'var(--green)':'var(--yellow)')+'">'+(s.margMedia!=null?s.margMedia.toFixed(1)+'%':'—')+'</td>'+
+      '<td style="font-size:.58rem">'+(s.recFim!=null?testeFmt(s.recFim):'—')+'</td>'+
+      '<td style="font-size:.58rem">'+(s.lucFim!=null?testeFmt(s.lucFim):'—')+'</td>'+
+      '<td style="color:'+testeCor(s.crescRec)+'">'+testePct(s.crescRec)+'</td>'+
+      '<td style="color:'+testeCor(s.crescLuc)+'">'+testePct(s.crescLuc)+'</td>'+
+      '<td style="font-size:.5rem">'+r.anos.length+' anos</td>'+
+      '</tr>';
   }
-  document.getElementById('teste-tabela-wrap').style.display = '';
+  document.getElementById('teste-tabela-wrap').style.display='';
 }
 
 function testeRenderHistorico() {
@@ -23923,55 +23924,43 @@ function testeRenderHistorico() {
   wrap.innerHTML = '';
   for (const emp of TESTE_EMPRESAS) {
     const r = testeResultados[emp.ticker];
-    if (!r || r.loading || r.erro || !r.hist) continue;
-    const anos = r.anosOrdem;
-    if (!anos.length) continue;
-
-    const linhas = anos.map(a => {
-      const d = r.hist[a];
-      const lucColor = d.lucro!=null?(d.lucro>=0?'var(--green)':'var(--red)'):'var(--dim)';
-      const roeColor = d.roe!=null?(d.roe>12?'var(--green)':d.roe>6?'var(--yellow)':'var(--red)'):'var(--dim)';
-      return `<tr>
-        <td style="color:var(--dim);font-weight:700">${a}</td>
-        <td>${d.receita!=null?testeFmtMoeda(d.receita):'—'}</td>
-        <td style="color:${lucColor}">${d.lucro!=null?testeFmtMoeda(d.lucro):'—'}</td>
-        <td style="color:${roeColor}">${d.roe!=null?d.roe.toFixed(1)+'%':'—'}</td>
-        <td style="color:${d.margemLiq!=null?(d.margemLiq>15?'var(--green)':'var(--yellow)'):'var(--dim)'}">${d.margemLiq!=null?d.margemLiq.toFixed(1)+'%':'—'}</td>
-        <td style="color:var(--papel)">${d.pl!=null?testeFmtMoeda(d.pl):'—'}</td>
-        <td style="color:var(--dim2)">${d.fcl!=null?testeFmtMoeda(d.fcl):'—'}</td>
-      </tr>`;
+    if (!r||r.loading||r.erro||!r.hist||!r.anos.length) continue;
+    const linhas = r.anos.map(a => {
+      const d=r.hist[a];
+      return '<tr>'+
+        '<td style="color:var(--dim);font-weight:700">'+a+'</td>'+
+        '<td>'+(d.receita!=null?testeFmt(d.receita):'—')+'</td>'+
+        '<td style="color:'+testeCor(d.lucro)+'">'+(d.lucro!=null?testeFmt(d.lucro):'—')+'</td>'+
+        '<td style="color:'+(d.roe!=null?(d.roe>12?'var(--green)':d.roe>6?'var(--yellow)':'var(--red)'):'var(--dim)')+'">'+(d.roe!=null?d.roe.toFixed(1)+'%':'—')+'</td>'+
+        '<td style="color:'+(d.margemLiq!=null?(d.margemLiq>15?'var(--green)':'var(--yellow)'):'var(--dim)')+'">'+(d.margemLiq!=null?d.margemLiq.toFixed(1)+'%':'—')+'</td>'+
+        '<td style="color:var(--papel)">'+(d.pl!=null?testeFmt(d.pl):'—')+'</td>'+
+        '<td style="color:var(--dim2)">'+(d.fcl!=null?testeFmt(d.fcl):'—')+'</td>'+
+        '</tr>';
     }).join('');
-
-    const s = r.stats;
-    wrap.innerHTML += `
-    <div class="card" style="margin-bottom:.8rem;border-left:3px solid ${emp.cor}">
-      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem;flex-wrap:wrap">
-        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${emp.cor}">${emp.ticker}</div>
-        <div style="font-size:.55rem;color:var(--dim)">${emp.nome}</div>
-        <span style="font-size:.46rem;background:${emp.cor}18;color:${emp.cor};border:1px solid ${emp.cor}30;border-radius:4px;padding:1px 6px">Brapi · ${anos.length} anos</span>
-      </div>
-      <div style="overflow-x:auto">
-        <table class="tbl" style="min-width:580px">
-          <thead><tr>
-            <th>ANO</th><th>RECEITA</th><th>LUCRO LÍQ.</th><th>ROE</th><th>MARG. LÍQ.</th><th>PATR. LÍQ.</th><th>FCL</th>
-          </tr></thead>
-          <tbody>${linhas}</tbody>
-        </table>
-      </div>
-      <div style="margin-top:.6rem;display:flex;gap:1rem;flex-wrap:wrap;font-size:.55rem">
-        <div><span style="color:var(--dim)">Cresc. Receita ${TESTE_ANOS}a: </span><strong style="color:${testeCorPct(s.crescReceita)}">${testeFmtPct(s.crescReceita)}</strong></div>
-        <div><span style="color:var(--dim)">Cresc. Lucro ${TESTE_ANOS}a: </span><strong style="color:${testeCorPct(s.crescLucro)}">${testeFmtPct(s.crescLucro)}</strong></div>
-        <div><span style="color:var(--dim)">ROE médio: </span><strong style="color:var(--papel)">${s.roeMedia!=null?s.roeMedia.toFixed(1)+'%':'—'}</strong></div>
-        <div><span style="color:var(--dim)">Marg. média: </span><strong style="color:var(--green)">${s.margemMedia!=null?s.margemMedia.toFixed(1)+'%':'—'}</strong></div>
-        ${r.atual?.dy!=null?`<div><span style="color:var(--dim)">DY atual: </span><strong style="color:var(--green)">${r.atual.dy.toFixed(2)}%</strong></div>`:''}
-        ${r.atual?.dlEbitda!=null?`<div><span style="color:var(--dim)">DL/EBITDA: </span><strong style="color:var(--yellow)">${r.atual.dlEbitda}x</strong></div>`:''}
-      </div>
-    </div>`;
+    const s=r.stats;
+    wrap.innerHTML +=
+      '<div class="card" style="margin-bottom:.8rem;border-left:3px solid '+emp.cor+'">'+
+      '<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.55rem;flex-wrap:wrap">'+
+      '<span style="font-family:\'Bebas Neue\',sans-serif;font-size:1.1rem;color:'+emp.cor+'">'+emp.ticker+'</span>'+
+      '<span style="font-size:.52rem;color:var(--dim)">'+emp.nome+'</span>'+
+      '<span style="font-size:.44rem;background:'+emp.cor+'18;color:'+emp.cor+';border:1px solid '+emp.cor+'30;border-radius:4px;padding:1px 6px">Yahoo Finance · '+r.anos.length+' anos</span>'+
+      '</div>'+
+      '<div style="overflow-x:auto">'+
+      '<table class="tbl" style="min-width:560px">'+
+      '<thead><tr><th>ANO</th><th>RECEITA</th><th>LUCRO LÍQ.</th><th>ROE</th><th>MARG. LÍQ.</th><th>PATR. LÍQ.</th><th>FCL</th></tr></thead>'+
+      '<tbody>'+linhas+'</tbody></table></div>'+
+      '<div style="margin-top:.55rem;display:flex;gap:.8rem;flex-wrap:wrap;font-size:.55rem">'+
+      '<span><span style="color:var(--dim)">Cresc. Receita '+TESTE_ANOS+'a: </span><b style="color:'+testeCor(s.crescRec)+'">'+testePct(s.crescRec)+'</b></span>'+
+      '<span><span style="color:var(--dim)">Cresc. Lucro '+TESTE_ANOS+'a: </span><b style="color:'+testeCor(s.crescLuc)+'">'+testePct(s.crescLuc)+'</b></span>'+
+      '<span><span style="color:var(--dim)">ROE médio: </span><b style="color:var(--papel)">'+(s.roeMedia!=null?s.roeMedia.toFixed(1)+'%':'—')+'</b></span>'+
+      '<span><span style="color:var(--dim)">Marg. média: </span><b style="color:var(--green)">'+(s.margMedia!=null?s.margMedia.toFixed(1)+'%':'—')+'</b></span>'+
+      (r.atual.dy!=null?'<span><span style="color:var(--dim)">DY: </span><b style="color:var(--green)">'+r.atual.dy.toFixed(2)+'%</b></span>':'')+
+      (r.atual.dlEbitda!=null?'<span><span style="color:var(--dim)">DL/EBITDA: </span><b style="color:var(--yellow)">'+r.atual.dlEbitda+'x</b></span>':'')+
+      '</div></div>';
   }
 }
 
-(function(){ setTimeout(testeRenderCards, 150); })();
-
+(function(){ setTimeout(testeRenderCards, 200); })();
 </script>
 
 </body>
