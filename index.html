@@ -142,11 +142,36 @@
     .nav-saved { font-size: .48rem; color: var(--dim2); letter-spacing: .04em; padding: .7rem; border-top: 1px solid var(--border); line-height: 1.6; }
 
     /* ── MAIN CONTENT AREA ── */
-    .main-content { flex: 1; min-width: 0; overflow-x: hidden; }
+    .main-content { flex: 1; min-width: 0; overflow-x: hidden; overflow-y: auto; height: 100vh; }
+
+    /* ── CALENDAR STYLES ── */
+    .cal-day { min-height:72px; border-radius:8px; padding:.35rem .4rem; cursor:pointer; transition:all .18s; position:relative; border:1px solid var(--border); background:var(--bg2); }
+    .cal-day:hover { border-color:var(--border2); background:var(--bg3); }
+    .cal-day.today  { border:2px solid var(--green); background:#0d2a1a; }
+    .cal-day.selected { border:2px solid #38bdf8; background:#0c1a2a; }
+    .cal-day.has-events::after { content:''; position:absolute; top:5px; right:5px; width:6px; height:6px; border-radius:50%; background:var(--green); }
+    .cal-day.has-custom::after { background:#f59e0b; }
+    .cal-day-num { font-size:.55rem; font-weight:700; color:var(--dim); }
+    .cal-day.today .cal-day-num { color:var(--green); }
+    .cal-day.selected .cal-day-num { color:#38bdf8; }
+    .cal-day-week { text-align:center; font-size:.48rem; font-weight:700; color:var(--dim2); padding:.3rem 0; }
+    .cal-event-chip { margin-top:2px; font-size:.42rem; border-radius:3px; padding:1px 4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+    .cal-event-div  { background:#16a34a33; color:#4ade80; }
+    .cal-event-cust { background:#f59e0b22; color:#fbbf24; }
+    .cal-event-alert{ background:#ef444422; color:#f87171; }
+    .cal-modal-overlay { display:none; position:fixed; inset:0; background:#00000099; z-index:8000; align-items:center; justify-content:center; padding:1rem; }
+    .cal-modal-overlay.open { display:flex; }
+    .cal-alert-badge { display:inline-flex; align-items:center; gap:.3rem; background:#ef444415; border:1px solid #ef444430; border-radius:6px; padding:.25rem .6rem; font-size:.52rem; color:#f87171; }
+    #cal-day-detail { transition:all .2s; }
+    @media (max-width:720px) {
+      #page-calendario [style*="grid-template-columns:1fr 300px"] { grid-template-columns:1fr !important; }
+    }
 
     /* ── LAYOUT ── */
     .page { display:none; padding:1.25rem 1.5rem; max-width:1080px; }
     .page.on { display:block; }
+    /* Fix: pages align to top of content area */
+    #page-calendario { vertical-align:top; }
     .g2 { display:grid; grid-template-columns:1fr 1fr; gap:.7rem; }
     .g3 { display:grid; grid-template-columns:repeat(3,1fr); gap:.6rem; }
     .g4 { display:grid; grid-template-columns:repeat(4,1fr); gap:.55rem; }
@@ -920,6 +945,7 @@
     <div class="nav-tab"   data-page="calendario"    onclick="goPage('calendario')"><span class="nav-tab-icon">📅</span> Calendário</div>
     <div class="nav-tab"   data-page="heatmap"       onclick="goPage('heatmap')"><span class="nav-tab-icon">🌡️</span> Mapa de Calor</div>
     <div class="nav-tab"   data-page="noticias"      onclick="goPage('noticias')"><span class="nav-tab-icon">📰</span> Notícias</div>
+    <div class="nav-tab"   data-page="checklistativos" onclick="goPage('checklistativos')"><span class="nav-tab-icon">✅</span> CheckList Ativos</div>
 
     <div class="nav-divider"></div>
     <div class="nav-section-label">Educação</div>
@@ -934,6 +960,10 @@
     <div class="nav-divider"></div>
     <div class="nav-section-label">Configuração</div>
     <div class="nav-tab"   data-page="token"        onclick="goPage('token')"><span class="nav-tab-icon">🔑</span> Token</div>
+
+    <div class="nav-divider"></div>
+    <div class="nav-section-label">Experimental</div>
+    <div class="nav-tab"   data-page="teste"        onclick="goPage('teste')"><span class="nav-tab-icon">⚡</span> Energia CVM</div>
   </div>
 
   <div class="nav-saved" id="nav-info"></div>
@@ -3471,6 +3501,9 @@ let modalFonteCenario_isSnapshotMode = false;
 function goPage(id) {
   document.querySelectorAll(".nav-tab").forEach(t => t.classList.toggle("on", t.dataset.page===id));
   document.querySelectorAll(".page").forEach(p => p.classList.toggle("on", p.id==="page-"+id));
+  // Scroll main content back to top on every page change
+  const mc = document.querySelector(".main-content");
+  if (mc) mc.scrollTop = 0;
   if (id==="carteira")      renderCarteira();
   if (id==="carteiraacoes") renderCarteiraAcoes();
   if (id==="carteiraetfs")  renderCarteiraEtfs();
@@ -3499,6 +3532,7 @@ function goPage(id) {
   if (id==="calendario")    initCalendario();
   if (id==="heatmap")       initHeatmap();
   if (id==="noticias")      initNoticias();
+  if (id==="checklistativos") renderChecklistAtivos();
   if (id==="token")         tokenCarregarNaTela();
   if (id==="dividendos")    renderDividendosPage();
   if (id==="rendimentos")    renderRendimentosPage();
@@ -14673,9 +14707,6 @@ function aprSubTab(tab) {
   </div>
 </div>
 
-</div><!-- /main-content -->
-</div><!-- /app-shell -->
-
 <script>
 /* ── MOBILE ANDROID: ajustes dinâmicos pós-renderização ── */
 (function mobileFix() {
@@ -14812,22 +14843,159 @@ function aprSubTab(tab) {
 <!-- ══════════════════════════════════════════════════════════════════════
      PAGE: CALENDÁRIO DE DIVIDENDOS
 ══════════════════════════════════════════════════════════════════════ -->
-<div class="page" id="page-calendario">
-  <div class="sec-head">
-    <div class="sec-title">📅 CALENDÁRIO DE DIVIDENDOS</div>
-    <div style="display:flex;gap:.5rem;align-items:center">
-      <button class="btn" onclick="calMesAnterior()">◀</button>
-      <span id="cal-titulo" style="font-size:.7rem;font-weight:700;color:var(--hi);min-width:120px;text-align:center"></span>
-      <button class="btn" onclick="calMesProximo()">▶</button>
-      <button class="btn btn-green" onclick="calCarregar()">🔄 Buscar</button>
+<div class="page" id="page-calendario" style="padding-top:1.25rem">
+
+<!-- Header -->
+<div class="sec-head" style="margin-bottom:.7rem">
+  <div class="sec-title">📅 CALENDÁRIO</div>
+  <div style="display:flex;gap:.4rem;align-items:center;flex-wrap:wrap">
+    <button class="btn" onclick="calMesAnterior()" style="padding:.28rem .6rem">◀</button>
+    <span id="cal-titulo" style="font-size:.78rem;font-weight:700;color:var(--hi);min-width:140px;text-align:center;font-family:'Bebas Neue',sans-serif;letter-spacing:.06em"></span>
+    <button class="btn" onclick="calMesProximo()" style="padding:.28rem .6rem">▶</button>
+    <button class="btn" onclick="calIrHoje()" style="font-size:.55rem">Hoje</button>
+    <button class="btn btn-green" onclick="calCarregar()">🔄 Dividendos</button>
+    <button class="btn" style="background:#f59e0b18;color:#fbbf24;border:1px solid #f59e0b30" onclick="calAbrirModalEvento(calDataSelecionada||calHoje())">+ Evento</button>
+    <button class="btn" style="background:#ef444415;color:#f87171;border:1px solid #ef444430" onclick="calMostrarAlertas()">🔔 Alertas</button>
+  </div>
+</div>
+
+<!-- Alertas pendentes banner -->
+<div id="cal-alertas-banner" style="display:none;margin-bottom:.7rem"></div>
+
+<!-- Layout: calendário + painel lateral -->
+<div style="display:grid;grid-template-columns:1fr 300px;gap:.8rem;align-items:start">
+
+  <!-- Calendário -->
+  <div>
+    <!-- Legenda -->
+    <div style="display:flex;gap:.5rem;align-items:center;margin-bottom:.5rem;flex-wrap:wrap">
+      <span style="font-size:.46rem;color:var(--dim)">Legenda:</span>
+      <span class="cal-event-chip cal-event-div" style="font-size:.46rem">💰 Dividendo</span>
+      <span class="cal-event-chip cal-event-cust" style="font-size:.46rem">📌 Evento</span>
+      <span class="cal-event-chip cal-event-alert" style="font-size:.46rem">🔔 Alerta</span>
+      <span style="margin-left:auto;font-size:.46rem;color:var(--dim2)">Clique numa data para ver detalhes ou adicionar evento</span>
+    </div>
+    <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:.6rem"></div>
+  </div>
+
+  <!-- Painel lateral -->
+  <div>
+    <!-- Detalhe do dia selecionado -->
+    <div id="cal-day-detail" class="card" style="margin-bottom:.7rem">
+      <div style="font-size:.5rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.4rem">📅 Selecione uma data</div>
+      <div id="cal-day-content" style="font-size:.58rem;color:var(--dim2)">Clique em um dia do calendário para ver os eventos.</div>
+    </div>
+
+    <!-- Mini agendinha — próximos eventos -->
+    <div class="card">
+      <div style="font-size:.5rem;color:var(--dim);letter-spacing:.07em;text-transform:uppercase;margin-bottom:.5rem;display:flex;justify-content:space-between;align-items:center">
+        <span>🗓 Próximos Eventos</span>
+        <span id="cal-proximos-count" style="font-size:.46rem;background:var(--bg3);padding:1px 6px;border-radius:8px;color:var(--dim2)">0</span>
+      </div>
+      <div id="cal-proximos-list" style="max-height:320px;overflow-y:auto">
+        <div style="font-size:.56rem;color:var(--dim2);text-align:center;padding:.8rem 0">Nenhum evento futuro</div>
+      </div>
     </div>
   </div>
-  <div class="card" style="margin-bottom:.8rem;background:#1e293b22;border:1px solid #3b82f633">
-    <div style="font-size:.55rem;color:#93c5fd">ℹ️ Mostra dividendos dos ativos da sua watchlist e carteira. Requer token BRAPI.</div>
-  </div>
-  <div id="cal-grid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:1rem"></div>
-  <div id="cal-eventos" class="card"></div>
+
 </div>
+
+<!-- Modal: Criar/Editar Evento -->
+<div class="cal-modal-overlay" id="cal-modal-evento">
+  <div class="card" style="width:min(460px,96vw);display:flex;flex-direction:column;gap:.7rem;border:1.5px solid #f59e0b40;box-shadow:0 0 30px #f59e0b10;max-height:90vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#fbbf24;letter-spacing:.05em" id="cal-modal-titulo">📌 NOVO EVENTO</div>
+      <button class="btn-icon" onclick="calFecharModalEvento()">✕</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+      <div>
+        <div style="font-size:.47rem;color:var(--dim);margin-bottom:.2rem">DATA *</div>
+        <input type="date" id="cal-ev-data" style="font-family:'IBM Plex Mono',monospace;font-size:.65rem;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);padding:.33rem .5rem;outline:none;width:100%"/>
+      </div>
+      <div>
+        <div style="font-size:.47rem;color:var(--dim);margin-bottom:.2rem">TIPO *</div>
+        <select id="cal-ev-tipo" style="width:100%" onchange="calModalTipoChange()">
+          <option value="evento">📌 Evento Geral</option>
+          <option value="vencimento">📋 Vencimento</option>
+          <option value="aporte">💸 Aporte Programado</option>
+          <option value="reuniao">👥 Reunião / AGO</option>
+          <option value="resultado">📊 Resultado de Empresa</option>
+          <option value="alerta">🔔 Alerta com Notificação</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:.47rem;color:var(--dim);margin-bottom:.2rem">TÍTULO *</div>
+      <input type="text" id="cal-ev-titulo" placeholder="ex: Pagamento HGLG11, Vencimento CDB..." style="width:100%"/>
+    </div>
+
+    <div>
+      <div style="font-size:.47rem;color:var(--dim);margin-bottom:.2rem">TICKER (opcional)</div>
+      <div style="position:relative">
+        <input type="text" id="cal-ev-ticker" placeholder="ex: HGLG11" autocomplete="off"
+          oninput="this.value=this.value.toUpperCase();calTickerAc(this)"
+          onfocus="calTickerAc(this)" onblur="tickerAcClose()"
+          onkeydown="calTickerAcKey(event,this)"
+          style="text-transform:uppercase;width:100%"/>
+      </div>
+    </div>
+
+    <div>
+      <div style="font-size:.47rem;color:var(--dim);margin-bottom:.2rem">VALOR / OBSERVAÇÃO</div>
+      <input type="text" id="cal-ev-valor" placeholder="ex: R$ 250,00 ou nota sobre o evento..." style="width:100%"/>
+    </div>
+
+    <!-- Config alerta -->
+    <div id="cal-alerta-config" style="display:none;background:var(--bg3);border:1px solid #ef444430;border-radius:8px;padding:.65rem .8rem">
+      <div style="font-size:.48rem;color:#f87171;font-weight:700;margin-bottom:.45rem;letter-spacing:.06em">🔔 CONFIGURAR ALERTA</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem">
+        <div>
+          <div style="font-size:.46rem;color:var(--dim);margin-bottom:.2rem">AVISAR COM ANTECEDÊNCIA</div>
+          <select id="cal-alerta-dias" style="width:100%">
+            <option value="0">No dia</option>
+            <option value="1" selected>1 dia antes</option>
+            <option value="3">3 dias antes</option>
+            <option value="7">7 dias antes</option>
+            <option value="14">14 dias antes</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:.46rem;color:var(--dim);margin-bottom:.2rem">REPETIR</div>
+          <select id="cal-alerta-repeat" style="width:100%">
+            <option value="none">Não repetir</option>
+            <option value="monthly">Mensal</option>
+            <option value="yearly">Anual</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div id="cal-modal-erro" style="display:none;font-size:.55rem;color:var(--red);background:#f8717115;border:1px solid #f8717130;border-radius:6px;padding:.4rem .6rem"></div>
+
+    <div style="display:flex;gap:.5rem;justify-content:space-between;align-items:center">
+      <button id="cal-btn-deletar" style="display:none" class="btn" style="background:#f8717115;color:var(--red);border:1px solid #f8717130" onclick="calDeletarEvento()">🗑 Remover</button>
+      <div style="display:flex;gap:.5rem;margin-left:auto">
+        <button class="btn" style="background:var(--bg3);color:var(--dim);border:1px solid var(--border2)" onclick="calFecharModalEvento()">Cancelar</button>
+        <button class="btn" style="background:#f59e0b18;color:#fbbf24;border:1px solid #f59e0b40;font-weight:700" onclick="calSalvarEvento()">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Painel de Alertas -->
+<div class="cal-modal-overlay" id="cal-modal-alertas">
+  <div class="card" style="width:min(500px,96vw);display:flex;flex-direction:column;gap:.7rem;border:1.5px solid #ef444440;box-shadow:0 0 30px #ef444415;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#f87171;letter-spacing:.05em">🔔 ALERTAS E LEMBRETES</div>
+      <button class="btn-icon" onclick="document.getElementById('cal-modal-alertas').classList.remove('open')">✕</button>
+    </div>
+    <div id="cal-alertas-lista" style="min-height:80px"></div>
+  </div>
+</div>
+
+</div><!-- /page-calendario -->
 
 <!-- ══════════════════════════════════════════════════════════════════════
      PAGE: MAPA DE CALOR
@@ -15026,124 +15194,481 @@ async function alertasCheck() {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-//  CALENDÁRIO DE DIVIDENDOS
+//  CALENDÁRIO — completo com eventos, alertas e layout no topo
 // ════════════════════════════════════════════════════════════════════════════
-let calAnoAtual = new Date().getFullYear();
-let calMesAtual = new Date().getMonth(); // 0-based
-let _calEventos  = []; // [{ticker, payDate, valor, tipo}]
+const CAL_KEY       = 'cal-eventos-custom';
+const CAL_ALERT_KEY = 'cal-alertas';
+let calAnoAtual  = new Date().getFullYear();
+let calMesAtual  = new Date().getMonth();
+let _calEventos  = []; // dividendos brapi
+let _calCustom   = []; // eventos criados pelo usuário
+let calDataSelecionada = null;
+let _calEditId   = null;
+
+function calGetCustom() {
+  try { let r=JSON.parse(localStorage.getItem(CAL_KEY)||'[]'); return Array.isArray(r)?r:[]; } catch{ return []; }
+}
+function calSaveCustom(arr) {
+  localStorage.setItem(CAL_KEY, JSON.stringify(arr));
+  if(typeof fbWrite==='function') try{fbWrite(CAL_KEY,arr);}catch(e){}
+}
+
+function calHoje() {
+  const h=new Date();
+  return h.getFullYear()+'-'+String(h.getMonth()+1).padStart(2,'0')+'-'+String(h.getDate()).padStart(2,'0');
+}
 
 function initCalendario() {
+  _calCustom = calGetCustom();
+  calDataSelecionada = calHoje();
   renderCalGrade();
+  calRenderProximos();
+  calVerificarAlertasBanner();
   calCarregar();
+}
+
+function calIrHoje() {
+  calAnoAtual = new Date().getFullYear();
+  calMesAtual = new Date().getMonth();
+  calDataSelecionada = calHoje();
+  renderCalGrade();
+  calRenderDiaDetalhe(calDataSelecionada);
 }
 
 function calMesAnterior() {
   calMesAtual--;
-  if (calMesAtual < 0) { calMesAtual = 11; calAnoAtual--; }
+  if(calMesAtual<0){calMesAtual=11;calAnoAtual--;}
   renderCalGrade();
 }
 
 function calMesProximo() {
   calMesAtual++;
-  if (calMesAtual > 11) { calMesAtual = 0; calAnoAtual++; }
+  if(calMesAtual>11){calMesAtual=0;calAnoAtual++;}
   renderCalGrade();
 }
 
 function renderCalGrade() {
   const meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   const tit = document.getElementById('cal-titulo');
-  if (tit) tit.textContent = meses[calMesAtual] + ' ' + calAnoAtual;
+  if(tit) tit.textContent = meses[calMesAtual]+' '+calAnoAtual;
 
   const grid = document.getElementById('cal-grid');
-  if (!grid) return;
+  if(!grid) return;
 
+  const hoje    = new Date();
+  const hojeStr = calHoje();
   const diasSemana = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-  let html = diasSemana.map(d => '<div style="text-align:center;font-size:.47rem;font-weight:700;color:var(--dim);padding:.3rem 0">' + d + '</div>').join('');
+
+  let html = diasSemana.map(d=>`<div class="cal-day-week">${d}</div>`).join('');
 
   const primeiroDia = new Date(calAnoAtual, calMesAtual, 1).getDay();
   const totalDias   = new Date(calAnoAtual, calMesAtual+1, 0).getDate();
-  const hoje = new Date();
 
-  // Empty cells before
-  for (let i = 0; i < primeiroDia; i++) {
-    html += '<div style="min-height:52px"></div>';
-  }
+  for(let i=0;i<primeiroDia;i++) html += '<div></div>';
 
-  for (let d = 1; d <= totalDias; d++) {
-    const isHoje = d === hoje.getDate() && calMesAtual === hoje.getMonth() && calAnoAtual === hoje.getFullYear();
-    const dateStr = calAnoAtual + '-' + String(calMesAtual+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
-    const events  = _calEventos.filter(e => e.payDate && e.payDate.startsWith(dateStr));
-    const border  = isHoje ? '2px solid var(--green)' : '1px solid var(--border)';
-    const bgDay   = isHoje ? 'background:#0d2a1a' : 'background:var(--bg2)';
-    html += '<div style="min-height:52px;border-radius:6px;' + border + ';' + bgDay + ';padding:.3rem;cursor:pointer" onclick="calDiaClick(&quot;' + dateStr + '&quot;)">'
-      + '<div style="font-size:.5rem;font-weight:700;color:' + (isHoje ? 'var(--green)' : 'var(--dim)') + '">' + d + '</div>';
-    events.slice(0,3).forEach(ev => {
-      html += '<div style="margin-top:2px;font-size:.4rem;background:#16a34a33;border-radius:3px;padding:1px 3px;color:#4ade80;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
-        + ev.ticker + ' R$' + (ev.valor||0).toFixed(2) + '</div>';
+  for(let d=1;d<=totalDias;d++) {
+    const dateStr = calAnoAtual+'-'+String(calMesAtual+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const divEvs  = _calEventos.filter(e=>e.payDate&&e.payDate.startsWith(dateStr));
+    const custEvs = (_calCustom||[]).filter(e=>e.data===dateStr);
+    const isHoje  = dateStr===hojeStr;
+    const isSel   = dateStr===calDataSelecionada;
+    const hasCust = custEvs.length>0;
+    const hasDiv  = divEvs.length>0;
+    const hasAlert= custEvs.some(e=>e.tipo==='alerta');
+
+    let cls = 'cal-day';
+    if(isHoje)  cls+=' today';
+    if(isSel)   cls+=' selected';
+    if(hasCust) cls+=' has-custom';
+    else if(hasDiv) cls+=' has-events';
+
+    html += `<div class="${cls}" onclick="calDiaClick('${dateStr}')">
+      <div class="cal-day-num">${d}</div>`;
+
+    // Dividendos brapi
+    divEvs.slice(0,2).forEach(ev=>{
+      html += `<div class="cal-event-chip cal-event-div">${ev.ticker} R$${(ev.valor||0).toFixed(2)}</div>`;
     });
-    if (events.length > 3) html += '<div style="font-size:.38rem;color:var(--dim)">+' + (events.length-3) + ' mais</div>';
+    if(divEvs.length>2) html+=`<div style="font-size:.38rem;color:var(--dim)">+${divEvs.length-2}</div>`;
+
+    // Eventos custom
+    custEvs.slice(0,2).forEach(ev=>{
+      const cls2 = ev.tipo==='alerta'?'cal-event-alert':'cal-event-cust';
+      const icon = {evento:'📌',vencimento:'📋',aporte:'💸',reuniao:'👥',resultado:'📊',alerta:'🔔'}[ev.tipo]||'📌';
+      html += `<div class="cal-event-chip ${cls2}">${icon} ${ev.titulo||ev.ticker||''}</div>`;
+    });
+    if(custEvs.length>2) html+=`<div style="font-size:.38rem;color:var(--dim)">+${custEvs.length-2}</div>`;
+
     html += '</div>';
   }
   grid.innerHTML = html;
+
+  // Renderiza detalhe se há data selecionada
+  if(calDataSelecionada) calRenderDiaDetalhe(calDataSelecionada);
 }
 
 function calDiaClick(dateStr) {
-  const events = _calEventos.filter(e => e.payDate && e.payDate.startsWith(dateStr));
-  const el = document.getElementById('cal-eventos');
-  if (!el) return;
-  if (!events.length) { el.innerHTML = '<div style="font-size:.55rem;color:var(--dim)">Nenhum dividendo nesta data.</div>'; return; }
-  el.innerHTML = '<div style="font-size:.55rem;font-weight:700;color:var(--hi);margin-bottom:.5rem">📅 ' + dateStr + '</div>'
-    + events.map(ev => '<div style="display:flex;justify-content:space-between;padding:.35rem 0;border-bottom:1px solid var(--border)">'
-      + '<span style="font-size:.58rem;color:var(--hi);font-weight:700">' + ev.ticker + '</span>'
-      + '<span style="font-size:.55rem;color:#4ade80;font-weight:700">R$ ' + (ev.valor||0).toFixed(4) + '</span>'
-      + '</div>').join('');
+  calDataSelecionada = dateStr;
+  // Remove seleção anterior
+  document.querySelectorAll('.cal-day.selected').forEach(el=>el.classList.remove('selected'));
+  // Adiciona na nova
+  const cells = document.querySelectorAll('.cal-day');
+  const d = parseInt(dateStr.split('-')[2]);
+  cells.forEach(cell=>{
+    const num = cell.querySelector('.cal-day-num');
+    if(num&&parseInt(num.textContent)===d) {
+      // verifica se é o mês/ano correto pela posição
+      cell.classList.add('selected');
+    }
+  });
+  calRenderDiaDetalhe(dateStr);
+}
+
+function calRenderDiaDetalhe(dateStr) {
+  const el = document.getElementById('cal-day-detail');
+  const content = document.getElementById('cal-day-content');
+  if(!el||!content) return;
+
+  const divEvs  = _calEventos.filter(e=>e.payDate&&e.payDate.startsWith(dateStr));
+  const custEvs = (_calCustom||[]).filter(e=>e.data===dateStr);
+  const total   = divEvs.length + custEvs.length;
+
+  const [ano,mes,dia] = dateStr.split('-');
+  const nomesMes = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const nomeDia  = `${parseInt(dia)} de ${nomesMes[parseInt(mes)-1]} de ${ano}`;
+
+  // Header do detalhe
+  el.querySelector('.\:not([id])') ; // noop
+  const hdr = el.querySelector('[style*="letter-spacing"]') || el.firstElementChild;
+
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:.95rem;color:var(--hi);letter-spacing:.04em">${nomeDia}</div>
+      <button class="btn" style="font-size:.5rem;background:#f59e0b15;color:#fbbf24;border:1px solid #f59e0b30;padding:.2rem .5rem"
+        onclick="calAbrirModalEvento('${dateStr}')">+ Evento</button>
+    </div>
+    <div id="cal-day-content-inner"></div>`;
+
+  const inner = document.getElementById('cal-day-content-inner');
+  if(!total) {
+    inner.innerHTML = '<div style="font-size:.56rem;color:var(--dim2);padding:.4rem 0">Sem eventos nesta data.</div>';
+    return;
+  }
+
+  let html = '';
+
+  if(divEvs.length) {
+    html += '<div style="font-size:.46rem;color:#4ade80;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:.3rem">💰 Dividendos</div>';
+    divEvs.forEach(ev=>{
+      html += `<div style="display:flex;justify-content:space-between;padding:.3rem 0;border-bottom:1px solid var(--border)">
+        <span style="font-size:.6rem;font-family:'Bebas Neue',sans-serif;color:var(--hi);letter-spacing:.04em">${ev.ticker}</span>
+        <span style="font-size:.58rem;color:#4ade80;font-weight:700">R$ ${(ev.valor||0).toFixed(4)}</span>
+      </div>`;
+    });
+  }
+
+  if(custEvs.length) {
+    html += '<div style="font-size:.46rem;color:#fbbf24;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin:.4rem 0 .3rem">📌 Seus Eventos</div>';
+    custEvs.forEach(ev=>{
+      const icon = {evento:'📌',vencimento:'📋',aporte:'💸',reuniao:'👥',resultado:'📊',alerta:'🔔'}[ev.tipo]||'📌';
+      const cor  = ev.tipo==='alerta'?'#f87171':'#fbbf24';
+      html += `<div style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;padding:.4rem .55rem;margin-bottom:.3rem">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:.6rem;color:${cor};font-weight:700">${icon} ${ev.titulo||'Sem título'}</span>
+          <div style="display:flex;gap:.25rem">
+            <button class="btn-icon" title="Editar" onclick="calAbrirModalEvento('${dateStr}','${ev.id}')">✏️</button>
+          </div>
+        </div>
+        ${ev.ticker?`<div style="font-size:.52rem;color:var(--dim);margin-top:.15rem">🏷 ${ev.ticker}</div>`:''}
+        ${ev.valor?`<div style="font-size:.52rem;color:var(--dim);margin-top:.1rem">💬 ${ev.valor}</div>`:''}
+      </div>`;
+    });
+  }
+
+  inner.innerHTML = html;
+}
+
+// ── Modal de Evento ─────────────────────────────────────────────────────────
+function calAbrirModalEvento(dateStr, editId) {
+  const modal = document.getElementById('cal-modal-evento');
+  if(!modal) return;
+  _calEditId = editId || null;
+
+  const titEl = document.getElementById('cal-modal-titulo');
+  const delBtn = document.getElementById('cal-btn-deletar');
+
+  if(editId) {
+    const ev = (_calCustom||[]).find(e=>e.id===editId);
+    if(!ev) return;
+    if(titEl) titEl.textContent = '✏️ EDITAR EVENTO';
+    if(delBtn) delBtn.style.display = 'inline-flex';
+    document.getElementById('cal-ev-data').value  = ev.data||'';
+    document.getElementById('cal-ev-tipo').value  = ev.tipo||'evento';
+    document.getElementById('cal-ev-titulo').value= ev.titulo||'';
+    document.getElementById('cal-ev-ticker').value= ev.ticker||'';
+    document.getElementById('cal-ev-valor').value = ev.valor||'';
+    document.getElementById('cal-alerta-dias').value   = ev.alertaDias??'1';
+    document.getElementById('cal-alerta-repeat').value = ev.alertaRepeat||'none';
+  } else {
+    if(titEl) titEl.textContent = '📌 NOVO EVENTO';
+    if(delBtn) delBtn.style.display = 'none';
+    document.getElementById('cal-ev-data').value   = dateStr||calHoje();
+    document.getElementById('cal-ev-tipo').value   = 'evento';
+    document.getElementById('cal-ev-titulo').value = '';
+    document.getElementById('cal-ev-ticker').value = '';
+    document.getElementById('cal-ev-valor').value  = '';
+    document.getElementById('cal-alerta-dias').value   = '1';
+    document.getElementById('cal-alerta-repeat').value = 'none';
+  }
+
+  const errEl = document.getElementById('cal-modal-erro');
+  if(errEl) errEl.style.display='none';
+  calModalTipoChange();
+  modal.classList.add('open');
+}
+
+function calFecharModalEvento() {
+  const modal = document.getElementById('cal-modal-evento');
+  if(modal) modal.classList.remove('open');
+}
+
+function calModalTipoChange() {
+  const tipo = document.getElementById('cal-ev-tipo')?.value;
+  const alConfig = document.getElementById('cal-alerta-config');
+  if(alConfig) alConfig.style.display = tipo==='alerta' ? 'block' : 'none';
+}
+
+function calSalvarEvento() {
+  const errEl = document.getElementById('cal-modal-erro');
+  const data   = document.getElementById('cal-ev-data')?.value?.trim()||'';
+  const tipo   = document.getElementById('cal-ev-tipo')?.value||'evento';
+  const titulo = document.getElementById('cal-ev-titulo')?.value?.trim()||'';
+  const ticker = (document.getElementById('cal-ev-ticker')?.value||'').trim().toUpperCase();
+  const valor  = document.getElementById('cal-ev-valor')?.value?.trim()||'';
+  const alertaDias   = parseInt(document.getElementById('cal-alerta-dias')?.value)||0;
+  const alertaRepeat = document.getElementById('cal-alerta-repeat')?.value||'none';
+
+  if(!data||!titulo) {
+    if(errEl){errEl.textContent='⚠ Preencha a data e o título.';errEl.style.display='block';}
+    return;
+  }
+  if(errEl) errEl.style.display='none';
+
+  _calCustom = calGetCustom();
+  const ev = { id:_calEditId||Date.now().toString(), data, tipo, titulo, ticker, valor, alertaDias, alertaRepeat,
+    criadoEm: _calEditId ? (_calCustom.find(e=>e.id===_calEditId)?.criadoEm||new Date().toISOString()) : new Date().toISOString()
+  };
+
+  if(_calEditId) {
+    const idx = _calCustom.findIndex(e=>e.id===_calEditId);
+    if(idx>=0) _calCustom[idx]=ev; else _calCustom.push(ev);
+  } else {
+    _calCustom.push(ev);
+  }
+  calSaveCustom(_calCustom);
+  calFecharModalEvento();
+  renderCalGrade();
+  calRenderProximos();
+  calVerificarAlertasBanner();
+  if(typeof toast==='function') toast('✅ Evento '+((_calEditId)?'atualizado':'criado')+'!');
+  _calEditId = null;
+}
+
+function calDeletarEvento() {
+  if(!_calEditId||!confirm('Remover este evento?')) return;
+  _calCustom = calGetCustom().filter(e=>e.id!==_calEditId);
+  calSaveCustom(_calCustom);
+  calFecharModalEvento();
+  renderCalGrade();
+  calRenderProximos();
+  calVerificarAlertasBanner();
+  if(typeof toast==='function') toast('Evento removido.');
+  _calEditId = null;
+}
+
+// ── Próximos Eventos ─────────────────────────────────────────────────────────
+function calRenderProximos() {
+  const lista = document.getElementById('cal-proximos-list');
+  const count = document.getElementById('cal-proximos-count');
+  if(!lista) return;
+
+  const hoje = calHoje();
+  const todos = [
+    ..._calEventos.map(e=>({...e, _tipo:'div', data:e.payDate, titulo:e.ticker+' — Dividendo', cor:'#4ade80'})),
+    ...(calGetCustom()).map(e=>({...e, _tipo:'cust', cor: e.tipo==='alerta'?'#f87171':'#fbbf24'})),
+  ].filter(e=>e.data>=hoje).sort((a,b)=>a.data.localeCompare(b.data)).slice(0,20);
+
+  if(count) count.textContent = todos.length;
+
+  if(!todos.length) {
+    lista.innerHTML='<div style="font-size:.56rem;color:var(--dim2);text-align:center;padding:.8rem 0">Nenhum evento futuro</div>';
+    return;
+  }
+
+  const [ah,am,ad] = [new Date().getFullYear(), new Date().getMonth()+1, new Date().getDate()];
+  const nomesMes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const icon = {evento:'📌',vencimento:'📋',aporte:'💸',reuniao:'👥',resultado:'📊',alerta:'🔔',div:'💰'};
+
+  lista.innerHTML = todos.map(ev=>{
+    const [ano,mes,dia] = ev.data.split('-').map(Number);
+    const dt = `${dia} ${nomesMes[mes-1]}`;
+    const diffDays = Math.round((new Date(ano,mes-1,dia)-new Date(ah,am-1,ad))/(86400000));
+    const diffLabel = diffDays===0?'Hoje':diffDays===1?'Amanhã':`em ${diffDays}d`;
+    const tipo = ev._tipo==='div'?'div':(ev.tipo||'evento');
+    const ic = icon[tipo]||'📌';
+    const cor = ev.cor||'#fbbf24';
+    return `<div style="display:flex;gap:.5rem;align-items:center;padding:.3rem 0;border-bottom:1px solid var(--border);cursor:pointer"
+      onclick="calIrData('${ev.data}')">
+      <div style="min-width:36px;text-align:center;font-size:.46rem;font-weight:700;color:${cor};background:${cor}15;border-radius:5px;padding:2px 4px;line-height:1.4">
+        ${dt}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.58rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ic} ${ev.titulo||''}</div>
+        ${ev.ticker&&ev._tipo!=='div'?`<div style="font-size:.48rem;color:var(--dim)">${ev.ticker}</div>`:''}
+      </div>
+      <div style="font-size:.46rem;color:var(--dim2);white-space:nowrap">${diffLabel}</div>
+    </div>`;
+  }).join('');
+}
+
+function calIrData(dateStr) {
+  const [ano,mes,dia] = dateStr.split('-').map(Number);
+  calAnoAtual = ano; calMesAtual = mes-1;
+  calDataSelecionada = dateStr;
+  renderCalGrade();
+}
+
+// ── Alertas ──────────────────────────────────────────────────────────────────
+function calVerificarAlertasBanner() {
+  const banner = document.getElementById('cal-alertas-banner');
+  if(!banner) return;
+  const alertas = calGetAlertas();
+  if(!alertas.length) { banner.style.display='none'; return; }
+  banner.style.display='block';
+  banner.innerHTML = alertas.map(a=>
+    `<div class="cal-alert-badge" style="margin-bottom:.3rem;cursor:pointer" onclick="calMostrarAlertas()">
+      🔔 ${a.titulo} — ${a.dataLabel}
+    </div>`
+  ).join('');
+}
+
+function calGetAlertas() {
+  const hoje = new Date(); hoje.setHours(0,0,0,0);
+  const alertas = [];
+  (calGetCustom()).forEach(ev=>{
+    if(ev.tipo!=='alerta') return;
+    const [ano,mes,dia] = ev.data.split('-').map(Number);
+    const evDate = new Date(ano,mes-1,dia);
+    const diasAntes = parseInt(ev.alertaDias)||0;
+    const alertDate = new Date(evDate); alertDate.setDate(alertDate.getDate()-diasAntes);
+    alertDate.setHours(0,0,0,0);
+    const diffHoje = Math.round((evDate-hoje)/86400000);
+    if(alertDate<=hoje && diffHoje>=0) {
+      const label = diffHoje===0?'HOJE':diffHoje===1?'AMANHÃ':`em ${diffHoje} dias`;
+      alertas.push({...ev, dataLabel:label});
+    }
+  });
+  return alertas;
+}
+
+function calMostrarAlertas() {
+  const modal = document.getElementById('cal-modal-alertas');
+  const lista = document.getElementById('cal-alertas-lista');
+  if(!modal||!lista) return;
+
+  const alertas = calGetAlertas();
+  const todos   = calGetCustom().filter(e=>e.tipo==='alerta');
+
+  if(!todos.length) {
+    lista.innerHTML='<div style="font-size:.58rem;color:var(--dim2);text-align:center;padding:1rem">Nenhum alerta cadastrado.<br>Crie um evento do tipo 🔔 Alerta.</div>';
+  } else {
+    const ativos = alertas.map(a=>a.id);
+    lista.innerHTML = todos.map(ev=>{
+      const isAtivo = ativos.includes(ev.id);
+      const [ano,mes,dia] = ev.data.split('-').map(Number);
+      const nomesMes=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+      const dt = `${dia} ${nomesMes[mes-1]} ${ano}`;
+      const diffDays = Math.round((new Date(ano,mes-1,dia)-new Date())/(86400000));
+      const diffLabel = diffDays<0?`${Math.abs(diffDays)}d atrás`:diffDays===0?'Hoje':diffDays===1?'Amanhã':`em ${diffDays}d`;
+      return `<div style="background:${isAtivo?'#ef444415':'var(--bg3)'};border:1px solid ${isAtivo?'#ef444430':'var(--border2)'};border-radius:8px;padding:.55rem .7rem;margin-bottom:.4rem">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:.62rem;color:${isAtivo?'#f87171':'var(--text)'};font-weight:700">🔔 ${ev.titulo}</span>
+          <span style="font-size:.5rem;font-weight:700;padding:2px 7px;border-radius:4px;background:${isAtivo?'#ef4444':'var(--border)'};color:${isAtivo?'#fff':'var(--dim)'}">${diffLabel}</span>
+        </div>
+        <div style="font-size:.5rem;color:var(--dim);margin-top:.2rem">📅 ${dt} · ${ev.alertaDias===0?'No dia':'Alerta '+ev.alertaDias+'d antes'}${ev.alertaRepeat!=='none'?' · Repetição: '+({monthly:'Mensal',yearly:'Anual'}[ev.alertaRepeat]||''):''}${ev.ticker?' · 🏷 '+ev.ticker:''}</div>
+        <div style="display:flex;gap:.3rem;margin-top:.4rem">
+          <button class="btn" style="font-size:.48rem;padding:.18rem .45rem;background:var(--bg3);color:var(--dim);border:1px solid var(--border)" onclick="calAbrirModalEvento('${ev.data}','${ev.id}');document.getElementById('cal-modal-alertas').classList.remove('open')">✏️ Editar</button>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  modal.classList.add('open');
+}
+
+// ── Autocomplete no campo cal-ev-ticker ──────────────────────────────────────
+function calTickerAc(input) {
+  _acInput = input;
+  const q = (input.value||'').trim().toUpperCase();
+  _removeAcDD();
+  if(q.length<2) return;
+  const all=[..._AC_DATA.fii.map(([t,n])=>[t,n,'FII']),..._AC_DATA.acao.map(([t,n])=>[t,n,'AÇÃO']),...(_AC_DATA.etf||[]).map(([t,n])=>[t,n,'ETF'])];
+  const matches=all.filter(([t])=>t.startsWith(q)).slice(0,10);
+  if(!matches.length) return;
+  const tc={'FII':'#34d399','AÇÃO':'#38bdf8','ETF':'#fb923c'};
+  const tb={'FII':'#34d39915','AÇÃO':'#38bdf815','ETF':'#fb923c15'};
+  const tm={'FII':'FII','AÇÃO':'Ação','ETF':'ETF'};
+  const dd=document.createElement('div');dd.id='__acDD__';dd.className='ticker-ac-dropdown';
+  matches.forEach(([t,n,tipo])=>{
+    const item=document.createElement('div');item.className='ticker-ac-item';item.dataset.ticker=t;item.dataset.name=n;item.dataset.tipo=tipo;
+    const hl=t.startsWith(q)?'<span class="ac-match">'+t.slice(0,q.length)+'</span>'+t.slice(q.length):t;
+    item.innerHTML='<span class="ac-ticker" style="color:'+tc[tipo]+'">'+hl+'</span><span class="ac-name" style="flex:1">'+n+'</span><span style="font-size:.44rem;font-weight:700;padding:1px 4px;border-radius:3px;color:'+tc[tipo]+';background:'+tb[tipo]+'">'+tipo+'</span>';
+    item.addEventListener('mousedown',e=>e.preventDefault());
+    item.addEventListener('click',()=>{const inp=document.getElementById('cal-ev-ticker');if(inp)inp.value=t;_removeAcDD();});
+    dd.appendChild(item);
+  });
+  const rect=input.getBoundingClientRect();
+  dd.style.cssText='position:fixed;top:'+(rect.bottom+3)+'px;left:'+rect.left+'px;min-width:'+Math.max(rect.width,220)+'px;z-index:99999;';
+  document.body.appendChild(dd);_acDD=dd;_acSelIdx=-1;
+}
+function calTickerAcKey(e,input){
+  if(!_acDD)return;
+  const items=_acDD.querySelectorAll('.ticker-ac-item');if(!items.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();_acSelIdx=Math.min(_acSelIdx+1,items.length-1);items.forEach((it,i)=>it.classList.toggle('selected',i===_acSelIdx));}
+  else if(e.key==='ArrowUp'){e.preventDefault();_acSelIdx=Math.max(_acSelIdx-1,0);items.forEach((it,i)=>it.classList.toggle('selected',i===_acSelIdx));}
+  else if(e.key==='Enter'||e.key==='Tab'){const tgt=_acSelIdx>=0?items[_acSelIdx]:items[0];if(tgt){e.preventDefault();const inp=document.getElementById('cal-ev-ticker');if(inp)inp.value=tgt.dataset.ticker;_removeAcDD();}}
+  else if(e.key==='Escape'){_removeAcDD();}
 }
 
 async function calCarregar() {
   const token = getBrapiToken();
-  if (!token) {
-    toast('Configure um token BRAPI para buscar dividendos', false);
-    return;
-  }
-  // Collect all tickers from watchlist + carteira FIIs + carteira ações
-  const wlTickers  = watchlistItems.map(i => i.ticker);
-  const fiiTickers = (typeof carteira !== 'undefined') ? carteira.map(a => a.ticker) : [];
-  const acoTickers = (typeof carteiraAcoes !== 'undefined') ? carteiraAcoes.map(a => a.ticker) : [];
-  const tickers = [...new Set([...wlTickers, ...fiiTickers, ...acoTickers])].slice(0, 20);
-  if (!tickers.length) {
-    toast('Adicione ativos à watchlist ou carteira', false);
-    return;
-  }
-  _calEventos = [];
+  if(!token){ toast('Configure um token BRAPI para buscar dividendos',false); return; }
+  const wlTickers  = (typeof watchlistItems!=='undefined'?watchlistItems:[]).map(i=>i.ticker);
+  const fiiTickers = (typeof carteira!=='undefined'?carteira:[]).map(a=>a.ticker);
+  const acoTickers = (typeof carteiraAcoes!=='undefined'?carteiraAcoes:[]).map(a=>a.ticker);
+  const tickers = [...new Set([...wlTickers,...fiiTickers,...acoTickers])].slice(0,20);
+  if(!tickers.length){ toast('Adicione ativos à watchlist ou carteira',false); return; }
+  _calEventos=[];
   toast('Buscando dividendos...');
-  // Batch by 5
-  let dividendosNaoDisponivel = false;
-  for (let i = 0; i < tickers.length; i += 5) {
-    const batch = tickers.slice(i, i+5);
-    try {
-      const url = 'https://brapi.dev/api/quote/' + batch.join(',') + '?modules=dividendsData&token=' + token;
-      const r = await fetch(url);
-      if (r.status === 403) { dividendosNaoDisponivel = true; break; }
-      const d = await r.json();
-      if (!d.results) continue;
-      d.results.forEach(q => {
-        const divs = q.dividendsData?.cashDividends || [];
-        divs.forEach(dv => {
-          const payDate = dv.paymentDate || dv.declaredDate || '';
-          if (payDate) {
-            _calEventos.push({ ticker: q.symbol, payDate: payDate.slice(0,10), valor: dv.rate || 0 });
-          }
+  let naoDisp=false;
+  for(let i=0;i<tickers.length;i+=5){
+    const batch=tickers.slice(i,i+5);
+    try{
+      const r=await fetch('https://brapi.dev/api/quote/'+batch.join(',')+'?modules=dividendsData&token='+token);
+      if(r.status===403){naoDisp=true;break;}
+      const d=await r.json();
+      if(!d.results)continue;
+      d.results.forEach(q=>{
+        (q.dividendsData?.cashDividends||[]).forEach(dv=>{
+          const payDate=dv.paymentDate||dv.declaredDate||'';
+          if(payDate) _calEventos.push({ticker:q.symbol,payDate:payDate.slice(0,10),valor:dv.rate||0});
         });
       });
-    } catch(e) { console.warn('calCarregar batch error', e); }
+    }catch(e){}
   }
-  if (dividendosNaoDisponivel) {
-    toast('⚠️ Dados de dividendos exigem plano pago na brapi.dev — faça upgrade em brapi.dev/dashboard', false);
-    renderCalGrade();
-    return;
-  }
+  if(naoDisp){toast('⚠️ Dividendos exigem plano pago na brapi.dev',false);}
   renderCalGrade();
-  toast('Calendário atualizado — ' + _calEventos.length + ' eventos encontrados');
+  calRenderProximos();
+  if(!naoDisp) toast('Calendário atualizado — '+_calEventos.length+' dividendos');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -19743,12 +20268,22 @@ function iaSalvarDiario(encodedTexto) {
 
 <!-- ── MODAL: Registrar Compra ───────────────────────────── -->
 <div id="modal-hc" style="display:none;position:fixed;inset:0;background:#00000099;z-index:7000;align-items:center;justify-content:center;padding:1rem">
-  <div class="card" style="width:min(480px,96vw);display:flex;flex-direction:column;gap:.75rem;border:1px solid #38bdf840;box-shadow:0 0 40px #38bdf815;max-height:90vh;overflow-y:auto">
+  <div class="card" style="width:min(560px,96vw);display:flex;flex-direction:column;gap:.75rem;border:1.5px solid #38bdf840;box-shadow:0 0 40px #38bdf818;max-height:90vh;overflow-y:auto">
+
+    <!-- Header -->
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:1.15rem;color:var(--papel);letter-spacing:.05em">🛒 REGISTRAR COMPRA</div>
-      <button class="btn-icon" onclick="hcFecharModal()">✕</button>
+      <button class="btn-icon" onclick="hcFecharModal()" style="font-size:1rem">✕</button>
     </div>
 
+    <!-- Selecionar da carteira -->
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:.7rem .85rem">
+      <div style="font-size:.48rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.45rem;font-weight:700">📂 Selecionar da minha carteira</div>
+      <div style="display:flex;gap:.35rem;flex-wrap:wrap;max-height:90px;overflow-y:auto" id="hc-carteira-chips"></div>
+      <div style="font-size:.48rem;color:var(--dim2);margin-top:.4rem">Clique em um ativo para preencher automaticamente</div>
+    </div>
+
+    <!-- Data + Tipo -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">DATA DA COMPRA *</div>
@@ -19756,7 +20291,7 @@ function iaSalvarDiario(encodedTexto) {
       </div>
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">TIPO *</div>
-        <select id="hc-tipo">
+        <select id="hc-tipo" style="width:100%">
           <option value="Ação">Ação</option>
           <option value="ETF">ETF</option>
           <option value="FII">FII</option>
@@ -19764,48 +20299,66 @@ function iaSalvarDiario(encodedTexto) {
       </div>
     </div>
 
+    <!-- Ticker com autocomplete -->
     <div>
       <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">TICKER *</div>
-      <input type="text" id="hc-ticker" placeholder="ex: PETR4" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()" />
+      <div style="position:relative">
+        <input type="text" id="hc-ticker" placeholder="ex: PETR4 — ou selecione acima"
+          autocomplete="off"
+          oninput="this.value=this.value.toUpperCase();hcTickerAc(this)"
+          onfocus="hcTickerAc(this)"
+          onblur="tickerAcClose()"
+          onkeydown="hcTickerAcKey(event,this)"
+          style="text-transform:uppercase;width:100%" />
+      </div>
+      <div id="hc-ticker-badge" style="display:none;margin-top:.25rem;font-size:.52rem;color:var(--dim)"></div>
     </div>
 
+    <!-- Qtd + Preço -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">QUANTIDADE *</div>
-        <input type="number" id="hc-qtd" placeholder="0" min="1" step="1" oninput="hcCalcTotal()" />
+        <input type="number" id="hc-qtd" placeholder="0" min="1" step="1" oninput="hcCalcTotal()" style="width:100%" />
       </div>
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">PREÇO MÉDIO (R$) *</div>
-        <input type="number" id="hc-preco" placeholder="0.00" min="0" step="0.01" oninput="hcCalcTotal()" />
+        <input type="number" id="hc-preco" placeholder="0.00" min="0" step="0.01" oninput="hcCalcTotal()" style="width:100%" />
       </div>
     </div>
 
+    <!-- Corretora + Custos -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
       <div>
         <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">CORRETORA</div>
-        <input type="text" id="hc-corretora" placeholder="ex: XP, Clear, Rico..." />
+        <input type="text" id="hc-corretora" placeholder="ex: XP, Clear, Rico..." style="width:100%" />
       </div>
       <div>
-        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">CUSTOS (R$)</div>
-        <input type="number" id="hc-custos" placeholder="0.00" min="0" step="0.01" oninput="hcCalcTotal()" />
+        <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">CUSTOS / TAXAS (R$)</div>
+        <input type="number" id="hc-custos" placeholder="0.00" min="0" step="0.01" oninput="hcCalcTotal()" style="width:100%" />
       </div>
     </div>
 
+    <!-- Observação -->
     <div>
       <div style="font-size:.48rem;color:var(--dim);margin-bottom:.2rem">OBSERVAÇÃO</div>
-      <input type="text" id="hc-obs" placeholder="ex: Aporte mensal, rebalanceamento..." />
+      <input type="text" id="hc-obs" placeholder="ex: Aporte mensal, rebalanceamento..." style="width:100%" />
     </div>
 
     <!-- Preview do total -->
-    <div id="hc-preview-total" style="display:none;background:var(--bg3);border:1px solid #38bdf830;border-radius:8px;padding:.65rem .85rem">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem">
+    <div id="hc-preview-total" style="display:none;background:var(--bg3);border:1.5px solid #38bdf830;border-radius:10px;padding:.75rem .9rem">
+      <div style="font-size:.48rem;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-bottom:.45rem;font-weight:700">Prévia do Investimento</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem">
         <div>
-          <div style="font-size:.45rem;color:var(--dim)">TOTAL INVESTIDO</div>
-          <div id="hc-prev-total" class="num" style="font-size:1.1rem;color:var(--papel)">R$ 0,00</div>
+          <div style="font-size:.44rem;color:var(--dim)">TOTAL INVESTIDO</div>
+          <div id="hc-prev-total" class="num" style="font-size:1rem;color:var(--papel)">R$ 0,00</div>
         </div>
         <div>
-          <div style="font-size:.45rem;color:var(--dim)">TOTAL C/ CUSTOS</div>
-          <div id="hc-prev-total-custos" class="num" style="font-size:1.1rem;color:var(--hi)">R$ 0,00</div>
+          <div style="font-size:.44rem;color:var(--dim)">TOTAL C/ CUSTOS</div>
+          <div id="hc-prev-total-custos" class="num" style="font-size:1rem;color:var(--hi)">R$ 0,00</div>
+        </div>
+        <div>
+          <div style="font-size:.44rem;color:var(--dim)">PREÇO MÉDIO REAL</div>
+          <div id="hc-prev-pmedio-real" class="num" style="font-size:1rem;color:var(--green)">R$ 0,00</div>
         </div>
       </div>
     </div>
@@ -19813,8 +20366,8 @@ function iaSalvarDiario(encodedTexto) {
     <div id="hc-modal-erro" style="display:none;font-size:.58rem;color:var(--red);background:#f8717115;border:1px solid #f8717130;border-radius:6px;padding:.4rem .6rem"></div>
 
     <div style="display:flex;gap:.5rem;justify-content:flex-end">
-      <button class="btn btn-dim" onclick="hcFecharModal()">Cancelar</button>
-      <button class="btn" style="background:#38bdf818;color:var(--papel);border:1px solid #38bdf840;font-weight:700" onclick="hcSalvar()">💾 Salvar Compra</button>
+      <button class="btn" style="background:var(--bg3);color:var(--dim);border:1px solid var(--border2)" onclick="hcFecharModal()">Cancelar</button>
+      <button class="btn" style="background:#38bdf818;color:var(--papel);border:1px solid #38bdf840;font-weight:700;position:relative;z-index:1" onclick="try{hcSalvar()}catch(e){alert('Erro: '+e.message)}">💾 Salvar Compra</button>
     </div>
   </div>
 </div>
@@ -19959,34 +20512,152 @@ function hcSaveAll(arr) {
   }
 }
 
+// ── Chips da carteira para modal de Compras ──────────────────────────────
+function hcPopularChips() {
+  const wrap = document.getElementById('hc-carteira-chips');
+  if (!wrap) return;
+  const todos = [];
+  try {
+    const fiis  = (typeof carteira      !== 'undefined' ? carteira      : []) || [];
+    const acoes = (typeof carteiraAcoes !== 'undefined' ? carteiraAcoes : []) || [];
+    const etfs  = (typeof carteiraEtfs  !== 'undefined' ? carteiraEtfs  : []) || [];
+    fiis .forEach(a => todos.push({ ticker: a.ticker, tipo: 'FII',  pmedio: a.pMedio || a.preco || 0, cotas: a.cotas || 0 }));
+    acoes.forEach(a => todos.push({ ticker: a.ticker, tipo: 'Ação', pmedio: a.pMedio || a.pAtual || 0, cotas: a.qtd   || 0 }));
+    etfs .forEach(a => todos.push({ ticker: a.ticker, tipo: 'ETF',  pmedio: a.pMedio || a.pAtual || 0, cotas: a.qtd   || 0 }));
+  } catch(e) {}
+  if (!todos.length) {
+    wrap.innerHTML = '<span style="font-size:.55rem;color:var(--dim2)">Nenhum ativo nas carteiras ainda.</span>';
+    return;
+  }
+  const typeColor = { 'FII':'#34d399', 'Ação':'#38bdf8', 'ETF':'#fb923c' };
+  const typeBg    = { 'FII':'#34d39915', 'Ação':'#38bdf815', 'ETF':'#fb923c15' };
+  wrap.innerHTML = todos.map(a => {
+    const bg  = typeBg[a.tipo]    || '#ffffff10';
+    const col = typeColor[a.tipo] || '#ffffff30';
+    const txt = typeColor[a.tipo] || 'var(--dim)';
+    const cs  = a.cotas ? '<span style="font-size:.44rem;opacity:.6;margin-left:.3rem">'+a.cotas+'u</span>' : '';
+    return '<button onclick="hcSelecionarAtivo(''+a.ticker+'',''+a.tipo+'','+a.pmedio+','+a.cotas+')"'
+      +' style="cursor:pointer;background:'+bg+';border:1.5px solid '+col+';border-radius:6px;'
+      +'padding:.28rem .6rem;font-size:.58rem;color:'+txt+';transition:all .15s;white-space:nowrap">'
+      +'<span style="font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:.04em">'+a.ticker+'</span>'
+      +'<span style="font-size:.44rem;opacity:.7;margin-left:.2rem">'+a.tipo+'</span>'+cs+'</button>';
+  }).join('');
+}
+
+function hcSelecionarAtivo(ticker, tipo, pmedio, cotas) {
+  const inp = document.getElementById('hc-ticker');
+  const sel = document.getElementById('hc-tipo');
+  if (inp) inp.value = ticker;
+  if (sel) sel.value = tipo;
+  if (pmedio > 0) { const el = document.getElementById('hc-preco'); if(el) el.value = pmedio.toFixed(2); }
+  if (cotas  > 0) { const el = document.getElementById('hc-qtd');   if(el) el.value = cotas; }
+  const badge = document.getElementById('hc-ticker-badge');
+  if (badge) {
+    const c = {'FII':'#34d399','Ação':'#38bdf8','ETF':'#fb923c'}[tipo]||'var(--green)';
+    badge.innerHTML = '<span style="font-family:'Bebas Neue',sans-serif;font-size:.78rem;color:'+c+';letter-spacing:.04em">'+ticker+'</span>'
+      +' · <span style="color:var(--dim)">'+tipo+'</span>'
+      +(pmedio>0?' · <span style="color:var(--dim)">P.Médio: R$ '+pmedio.toFixed(2).replace('.',',')+'</span>':'')
+      +(cotas>0?' · <span style="color:var(--dim)">'+cotas+' un</span>':'');
+    badge.style.display='block';
+  }
+  document.querySelectorAll('#hc-carteira-chips button').forEach(b=>b.style.outline='');
+  if(event&&event.target){const btn=event.target.closest('button');if(btn)btn.style.outline='2px solid var(--green)';}
+  hcCalcTotal();
+}
+
+function hcTickerAc(input) {
+  _acInput = input;
+  const q = (input.value||'').trim().toUpperCase();
+  _removeAcDD();
+  if (q.length < 2) { const b=document.getElementById('hc-ticker-badge');if(b)b.style.display='none';return; }
+  const all = [
+    ..._AC_DATA.fii.map( ([t,n])=>[t,n,'FII']),
+    ..._AC_DATA.acao.map(([t,n])=>[t,n,'AÇÃO']),
+    ...(_AC_DATA.etf||[]).map(([t,n])=>[t,n,'ETF']),
+  ];
+  const matches = all.filter(([t])=>t.startsWith(q)).slice(0,14);
+  if(!matches.length) return;
+  const typeColor={'FII':'#34d399','AÇÃO':'#38bdf8','ETF':'#fb923c'};
+  const typeBg   ={'FII':'#34d39915','AÇÃO':'#38bdf815','ETF':'#fb923c15'};
+  const tipoMap  ={'FII':'FII','AÇÃO':'Ação','ETF':'ETF'};
+  const dd=document.createElement('div');
+  dd.id='__acDD__';dd.className='ticker-ac-dropdown';dd.style.minWidth='260px';
+  const hdr=document.createElement('div');
+  hdr.style.cssText='padding:.22rem .65rem .15rem;font-size:.44rem;color:var(--dim2);letter-spacing:.08em;border-bottom:1px solid var(--border);text-transform:uppercase';
+  hdr.textContent=matches.length+' resultado'+(matches.length>1?'s':'')+' · ↑↓ · Enter';
+  dd.appendChild(hdr);
+  matches.forEach(([t,n,tipo],i)=>{
+    const item=document.createElement('div');
+    item.className='ticker-ac-item';item.dataset.ticker=t;item.dataset.name=n;item.dataset.tipo=tipo;item.dataset.idx=i;
+    const hl=t.startsWith(q)?'<span class="ac-match">'+t.slice(0,q.length)+'</span>'+t.slice(q.length):t;
+    item.innerHTML='<span class="ac-ticker" style="color:'+typeColor[tipo]+'">'+hl+'</span>'
+      +'<span class="ac-name" style="flex:1">'+n+'</span>'
+      +'<span style="font-size:.44rem;font-weight:700;padding:1px 5px;border-radius:3px;color:'+typeColor[tipo]+';background:'+typeBg[tipo]+';flex-shrink:0">'+tipo+'</span>';
+    item.addEventListener('mousedown',e=>e.preventDefault());
+    item.addEventListener('click',()=>hcTickerAcApply(t,n,tipo,tipoMap[tipo]));
+    dd.appendChild(item);
+  });
+  const rect=input.getBoundingClientRect();
+  dd.style.cssText='position:fixed;top:'+(rect.bottom+3)+'px;left:'+rect.left+'px;min-width:'+Math.max(rect.width,260)+'px;z-index:99999;';
+  document.body.appendChild(dd);_acDD=dd;_acSelIdx=-1;
+}
+
+function hcTickerAcApply(ticker,name,tipoLabel,tipoVal){
+  const inp=document.getElementById('hc-ticker');if(inp)inp.value=ticker;
+  const sel=document.getElementById('hc-tipo');if(sel&&tipoVal)sel.value=tipoVal;
+  _removeAcDD();
+  const badge=document.getElementById('hc-ticker-badge');
+  if(badge){
+    const c={'FII':'#34d399','AÇÃO':'#38bdf8','ETF':'#fb923c'}[tipoLabel]||'var(--green)';
+    badge.innerHTML='<span style="font-family:'Bebas Neue',sans-serif;font-size:.78rem;color:'+c+';letter-spacing:.04em">'+ticker+'</span>'
+      +' · <span style="color:var(--dim)">'+name+'</span>';
+    badge.style.display='block';
+  }
+}
+
+function hcTickerAcKey(e,input){
+  if(!_acDD)return;
+  const items=_acDD.querySelectorAll('.ticker-ac-item');if(!items.length)return;
+  if(e.key==='ArrowDown'){e.preventDefault();_acSelIdx=Math.min(_acSelIdx+1,items.length-1);items.forEach((it,i)=>it.classList.toggle('selected',i===_acSelIdx));}
+  else if(e.key==='ArrowUp'){e.preventDefault();_acSelIdx=Math.max(_acSelIdx-1,0);items.forEach((it,i)=>it.classList.toggle('selected',i===_acSelIdx));}
+  else if(e.key==='Enter'||e.key==='Tab'){
+    const tgt=_acSelIdx>=0?items[_acSelIdx]:items[0];
+    if(tgt){e.preventDefault();hcTickerAcApply(tgt.dataset.ticker,tgt.dataset.name,tgt.dataset.tipo,{'FII':'FII','AÇÃO':'Ação','ETF':'ETF'}[tgt.dataset.tipo]||'Ação');}
+  }else if(e.key==='Escape'){_removeAcDD();}
+}
+
 function hcAbrirModal(id) {
   const el = document.getElementById('modal-hc');
+  if (!el) return;
+  hcPopularChips();
   if (id !== undefined) {
-    // editar
     const arr = hcGetAll();
     const r = arr.find(x => x.id === id);
     if (!r) return;
-    document.getElementById('hc-data').value = r.data;
-    document.getElementById('hc-tipo').value = r.tipo;
-    document.getElementById('hc-ticker').value = r.ticker;
-    document.getElementById('hc-qtd').value = r.qtd;
-    document.getElementById('hc-preco').value = r.preco;
+    document.getElementById('hc-data').value      = r.data      || '';
+    document.getElementById('hc-tipo').value      = r.tipo      || 'Ação';
+    document.getElementById('hc-ticker').value    = r.ticker    || '';
+    document.getElementById('hc-qtd').value       = r.qtd       || '';
+    document.getElementById('hc-preco').value     = r.preco     || '';
     document.getElementById('hc-corretora').value = r.corretora || '';
-    document.getElementById('hc-custos').value = r.custos || 0;
-    document.getElementById('hc-obs').value = r.obs || '';
+    document.getElementById('hc-custos').value    = r.custos    || '';
+    document.getElementById('hc-obs').value       = r.obs       || '';
     el.dataset.editId = id;
+    const badge = document.getElementById('hc-ticker-badge');
+    if(badge&&r.ticker){badge.textContent=r.ticker+' — editando';badge.style.display='block';}
   } else {
-    // novo
     delete el.dataset.editId;
-    document.getElementById('hc-data').value = new Date().toISOString().slice(0,10);
-    document.getElementById('hc-tipo').value = 'Ação';
-    document.getElementById('hc-ticker').value = '';
-    document.getElementById('hc-qtd').value = '';
-    document.getElementById('hc-preco').value = '';
+    document.getElementById('hc-data').value      = new Date().toISOString().slice(0,10);
+    document.getElementById('hc-tipo').value      = 'Ação';
+    document.getElementById('hc-ticker').value    = '';
+    document.getElementById('hc-qtd').value       = '';
+    document.getElementById('hc-preco').value     = '';
     document.getElementById('hc-corretora').value = '';
-    document.getElementById('hc-custos').value = '';
-    document.getElementById('hc-obs').value = '';
+    document.getElementById('hc-custos').value    = '';
+    document.getElementById('hc-obs').value       = '';
     document.getElementById('hc-preview-total').style.display = 'none';
+    const badge = document.getElementById('hc-ticker-badge');
+    if(badge) badge.style.display='none';
   }
   document.getElementById('hc-modal-erro').style.display = 'none';
   hcCalcTotal();
@@ -19997,14 +20668,17 @@ function hcFecharModal() {
 }
 
 function hcCalcTotal() {
-  const qtd = parseFloat(document.getElementById('hc-qtd').value) || 0;
-  const preco = parseFloat(document.getElementById('hc-preco').value) || 0;
-  const custos = parseFloat(document.getElementById('hc-custos').value) || 0;
+  const qtd    = parseFloat(document.getElementById('hc-qtd')?.value)    || 0;
+  const preco  = parseFloat(document.getElementById('hc-preco')?.value)  || 0;
+  const custos = parseFloat(document.getElementById('hc-custos')?.value) || 0;
   if (qtd > 0 && preco > 0) {
-    const total = qtd * preco;
-    const totalC = total + custos;
-    document.getElementById('hc-prev-total').textContent = 'R$ ' + total.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
-    document.getElementById('hc-prev-total-custos').textContent = 'R$ ' + totalC.toLocaleString('pt-BR', {minimumFractionDigits:2, maximumFractionDigits:2});
+    const total   = qtd * preco;
+    const totalC  = total + custos;
+    const pMedioR = totalC / qtd;
+    const fmt     = v => 'R$ ' + v.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const el1 = document.getElementById('hc-prev-total');          if(el1) el1.textContent = fmt(total);
+    const el2 = document.getElementById('hc-prev-total-custos');   if(el2) el2.textContent = fmt(totalC);
+    const el3 = document.getElementById('hc-prev-pmedio-real');    if(el3) el3.textContent = fmt(pMedioR);
     document.getElementById('hc-preview-total').style.display = 'block';
   } else {
     document.getElementById('hc-preview-total').style.display = 'none';
@@ -21810,12 +22484,1581 @@ function advClearChat() {
 }
 </script>
 
+<!-- ══════════════════════════════════════════════════════════════════════════
+     PAGE: CHECKLIST ATIVOS
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="page" id="page-checklistativos">
+
+<style>
+/* ── CHECKLIST PAGE ── */
+.ck-hero {
+  background: linear-gradient(135deg,#07080f 0%,#0d0f1e 50%,#080b18 100%);
+  border: 1.5px solid var(--border2);
+  border-radius: 16px;
+  padding: 1.4rem 1.8rem;
+  margin-bottom: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+.ck-hero::before {
+  content:'';
+  position:absolute;top:-40px;right:-40px;
+  width:180px;height:180px;
+  background:radial-gradient(circle,#00e5a018 0%,transparent 70%);
+  pointer-events:none;
+}
+.ck-hero-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:2rem; letter-spacing:.07em; color:var(--white); line-height:1;
+}
+.ck-hero-sub { font-size:.58rem; color:var(--dim); letter-spacing:.05em; margin-top:.3rem; }
+
+/* Modal overlay */
+.ck-modal-overlay {
+  display:none;position:fixed;inset:0;background:#00000099;z-index:9000;
+  align-items:center;justify-content:center;padding:1rem;
+}
+.ck-modal-overlay.open { display:flex; }
+.ck-modal {
+  background:var(--bg2);border:1.5px solid var(--border2);border-radius:16px;
+  padding:1.5rem 1.8rem;width:100%;max-width:680px;max-height:90vh;
+  overflow-y:auto;position:relative;
+}
+.ck-modal-title {
+  font-family:'Bebas Neue',sans-serif;
+  font-size:1.5rem;letter-spacing:.06em;color:var(--white);margin-bottom:.2rem;
+}
+.ck-modal-sub { font-size:.54rem;color:var(--dim);margin-bottom:1.2rem;letter-spacing:.05em; }
+
+/* Field grid inside modal */
+.ck-fields-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:.7rem;
+  margin-bottom:1rem;
+}
+.ck-field { display:flex;flex-direction:column;gap:.25rem; }
+.ck-field-full { grid-column:1/-1; }
+.ck-label {
+  font-size:.52rem;color:var(--dim);letter-spacing:.08em;
+  text-transform:uppercase;font-weight:700;
+}
+.ck-label span.ck-auto {
+  font-size:.44rem;color:var(--green);margin-left:.3rem;
+  background:#00e5a015;border-radius:3px;padding:1px 4px;letter-spacing:.04em;
+}
+.ck-label span.ck-manual {
+  font-size:.44rem;color:var(--yellow);margin-left:.3rem;
+  background:#fbbf2415;border-radius:3px;padding:1px 4px;letter-spacing:.04em;
+}
+.ck-input {
+  background:var(--bg3);border:1px solid var(--border2);border-radius:6px;
+  color:var(--hi);font-family:'IBM Plex Mono',monospace;font-size:.7rem;
+  padding:.35rem .55rem;outline:none;transition:border-color .15s;width:100%;
+}
+.ck-input:focus { border-color:#2a3a60; }
+.ck-input::placeholder { color:#1e2740; }
+.ck-input.ck-filled { border-color:#00e5a040;background:#00e5a008; }
+.ck-select {
+  background:var(--bg3);border:1px solid var(--border2);border-radius:6px;
+  color:var(--hi);font-family:'IBM Plex Mono',monospace;font-size:.68rem;
+  padding:.35rem .55rem;outline:none;width:100%;
+}
+.ck-select:focus { border-color:#2a3a60; }
+
+/* Criterion toggle buttons (Sim/Não/–) */
+.ck-toggle-row { display:flex;gap:.35rem; }
+.ck-toggle {
+  flex:1;padding:.3rem 0;font-size:.58rem;font-weight:700;letter-spacing:.04em;
+  border-radius:6px;border:1px solid var(--border2);background:var(--bg3);
+  color:var(--dim);cursor:pointer;text-align:center;transition:all .15s;
+}
+.ck-toggle:hover { border-color:var(--border2);color:var(--text); }
+.ck-toggle.active-sim  { background:#00e5a018;border-color:#00e5a060;color:var(--green); }
+.ck-toggle.active-nao  { background:#f8717118;border-color:#f8717160;color:var(--red); }
+.ck-toggle.active-nd   { background:#1e273040;border-color:#64748b40;color:var(--dim); }
+
+/* Search row */
+.ck-search-row {
+  display:flex;gap:.6rem;align-items:flex-end;margin-bottom:1rem;
+}
+.ck-buscar-btn {
+  background:var(--green);color:#07080f;border:none;border-radius:8px;
+  font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:.65rem;
+  padding:.4rem 1rem;cursor:pointer;white-space:nowrap;transition:opacity .15s;
+  letter-spacing:.04em;
+}
+.ck-buscar-btn:hover { opacity:.85; }
+.ck-buscar-btn:disabled { opacity:.4;cursor:not-allowed; }
+
+/* Action buttons */
+.ck-btn-row { display:flex;gap:.55rem;justify-content:flex-end;margin-top:1.2rem; }
+.ck-btn-save {
+  background:var(--green);color:#07080f;border:none;border-radius:8px;
+  font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:.65rem;
+  padding:.45rem 1.4rem;cursor:pointer;letter-spacing:.05em;transition:opacity .15s;
+}
+.ck-btn-save:hover { opacity:.85; }
+.ck-btn-cancel {
+  background:var(--bg3);color:var(--dim);border:1px solid var(--border2);
+  border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:.65rem;
+  padding:.45rem 1rem;cursor:pointer;letter-spacing:.04em;transition:all .15s;
+}
+.ck-btn-cancel:hover { color:var(--text);border-color:var(--border2); }
+
+/* Asset cards list */
+.ck-list { display:flex;flex-direction:column;gap:.65rem; }
+.ck-card {
+  background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;
+  padding:1rem 1.2rem;transition:border-color .15s;
+}
+.ck-card:hover { border-color:var(--border2); }
+.ck-card-head {
+  display:flex;align-items:center;gap:.7rem;margin-bottom:.65rem;
+  justify-content:space-between;
+}
+.ck-card-left { display:flex;align-items:center;gap:.7rem; }
+.ck-ticker-badge {
+  font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:.08em;
+  color:var(--white);background:var(--bg3);border:1px solid var(--border2);
+  border-radius:8px;padding:.15rem .7rem;
+}
+.ck-seg-badge {
+  font-size:.48rem;color:var(--dim);letter-spacing:.07em;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:20px;padding:.15rem .55rem;
+}
+.ck-score-badge {
+  font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.06em;
+  border-radius:8px;padding:.15rem .65rem;border:1.5px solid;
+}
+.ck-score-a  { color:var(--green);border-color:#00e5a050;background:#00e5a012; }
+.ck-score-b  { color:#38bdf8;border-color:#38bdf850;background:#38bdf812; }
+.ck-score-c  { color:var(--yellow);border-color:#fbbf2450;background:#fbbf2412; }
+.ck-score-d  { color:var(--red);border-color:#f8717150;background:#f8717112; }
+
+/* Criteria grid on the card */
+.ck-criteria-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(130px,1fr));
+  gap:.4rem;
+}
+.ck-crit-item {
+  background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+  padding:.35rem .55rem;
+}
+.ck-crit-name {
+  font-size:.45rem;color:var(--dim);letter-spacing:.07em;
+  text-transform:uppercase;font-weight:700;margin-bottom:.2rem;
+}
+.ck-crit-val {
+  font-size:.65rem;font-weight:700;color:var(--hi);
+}
+.ck-crit-val.green { color:var(--green); }
+.ck-crit-val.red   { color:var(--red); }
+.ck-crit-val.yellow { color:var(--yellow); }
+.ck-crit-val.blue  { color:#38bdf8; }
+
+/* Card action icons */
+.ck-card-actions { display:flex;gap:.4rem; }
+.ck-act-btn {
+  background:var(--bg3);border:1px solid var(--border);border-radius:6px;
+  padding:.25rem .5rem;cursor:pointer;font-size:.7rem;
+  transition:all .15s;color:var(--dim);
+}
+.ck-act-btn:hover { border-color:var(--border2);color:var(--text); }
+.ck-act-btn.del:hover { border-color:#f8717180;color:var(--red); }
+
+/* Score legend */
+.ck-legend {
+  display:flex;gap:.6rem;flex-wrap:wrap;
+  font-size:.48rem;color:var(--dim);letter-spacing:.06em;
+  margin-bottom:.8rem;
+}
+.ck-legend-dot { display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:.25rem; }
+
+/* Empty state */
+.ck-empty {
+  text-align:center;padding:3rem 1rem;
+  font-size:.62rem;color:var(--dim);letter-spacing:.06em;
+}
+.ck-empty-icon { font-size:2.5rem;margin-bottom:.7rem; }
+
+/* BRAPI note */
+.ck-brapi-note {
+  font-size:.5rem;color:var(--dim2);letter-spacing:.05em;
+  background:var(--bg3);border:1px solid var(--border);
+  border-radius:6px;padding:.4rem .7rem;margin-bottom:1rem;
+  display:flex;align-items:center;gap:.5rem;
+}
+</style>
+
+<!-- Hero -->
+<div class="ck-hero">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:.7rem">
+    <div>
+      <div class="ck-hero-title">✅ CHECKLIST DE ATIVOS</div>
+      <div class="ck-hero-sub">Avaliação criteriosa de ações · dados preenchidos via BRAPI + manual</div>
+    </div>
+    <button class="ck-buscar-btn" style="font-size:.68rem;padding:.5rem 1.3rem" onclick="ckAbrirModal()">
+      + Adicionar Ativo
+    </button>
+  </div>
+</div>
+
+<!-- Legend -->
+<div class="ck-legend">
+  <span><span class="ck-legend-dot" style="background:var(--green)"></span>A — Excelente (≥ 80%)</span>
+  <span><span class="ck-legend-dot" style="background:#38bdf8"></span>B — Bom (60–79%)</span>
+  <span><span class="ck-legend-dot" style="background:var(--yellow)"></span>C — Regular (40–59%)</span>
+  <span><span class="ck-legend-dot" style="background:var(--red)"></span>D — Fraco (< 40%)</span>
+  <span style="margin-left:auto"><span style="color:var(--green);font-weight:700">AUTO</span> = preenchido pelo BRAPI &nbsp;|&nbsp; <span style="color:var(--yellow);font-weight:700">MANUAL</span> = preenchimento do usuário</span>
+</div>
+
+<!-- BRAPI note -->
+<div class="ck-brapi-note" id="ck-brapi-warn" style="display:none">
+  ⚠️ Token BRAPI não configurado — o preenchimento automático ficará indisponível.
+  <a onclick="goPage('token')" style="color:var(--papel);cursor:pointer;text-decoration:underline;margin-left:.3rem">Configurar token →</a>
+</div>
+
+<!-- Sort / filter bar -->
+<div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;flex-wrap:wrap">
+  <div style="font-size:.52rem;color:var(--dim);letter-spacing:.07em">ORDENAR:</div>
+  <select class="ck-select" style="width:auto;font-size:.55rem;padding:.25rem .5rem" id="ck-sort" onchange="renderChecklistAtivos()">
+    <option value="score">Score (maior)</option>
+    <option value="ticker">Ticker (A–Z)</option>
+    <option value="data">Mais recente</option>
+  </select>
+  <div style="font-size:.52rem;color:var(--dim);letter-spacing:.07em;margin-left:.4rem">FILTRAR:</div>
+  <select class="ck-select" style="width:auto;font-size:.55rem;padding:.25rem .5rem" id="ck-filter" onchange="renderChecklistAtivos()">
+    <option value="">Todos</option>
+    <option value="A">Score A</option>
+    <option value="B">Score B</option>
+    <option value="C">Score C</option>
+    <option value="D">Score D</option>
+  </select>
+  <div style="margin-left:auto;font-size:.52rem;color:var(--dim)" id="ck-count"></div>
+</div>
+
+<!-- List -->
+<div class="ck-list" id="ck-list"></div>
+
+</div><!-- /page-checklistativos -->
+
+</div><!-- /main-content -->
+</div><!-- /app-shell -->
+
+<!-- ══ MODAL: ADICIONAR / EDITAR ATIVO ══ -->
+<div class="ck-modal-overlay" id="ck-modal-overlay" onclick="ckFecharModalFora(event)">
+  <div class="ck-modal" id="ck-modal">
+    <div class="ck-modal-title">📋 ADICIONAR ATIVO</div>
+    <div class="ck-modal-sub">Campos marcados <span style="color:var(--green);font-weight:700">AUTO</span> são preenchidos via BRAPI · <span style="color:var(--yellow);font-weight:700">MANUAL</span> requerem preenchimento do usuário</div>
+
+    <!-- ── Ticker + Segmento + Buscar ── -->
+    <div class="ck-search-row" style="position:relative">
+      <div class="ck-field" style="flex:1;position:relative">
+        <label class="ck-label">Ticker <span class="ck-auto">AUTO</span></label>
+        <input class="ck-input" id="ck-f-ticker" type="text" placeholder="Ex: ITUB4" maxlength="8" autocomplete="off"
+          oninput="this.value=this.value.toUpperCase();ckTickerInput(this.value)" />
+        <!-- Dropdown sugestões -->
+        <div id="ck-ticker-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;z-index:9999;
+          background:var(--bg2);border:1.5px solid var(--border2);border-radius:8px;
+          box-shadow:0 8px 24px #00000060;max-height:200px;overflow-y:auto;margin-top:2px"></div>
+      </div>
+      <div class="ck-field" style="min-width:150px">
+        <label class="ck-label">Segmento <span class="ck-auto">AUTO</span></label>
+        <input class="ck-input" id="ck-f-segmento" type="text" placeholder="Ex: Bancos" />
+      </div>
+      <button class="ck-buscar-btn" id="ck-buscar-btn" onclick="ckBuscarBrapi()">🔍 Buscar Ativo</button>
+    </div>
+
+    <!-- Divider -->
+    <div style="border-top:1px solid var(--border);margin-bottom:1rem"></div>
+
+    <!-- ── SEÇÃO: TAG ALONG + FREE FLOAT + IPO ── -->
+    <div style="font-size:.52rem;color:var(--dim2);letter-spacing:.08em;margin-bottom:.6rem;font-weight:700">GOVERNANÇA & ESTRUTURA</div>
+    <div class="ck-fields-grid" style="margin-bottom:.9rem">
+      <div class="ck-field">
+        <label class="ck-label">Tag Along (%) <span class="ck-auto">AUTO</span></label>
+        <input class="ck-input" id="ck-f-takalong" type="number" placeholder="Ex: 100" step="0.1" />
+      </div>
+      <div class="ck-field">
+        <label class="ck-label">Free Float (%) <span class="ck-auto">AUTO</span></label>
+        <input class="ck-input" id="ck-f-freefloat" type="number" placeholder="Ex: 40" step="0.1" />
+      </div>
+      <div class="ck-field">
+        <label class="ck-label">IPO ≥ 5 anos? <span class="ck-auto">AUTO</span></label>
+        <div class="ck-toggle-row" id="ck-f-ipo-toggle">
+          <button class="ck-toggle" data-val="sim" onclick="ckToggle('ipo','sim',this)">✓ SIM</button>
+          <button class="ck-toggle" data-val="nao" onclick="ckToggle('ipo','nao',this)">✗ NÃO</button>
+          <button class="ck-toggle active-nd" data-val="nd" onclick="ckToggle('ipo','nd',this)">— N/D</button>
+        </div>
+        <input type="hidden" id="ck-f-ipo" value="nd" />
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO: PAYOUT ── -->
+    <div style="border-top:1px solid var(--border);padding-top:.8rem;margin-bottom:.6rem">
+      <div style="font-size:.52rem;color:var(--dim2);letter-spacing:.08em;font-weight:700;margin-bottom:.6rem">
+        💰 PAYOUT <span style="color:var(--dim);font-weight:400">(distribuição de lucros)</span>
+      </div>
+      <div class="ck-fields-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:.5rem">
+        <div class="ck-field">
+          <label class="ck-label">Payout Atual (%) <span class="ck-auto">AUTO</span></label>
+          <input class="ck-input" id="ck-f-payout-atual" type="number" placeholder="Ex: 40" step="0.1" />
+        </div>
+        <div class="ck-field">
+          <label class="ck-label">Payout Médio Empresa (%) <span class="ck-manual">MANUAL</span></label>
+          <input class="ck-input" id="ck-f-payout-med-emp" type="number" placeholder="Ex: 38" step="0.1" />
+        </div>
+        <div class="ck-field">
+          <label class="ck-label">Payout Médio Segmento (%) <span class="ck-manual">MANUAL</span></label>
+          <input class="ck-input" id="ck-f-payout-med-seg" type="number" placeholder="Ex: 35" step="0.1" />
+        </div>
+      </div>
+      <!-- Payout histórico 10 anos -->
+      <div class="ck-field ck-field-full" style="margin-bottom:.3rem">
+        <label class="ck-label" style="margin-bottom:.4rem">Payout histórico — últimos 10 anos (%) <span class="ck-manual">MANUAL</span>
+          <span style="color:var(--dim);font-weight:400;text-transform:none;font-size:.44rem;margin-left:.3rem">deixe em branco os anos sem dado</span>
+        </label>
+        <div id="ck-payout-hist-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:.35rem"></div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO: LUCRO ── -->
+    <div style="border-top:1px solid var(--border);padding-top:.8rem;margin-bottom:.6rem">
+      <div style="font-size:.52rem;color:var(--dim2);letter-spacing:.08em;font-weight:700;margin-bottom:.6rem">
+        📈 LUCRO LÍQUIDO <span style="color:var(--dim);font-weight:400">(R$ mil)</span>
+      </div>
+      <div class="ck-fields-grid" style="margin-bottom:.5rem">
+        <div class="ck-field">
+          <label class="ck-label">Lucro Crescente 10 anos? <span class="ck-manual">MANUAL</span></label>
+          <div class="ck-toggle-row" id="ck-f-lucro10-toggle">
+            <button class="ck-toggle" data-val="sim" onclick="ckToggle('lucro10','sim',this)">✓ SIM</button>
+            <button class="ck-toggle" data-val="nao" onclick="ckToggle('lucro10','nao',this)">✗ NÃO</button>
+            <button class="ck-toggle active-nd" data-val="nd" onclick="ckToggle('lucro10','nd',this)">— N/D</button>
+          </div>
+          <input type="hidden" id="ck-f-lucro10" value="nd" />
+        </div>
+        <div class="ck-field">
+          <label class="ck-label">Lucro Atual (R$ mil) <span class="ck-auto">AUTO</span></label>
+          <input class="ck-input" id="ck-f-lucro-atual" type="number" placeholder="Ex: 2500000" step="1"
+            oninput="ckFmtPreview('lucro-atual',this.value)" />
+          <div id="ck-f-lucro-atual-preview" style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;min-height:.9rem;margin-top:.15rem;letter-spacing:.03em"></div>
+        </div>
+      </div>
+      <!-- Lucro histórico 10 anos -->
+      <div class="ck-field ck-field-full" style="margin-bottom:.3rem">
+        <label class="ck-label" style="margin-bottom:.4rem">Lucro histórico — últimos 10 anos (R$ mil) <span class="ck-manual">MANUAL</span></label>
+        <div id="ck-lucro-hist-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:.35rem"></div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO: LPA ── -->
+    <div style="border-top:1px solid var(--border);padding-top:.8rem;margin-bottom:.6rem">
+      <div style="font-size:.52rem;color:var(--dim2);letter-spacing:.08em;font-weight:700;margin-bottom:.6rem">
+        📊 LPA — LUCRO POR AÇÃO <span style="color:var(--dim);font-weight:400">(R$)</span>
+      </div>
+      <div class="ck-fields-grid" style="margin-bottom:.5rem">
+        <div class="ck-field">
+          <label class="ck-label">LPA Crescente 5 anos? <span class="ck-manual">MANUAL</span></label>
+          <div class="ck-toggle-row" id="ck-f-lpa5-toggle">
+            <button class="ck-toggle" data-val="sim" onclick="ckToggle('lpa5','sim',this)">✓ SIM</button>
+            <button class="ck-toggle" data-val="nao" onclick="ckToggle('lpa5','nao',this)">✗ NÃO</button>
+            <button class="ck-toggle active-nd" data-val="nd" onclick="ckToggle('lpa5','nd',this)">— N/D</button>
+          </div>
+          <input type="hidden" id="ck-f-lpa5" value="nd" />
+        </div>
+        <div class="ck-field">
+          <label class="ck-label">LPA Atual (R$) <span class="ck-auto">AUTO</span></label>
+          <input class="ck-input" id="ck-f-lpa-atual" type="number" placeholder="Ex: 3.45" step="0.01" />
+        </div>
+      </div>
+      <!-- LPA histórico 10 anos -->
+      <div class="ck-field ck-field-full" style="margin-bottom:.3rem">
+        <label class="ck-label" style="margin-bottom:.4rem">LPA histórico — últimos 10 anos (R$) <span class="ck-manual">MANUAL</span></label>
+        <div id="ck-lpa-hist-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:.35rem"></div>
+      </div>
+    </div>
+
+    <!-- ── SEÇÃO: INDICADORES ── -->
+    <div style="border-top:1px solid var(--border);padding-top:.8rem;margin-bottom:.6rem">
+      <div style="font-size:.52rem;color:var(--dim2);letter-spacing:.08em;font-weight:700;margin-bottom:.6rem">⚙️ INDICADORES FINANCEIROS</div>
+      <div class="ck-fields-grid">
+        <div class="ck-field">
+          <label class="ck-label">ROE (%) <span class="ck-auto">AUTO</span></label>
+          <input class="ck-input" id="ck-f-roe" type="number" placeholder="Ex: 18.5" step="0.01" />
+        </div>
+        <div class="ck-field">
+          <label class="ck-label">DL/EBITDA <span class="ck-auto">AUTO</span></label>
+          <input class="ck-input" id="ck-f-dlebitda" type="number" placeholder="Ex: 1.2" step="0.01" />
+        </div>
+        <div class="ck-field">
+          <label class="ck-label">ROIC (%) <span class="ck-auto">AUTO</span></label>
+          <input class="ck-input" id="ck-f-roic" type="number" placeholder="Ex: 15" step="0.01" />
+        </div>
+        <div class="ck-field">
+          <label class="ck-label">Margem Líquida (%) <span class="ck-auto">AUTO</span></label>
+          <input class="ck-input" id="ck-f-margemliq" type="number" placeholder="Ex: 22" step="0.01" />
+        </div>
+        <div class="ck-field">
+          <label class="ck-label">FCL (R$ mil) <span class="ck-auto">AUTO</span></label>
+          <input class="ck-input" id="ck-f-fcl" type="number" placeholder="Ex: 5200000" step="1"
+            oninput="ckFmtPreview('fcl',this.value)" />
+          <div id="ck-f-fcl-preview" style="font-size:.6rem;color:var(--green);font-family:'IBM Plex Mono',monospace;min-height:.9rem;margin-top:.15rem;letter-spacing:.03em"></div>
+        </div>
+        <div class="ck-field">
+          <label class="ck-label">FCL Positivo (últimos 5a)? <span class="ck-manual">MANUAL</span></label>
+          <div class="ck-toggle-row" id="ck-f-fclpos-toggle">
+            <button class="ck-toggle" data-val="sim" onclick="ckToggle('fclpos','sim',this)">✓ SIM</button>
+            <button class="ck-toggle" data-val="nao" onclick="ckToggle('fclpos','nao',this)">✗ NÃO</button>
+            <button class="ck-toggle active-nd" data-val="nd" onclick="ckToggle('fclpos','nd',this)">— N/D</button>
+          </div>
+          <input type="hidden" id="ck-f-fclpos" value="nd" />
+        </div>
+        <div class="ck-field ck-field-full">
+          <label class="ck-label">Observações <span class="ck-manual">MANUAL</span></label>
+          <input class="ck-input" id="ck-f-obs" type="text" placeholder="Notas sobre o ativo..." />
+        </div>
+      </div>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="ck-btn-row">
+      <button class="ck-btn-cancel" onclick="ckFecharModal()">Cancelar</button>
+      <button class="ck-btn-save" onclick="ckSalvarAtivo()">💾 Salvar Ativo</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════════
+   CHECKLIST ATIVOS — lógica completa v2
+════════════════════════════════════════════════════════════════════════ */
+
+const CK_KEY = 'checklist-ativos';
+let ckAtivos = [];
+let ckEditId = null;
+
+// ── Lista de tickers B3 para autocomplete
+const CK_TICKERS_B3 = [
+  'ABEV3','ALOS3','ALPA4','AMBP3','ANIM3','ARZZ3','ASAI3','AZUL4',
+  'B3SA3','BBAS3','BBDC3','BBDC4','BBSE3','BEEF3','BIDI4','BIDI11',
+  'BPAC11','BRAP4','BRFS3','BRKM5','BRML3','BTOW3','CAML3','CCRO3',
+  'CIEL3','CLSC4','CMIG4','CMIN3','COGN3','CPFE3','CPLE6','CRFB3',
+  'CSAN3','CSMG3','CSNA3','CVCB3','CYRE3','DXCO3','ECOR3','EGIE3',
+  'ELET3','ELET6','EMBR3','ENEV3','ENGI11','EQTL3','EZTC3','FLRY3',
+  'GGBR4','GOAU4','GOLL4','GRND3','HAPV3','HYPE3','IGTI11','IRBR3',
+  'ITSA4','ITUB4','JBSS3','JHSF3','KLBN11','LREN3','LWSA3','MGLU3',
+  'MILS3','MOVI3','MRFG3','MRVE3','MULT3','MYPK3','NTCO3','OIBR3',
+  'PCAR3','PETR3','PETR4','PETZ3','PRIO3','QUAL3','RADL3','RAIZ4',
+  'RDOR3','RENT3','RRRP3','SAPR11','SBSP3','SEQL3','SIMH3','SLCE3',
+  'SMFT3','SMTO3','SOMA3','STBP3','SUZB3','TAEE11','TASA4','TEND3',
+  'TIMS3','TOTS3','TRPL4','UGPA3','UNIP6','USIM5','VALE3','VBBR3',
+  'VIVT3','WEGE3','WIZC3','YDUQ3',
+  // FIIs populares
+  'BCFF11','BPFF11','BTLG11','CPTS11','FIGS11','FIIB11','GGRC11',
+  'HGLG11','HSML11','HTMX11','HUSI11','IFIX11','JSRE11','KNCR11',
+  'KNRI11','MALL11','MXRF11','RBRF11','RECR11','RBRR11','RZTR11',
+  'TGAR11','TRXF11','VISC11','VGHF11','VRTA11','XPML11','XPLG11',
+];
+
+// ── Autocomplete ticker
+function ckTickerInput(val) {
+  const dd = document.getElementById('ck-ticker-dropdown');
+  if (!dd) return;
+  if (val.length < 2) { dd.style.display = 'none'; return; }
+
+  const matches = CK_TICKERS_B3.filter(t => t.startsWith(val)).slice(0, 10);
+  if (matches.length === 0) { dd.style.display = 'none'; return; }
+
+  dd.innerHTML = matches.map(t => `
+    <div onclick="ckTickerSelect('${t}')"
+      style="padding:.45rem .75rem;font-size:.68rem;font-family:'IBM Plex Mono',monospace;
+             color:var(--hi);cursor:pointer;letter-spacing:.04em;border-bottom:1px solid var(--border);
+             transition:background .1s"
+      onmouseenter="this.style.background='var(--bg3)'"
+      onmouseleave="this.style.background=''">${t}</div>`).join('');
+  dd.style.display = 'block';
+}
+
+function ckTickerSelect(ticker) {
+  const input = document.getElementById('ck-f-ticker');
+  if (input) input.value = ticker;
+  const dd = document.getElementById('ck-ticker-dropdown');
+  if (dd) dd.style.display = 'none';
+}
+
+// Fecha dropdown ao clicar fora
+document.addEventListener('click', e => {
+  if (!e.target.closest('#ck-f-ticker') && !e.target.closest('#ck-ticker-dropdown')) {
+    const dd = document.getElementById('ck-ticker-dropdown');
+    if (dd) dd.style.display = 'none';
+  }
+});
+
+// ── Gera os campos de histórico anual (10 anos)
+function ckBuildHistGrids() {
+  const ano = new Date().getFullYear();
+  const anos = Array.from({length:10}, (_,i) => ano - 9 + i); // mais antigo → mais recente
+
+  const buildGrid = (containerId, prefix, placeholder, step) => {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = anos.map(a => `
+      <div style="display:flex;flex-direction:column;gap:.2rem">
+        <div style="font-size:.44rem;color:var(--dim2);text-align:center;font-weight:700">${a}</div>
+        <input class="ck-input" id="ck-f-${prefix}-${a}" type="number"
+          placeholder="${placeholder}" step="${step}"
+          style="text-align:center;font-size:.6rem;padding:.28rem .2rem" />
+      </div>`).join('');
+  };
+
+  buildGrid('ck-payout-hist-grid', 'payout', '—', '0.1');
+  buildGrid('ck-lucro-hist-grid',  'lucro',  '—', '1');
+  buildGrid('ck-lpa-hist-grid',    'lpa',    '—', '0.01');
+}
+
+// ── Lê os 10 valores de um histórico como array
+function ckGetHist(prefix) {
+  const ano = new Date().getFullYear();
+  return Array.from({length:10}, (_,i) => ano - 9 + i).map(a => {
+    const v = document.getElementById(`ck-f-${prefix}-${a}`)?.value;
+    return (v === '' || v === null || v === undefined) ? null : Number(v);
+  });
+}
+
+// ── Seta os valores de um histórico
+function ckSetHist(prefix, arr) {
+  if (!Array.isArray(arr)) return;
+  const ano = new Date().getFullYear();
+  const anos = Array.from({length:10}, (_,i) => ano - 9 + i);
+  arr.forEach((v, i) => {
+    const el = document.getElementById(`ck-f-${prefix}-${anos[i]}`);
+    if (el && v !== null && v !== undefined) el.value = v;
+  });
+}
+
+// ── Carrega / Salva
+function ckLoad() {
+  const d = stGet(CK_KEY);
+  if (d && Array.isArray(d)) ckAtivos = d;
+}
+function ckSave() { stSet(CK_KEY, ckAtivos); }
+
+// ── Score
+function ckScore(a) {
+  let pts = 0, total = 0;
+  const num = (v, ok) => { if (v !== null && v !== undefined && v !== '') { total += 10; if (ok(Number(v))) pts += 10; } };
+  const tog = v => { if (v && v !== 'nd') { total += 10; if (v === 'sim') pts += 10; } };
+
+  num(a.takalong,    v => v >= 100);
+  num(a.freefloat,   v => v >= 25);
+  num(a.payoutAtual, v => v >= 25 && v <= 60);
+  num(a.roe,         v => v >= 15);
+  num(a.dlebitda,    v => v <= 3);
+  num(a.roic,        v => v >= 12);
+  num(a.margemliq,   v => v >= 10);
+  tog(a.ipo);
+  tog(a.lucro10);
+  tog(a.lpa5);
+  tog(a.fclpos);
+
+  // Bônus histórico: payout consistente nos 10 anos
+  if (Array.isArray(a.payoutHist)) {
+    const vals = a.payoutHist.filter(v => v !== null);
+    if (vals.length >= 5) { total += 10; if (vals.every(v => v >= 20)) pts += 10; }
+  }
+  // Bônus lucro crescente
+  if (Array.isArray(a.lucroHist)) {
+    const vals = a.lucroHist.filter(v => v !== null);
+    if (vals.length >= 5) {
+      total += 10;
+      let crescente = true;
+      for (let i = 1; i < vals.length; i++) if (vals[i] < vals[i-1]) { crescente = false; break; }
+      if (crescente) pts += 10;
+    }
+  }
+  // Bônus LPA crescente
+  if (Array.isArray(a.lpaHist)) {
+    const vals = a.lpaHist.filter(v => v !== null);
+    if (vals.length >= 3) {
+      total += 10;
+      let crescente = true;
+      for (let i = 1; i < vals.length; i++) if (vals[i] < vals[i-1]) { crescente = false; break; }
+      if (crescente) pts += 10;
+    }
+  }
+
+  if (total === 0) return null;
+  return Math.round((pts / total) * 100);
+}
+
+function ckGrade(score) {
+  if (score === null) return { grade:'?',  cls:'ck-score-c', label:'Sem dados' };
+  if (score >= 80)   return { grade:'A',  cls:'ck-score-a', label:'Excelente' };
+  if (score >= 60)   return { grade:'B',  cls:'ck-score-b', label:'Bom' };
+  if (score >= 40)   return { grade:'C',  cls:'ck-score-c', label:'Regular' };
+  return               { grade:'D',  cls:'ck-score-d', label:'Fraco' };
+}
+
+// ── Render principal
+function renderChecklistAtivos() {
+  ckLoad();
+  const warn = document.getElementById('ck-brapi-warn');
+  if (warn) warn.style.display = getBrapiToken() ? 'none' : 'block';
+
+  const list    = document.getElementById('ck-list');
+  const counter = document.getElementById('ck-count');
+  if (!list) return;
+
+  const sortVal   = document.getElementById('ck-sort')?.value   || 'score';
+  const filterVal = document.getElementById('ck-filter')?.value || '';
+
+  let items = [...ckAtivos];
+  if (filterVal) items = items.filter(a => ckGrade(ckScore(a)).grade === filterVal);
+
+  items.sort((a, b) => {
+    if (sortVal === 'score')  return (ckScore(b) ?? -1) - (ckScore(a) ?? -1);
+    if (sortVal === 'ticker') return a.ticker.localeCompare(b.ticker);
+    if (sortVal === 'data')   return (b._ts || 0) - (a._ts || 0);
+    return 0;
+  });
+
+  if (counter) counter.textContent = `${items.length} ativo${items.length !== 1 ? 's' : ''}`;
+
+  if (items.length === 0) {
+    list.innerHTML = `<div class="ck-empty"><div class="ck-empty-icon">📋</div>
+      <div>${ckAtivos.length === 0 ? 'Nenhum ativo adicionado ainda.<br>Clique em <b>+ Adicionar Ativo</b> para começar.' : 'Nenhum ativo corresponde ao filtro selecionado.'}</div></div>`;
+    return;
+  }
+
+  const fmt  = (v, suf='') => (v !== null && v !== undefined && v !== '') ? `${Number(v).toLocaleString('pt-BR',{maximumFractionDigits:2})}${suf}` : '—';
+  const fmtK = v => { if (!v && v !== 0) return '—'; const n=Number(v); if(Math.abs(n)>=1e6) return `R$${(n/1e6).toFixed(2)}B`; if(Math.abs(n)>=1e3) return `R$${(n/1e3).toFixed(2)}M`; return `R$${n.toLocaleString('pt-BR')} mil`; };
+  const tog  = v => v==='sim'?'<span style="color:var(--green);font-weight:700">✓ SIM</span>':v==='nao'?'<span style="color:var(--red);font-weight:700">✗ NÃO</span>':'<span style="color:var(--dim)">—</span>';
+
+  const miniSparkline = (arr, color) => {
+    if (!Array.isArray(arr)) return '';
+    const vals = arr.map(v => v === null ? null : Number(v));
+    const nonNull = vals.filter(v => v !== null);
+    if (nonNull.length < 2) return '';
+    const min = Math.min(...nonNull), max = Math.max(...nonNull);
+    const range = max - min || 1;
+    const W = 120, H = 28;
+    const pts = vals.map((v, i) => {
+      const x = (i / (vals.length - 1)) * W;
+      const y = v === null ? null : H - ((v - min) / range) * H;
+      return y === null ? null : `${x.toFixed(1)},${y.toFixed(1)}`;
+    }).filter(Boolean).join(' ');
+    return `<svg width="${W}" height="${H}" style="display:block;margin-top:3px">
+      <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+    </svg>`;
+  };
+
+  list.innerHTML = items.map(a => {
+    const sc    = ckScore(a);
+    const grade = ckGrade(sc);
+    const cROE  = a.roe       ? (a.roe>=15?'green':a.roe>=10?'yellow':'red') : '';
+    const cDL   = a.dlebitda  ? (a.dlebitda<=2?'green':a.dlebitda<=3.5?'yellow':'red') : '';
+    const cROIC = a.roic      ? (a.roic>=12?'green':a.roic>=8?'yellow':'red') : '';
+    const cML   = a.margemliq ? (a.margemliq>=15?'green':a.margemliq>=8?'yellow':'red') : '';
+    const cTag  = a.takalong  ? (a.takalong>=100?'green':a.takalong>=80?'yellow':'red') : '';
+    const cFF   = a.freefloat ? (a.freefloat>=25?'green':a.freefloat>=15?'yellow':'red') : '';
+
+    const hasPayoutHist = Array.isArray(a.payoutHist) && a.payoutHist.some(v=>v!==null);
+    const hasLucroHist  = Array.isArray(a.lucroHist)  && a.lucroHist.some(v=>v!==null);
+    const hasLpaHist    = Array.isArray(a.lpaHist)    && a.lpaHist.some(v=>v!==null);
+    const ano = new Date().getFullYear();
+    const anos10 = Array.from({length:10},(_,i)=>ano-9+i);
+
+    return `
+    <div class="ck-card" id="ck-card-${a.id}">
+      <div class="ck-card-head">
+        <div class="ck-card-left">
+          <div class="ck-ticker-badge">${esc(a.ticker)}</div>
+          ${a.segmento ? `<div class="ck-seg-badge">${esc(a.segmento)}</div>` : ''}
+          <div class="ck-score-badge ${grade.cls}">${grade.grade} · ${sc!==null?sc+'%':'?'}</div>
+          <div style="font-size:.5rem;color:var(--dim2);letter-spacing:.05em">${grade.label}</div>
+        </div>
+        <div class="ck-card-actions">
+          <button class="ck-act-btn" onclick="ckEditarAtivo('${a.id}')" title="Editar">✏️</button>
+          <button class="ck-act-btn" onclick="ckAtualizarBrapi('${a.id}')" title="Atualizar via BRAPI">🔄</button>
+          <button class="ck-act-btn del" onclick="ckRemoverAtivo('${a.id}')" title="Remover">🗑</button>
+        </div>
+      </div>
+
+      <div class="ck-criteria-grid">
+        <div class="ck-crit-item"><div class="ck-crit-name">Tag Along</div><div class="ck-crit-val ${cTag}">${fmt(a.takalong,'%')}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">Free Float</div><div class="ck-crit-val ${cFF}">${fmt(a.freefloat,'%')}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">Payout Atual</div><div class="ck-crit-val blue">${fmt(a.payoutAtual,'%')}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">Payout Méd. Emp.</div><div class="ck-crit-val">${fmt(a.payoutMedEmp,'%')}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">Payout Méd. Seg.</div><div class="ck-crit-val">${fmt(a.payoutMedSeg,'%')}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">IPO ≥ 5 anos</div><div class="ck-crit-val">${tog(a.ipo)}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">Lucro 10 anos</div><div class="ck-crit-val">${tog(a.lucro10)}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">Lucro Atual</div><div class="ck-crit-val ${a.lucroAtual>0?'green':''}">${fmtK(a.lucroAtual)}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">LPA 5 anos</div><div class="ck-crit-val">${tog(a.lpa5)}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">LPA Atual</div><div class="ck-crit-val blue">${fmt(a.lpaAtual,'')}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">ROE</div><div class="ck-crit-val ${cROE}">${fmt(a.roe,'%')}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">DL/EBITDA</div><div class="ck-crit-val ${cDL}">${fmt(a.dlebitda,'x')}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">ROIC</div><div class="ck-crit-val ${cROIC}">${fmt(a.roic,'%')}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">Margem Líq.</div><div class="ck-crit-val ${cML}">${fmt(a.margemliq,'%')}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">FCL</div><div class="ck-crit-val ${a.fcl>0?'green':a.fcl<0?'red':''}">${fmtK(a.fcl)}</div></div>
+        <div class="ck-crit-item"><div class="ck-crit-name">FCL Positivo 5a</div><div class="ck-crit-val">${tog(a.fclpos)}</div></div>
+      </div>
+
+      ${(hasPayoutHist || hasLucroHist || hasLpaHist) ? `
+      <div style="margin-top:.7rem;border-top:1px solid var(--border);padding-top:.6rem;
+                  display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.65rem">
+        ${hasPayoutHist ? `<div>
+          <div style="font-size:.44rem;color:var(--dim);letter-spacing:.07em;font-weight:700;margin-bottom:.15rem">PAYOUT HISTÓRICO (%)</div>
+          ${miniSparkline(a.payoutHist,'#38bdf8')}
+          <div style="display:flex;gap:.2rem;flex-wrap:wrap;margin-top:.25rem">
+            ${anos10.map((ano,i)=>{const v=a.payoutHist?.[i];return v!==null&&v!==undefined?`<span style="font-size:.42rem;color:var(--dim2)">${String(ano).slice(2)}<span style="color:var(--hi);margin-left:.15rem">${Number(v).toFixed(0)}%</span></span>`:''}).filter(Boolean).join('')}
+          </div>
+        </div>` : ''}
+        ${hasLucroHist ? `<div>
+          <div style="font-size:.44rem;color:var(--dim);letter-spacing:.07em;font-weight:700;margin-bottom:.15rem">LUCRO HISTÓRICO</div>
+          ${miniSparkline(a.lucroHist,'#00e5a0')}
+          <div style="display:flex;gap:.2rem;flex-wrap:wrap;margin-top:.25rem">
+            ${anos10.map((ano,i)=>{const v=a.lucroHist?.[i];return v!==null&&v!==undefined?`<span style="font-size:.42rem;color:var(--dim2)">${String(ano).slice(2)}<span style="color:var(--hi);margin-left:.15rem">${fmtK(v)}</span></span>`:''}).filter(Boolean).join('')}
+          </div>
+        </div>` : ''}
+        ${hasLpaHist ? `<div>
+          <div style="font-size:.44rem;color:var(--dim);letter-spacing:.07em;font-weight:700;margin-bottom:.15rem">LPA HISTÓRICO (R$)</div>
+          ${miniSparkline(a.lpaHist,'#818cf8')}
+          <div style="display:flex;gap:.2rem;flex-wrap:wrap;margin-top:.25rem">
+            ${anos10.map((ano,i)=>{const v=a.lpaHist?.[i];return v!==null&&v!==undefined?`<span style="font-size:.42rem;color:var(--dim2)">${String(ano).slice(2)}<span style="color:var(--hi);margin-left:.15rem">R$${Number(v).toFixed(2)}</span></span>`:''}).filter(Boolean).join('')}
+          </div>
+        </div>` : ''}
+      </div>` : ''}
+
+      ${a.obs ? `<div style="margin-top:.5rem;font-size:.52rem;color:var(--dim);letter-spacing:.04em;border-top:1px solid var(--border);padding-top:.4rem">💬 ${esc(a.obs)}</div>` : ''}
+      <div style="margin-top:.35rem;font-size:.44rem;color:var(--dim2);letter-spacing:.04em">
+        Adicionado em ${a._ts ? new Date(a._ts).toLocaleDateString('pt-BR') : '—'}
+        ${a._brapiUpdated ? ' · BRAPI: ' + new Date(a._brapiUpdated).toLocaleString('pt-BR') : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Abrir modal
+function ckAbrirModal(id) {
+  ckEditId = id || null;
+  ckLoad();
+  ckBuildHistGrids();
+
+  const overlay = document.getElementById('ck-modal-overlay');
+  const title   = document.querySelector('#ck-modal .ck-modal-title');
+  overlay.classList.add('open');
+
+  // Reset todos os campos simples
+  ['ticker','segmento','takalong','freefloat',
+   'payout-atual','payout-med-emp','payout-med-seg',
+   'lucro-atual','lpa-atual',
+   'roe','dlebitda','roic','margemliq','fcl','obs']
+    .forEach(f => { const el = document.getElementById('ck-f-'+f); if(el) el.value = ''; });
+  ['ipo','lucro10','lpa5','fclpos'].forEach(k => ckResetToggle(k));
+
+  if (id) {
+    title.textContent = '✏️ EDITAR ATIVO';
+    const a = ckAtivos.find(x => x.id === id);
+    if (a) {
+      const set = (fid, val) => { const el = document.getElementById('ck-f-'+fid); if(el && val !== undefined && val !== null) el.value = val; };
+      set('ticker',          a.ticker);
+      set('segmento',        a.segmento);
+      set('takalong',        a.takalong);
+      set('freefloat',       a.freefloat);
+      set('payout-atual',    a.payoutAtual);
+      set('payout-med-emp',  a.payoutMedEmp);
+      set('payout-med-seg',  a.payoutMedSeg);
+      set('lucro-atual',     a.lucroAtual);
+      set('lpa-atual',       a.lpaAtual);
+      set('roe',             a.roe);
+      set('dlebitda',        a.dlebitda);
+      set('roic',            a.roic);
+      set('margemliq',       a.margemliq);
+      set('fcl',             a.fcl);
+      set('obs',             a.obs);
+      ['ipo','lucro10','lpa5','fclpos'].forEach(k => { if(a[k]) ckSetToggleActive(k, a[k]); });
+      if (a.payoutHist) ckSetHist('payout', a.payoutHist);
+      if (a.lucroHist)  ckSetHist('lucro',  a.lucroHist);
+      if (a.lpaHist)    ckSetHist('lpa',    a.lpaHist);
+    }
+  } else {
+    title.textContent = '📋 ADICIONAR ATIVO';
+  }
+}
+
+// ── Fechar modal
+function ckFecharModal() {
+  document.getElementById('ck-modal-overlay').classList.remove('open');
+  ckEditId = null;
+}
+function ckFecharModalFora(e) {
+  if (e.target === document.getElementById('ck-modal-overlay')) ckFecharModal();
+}
+
+// ── Toggles
+function ckToggle(key, val, btn) {
+  const row = document.getElementById(`ck-f-${key}-toggle`);
+  if (!row) return;
+  row.querySelectorAll('.ck-toggle').forEach(b => b.classList.remove('active-sim','active-nao','active-nd'));
+  btn.classList.add(val==='sim'?'active-sim':val==='nao'?'active-nao':'active-nd');
+  const h = document.getElementById(`ck-f-${key}`);
+  if (h) h.value = val;
+}
+function ckResetToggle(key) {
+  const row = document.getElementById(`ck-f-${key}-toggle`);
+  if (!row) return;
+  row.querySelectorAll('.ck-toggle').forEach(b => {
+    b.classList.remove('active-sim','active-nao','active-nd');
+    if (b.dataset.val === 'nd') b.classList.add('active-nd');
+  });
+  const h = document.getElementById(`ck-f-${key}`);
+  if (h) h.value = 'nd';
+}
+function ckSetToggleActive(key, val) {
+  const row = document.getElementById(`ck-f-${key}-toggle`);
+  if (!row) return;
+  row.querySelectorAll('.ck-toggle').forEach(b => {
+    b.classList.remove('active-sim','active-nao','active-nd');
+    if (b.dataset.val === val) b.classList.add(val==='sim'?'active-sim':val==='nao'?'active-nao':'active-nd');
+  });
+  const h = document.getElementById(`ck-f-${key}`);
+  if (h) h.value = val;
+}
+
+// ── BRAPI busca
+async function ckBuscarBrapi() {
+  const ticker = document.getElementById('ck-f-ticker')?.value.trim().toUpperCase();
+  if (!ticker) { toast('Digite um ticker antes de buscar.', false); return; }
+  const token = getBrapiToken();
+  if (!token) { toast('Configure um Token BRAPI na aba Token.', false); return; }
+
+  const btn = document.getElementById('ck-buscar-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⟳ Buscando...'; }
+
+  // Helper: seta campo e marca como preenchido
+  const setF = (fid, val) => {
+    const el = document.getElementById('ck-f-' + fid);
+    if (!el || val === undefined || val === null || val === '') return;
+    el.value = val;
+    el.classList.add('ck-filled');
+    // Atualiza preview de formatação se existir
+    if (fid === 'fcl' || fid === 'lucro-atual') ckFmtPreview(fid, val);
+  };
+
+  // Helper: valor numérico seguro (trata 0 como válido, rejeita null/undefined/NaN)
+  const num = v => (v !== null && v !== undefined && !isNaN(v)) ? Number(v) : null;
+
+  let filled = 0;
+
+  try {
+    // ── 1ª tentativa: com módulos fundamentalistas
+    const url1 = buildBrapiUrl(ticker, 'modules=financialData,defaultKeyStatistics,summaryProfile&fundamental=true');
+    const res1 = await fetch(url1);
+    let r = null;
+
+    if (res1.ok) {
+      const j = await res1.json();
+      r = j.results?.[0] || null;
+    }
+
+    // ── 2ª tentativa: endpoint básico (sem módulos) — fallback
+    if (!r) {
+      const url2 = buildBrapiUrl(ticker, 'fundamental=true');
+      const res2 = await fetch(url2);
+      if (!res2.ok) throw new Error(`HTTP ${res2.status} — ativo não encontrado.`);
+      const j2 = await res2.json();
+      r = j2.results?.[0];
+      if (!r) throw new Error('Ativo não encontrado na BRAPI.');
+    }
+
+    const fd = r.financialData         || {};
+    const ks = r.defaultKeyStatistics  || {};
+    const sp = r.summaryProfile        || {};
+
+    // ── Segmento
+    const seg = sp.sector || sp.industry || r.sector || r.industry;
+    if (seg) { setF('segmento', seg); filled++; }
+
+    // ── ROE (decimal → %)
+    const roe = num(fd.returnOnEquity);
+    if (roe !== null) { setF('roe', +(roe * 100).toFixed(2)); filled++; }
+
+    // ── ROIC
+    const roic = num(ks.returnOnCapital) ?? num(fd.returnOnAssets);
+    if (roic !== null) { setF('roic', +(roic * 100).toFixed(2)); filled++; }
+
+    // ── Margem Líquida
+    const ml = num(fd.profitMargins);
+    if (ml !== null) { setF('margemliq', +(ml * 100).toFixed(2)); filled++; }
+
+    // ── DL/EBITDA
+    const debt = num(fd.totalDebt), ebitda = num(fd.ebitda), cash = num(fd.totalCash) ?? 0;
+    if (debt !== null && ebitda !== null && ebitda > 0) {
+      setF('dlebitda', +((debt - cash) / ebitda).toFixed(2)); filled++;
+    }
+
+    // ── Free Float
+    const ff = num(ks.floatShares), shares = num(ks.sharesOutstanding);
+    if (ff !== null && shares !== null && shares > 0) {
+      setF('freefloat', +((ff / shares) * 100).toFixed(1)); filled++;
+    } else if (num(r.freeFloat) !== null) {
+      setF('freefloat', r.freeFloat); filled++;
+    }
+
+    // ── Tag Along
+    if (r.tagAlong !== undefined && r.tagAlong !== null) {
+      setF('takalong', r.tagAlong); filled++;
+    }
+
+    // ── FCL (freeCashflow vem em R$, guardamos em R$ mil)
+    const fcl = num(fd.freeCashflow);
+    if (fcl !== null) { setF('fcl', Math.round(fcl / 1000)); filled++; }
+
+    // ── LPA (earningsPerShare direto no resultado principal)
+    const lpa = num(r.earningsPerShare) ?? num(ks.trailingEps);
+    if (lpa !== null) { setF('lpa-atual', +lpa.toFixed(2)); filled++; }
+
+    // ── Lucro Líquido
+    const lucro = num(fd.netIncome) ?? num(r.netIncome);
+    if (lucro !== null) { setF('lucro-atual', Math.round(lucro / 1000)); filled++; }
+
+    // ── Payout
+    const payout = num(ks.payoutRatio);
+    if (payout !== null) { setF('payout-atual', +(payout * 100).toFixed(1)); filled++; }
+
+    // ── IPO / listingDate
+    const listDate = r.listingDate || ks.dateFirstTradeDateEpochUtc;
+    if (listDate) {
+      const d = typeof listDate === 'number' ? new Date(listDate * 1000) : new Date(listDate);
+      if (!isNaN(d)) {
+        ckSetToggleActive('ipo', (Date.now() - d.getTime()) / (1000*60*60*24*365) >= 5 ? 'sim' : 'nao');
+        filled++;
+      }
+    }
+
+    if (filled === 0) {
+      toast(`⚠ ${ticker} encontrado, mas sem dados fundamentalistas disponíveis. Preencha manualmente.`, false);
+    } else {
+      toast(`✅ ${filled} campos preenchidos para ${ticker}! Complete os campos manuais.`);
+    }
+
+  } catch(err) {
+    toast(`⚠ Erro ao buscar ${ticker}: ${err.message}`, false);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔍 Buscar Ativo'; }
+  }
+}
+
+// ── BRAPI atualiza ativo existente
+async function ckAtualizarBrapi(id) {
+  ckLoad();
+  const a = ckAtivos.find(x => x.id === id);
+  if (!a || !getBrapiToken()) { toast('Configure um Token BRAPI na aba Token.', false); return; }
+  toast(`⟳ Atualizando ${a.ticker}...`);
+  try {
+    const url = buildBrapiUrl(a.ticker, 'modules=financialData,defaultKeyStatistics,summaryProfile&fundamental=true');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const r = (await res.json()).results?.[0];
+    if (!r) throw new Error('Ativo não encontrado.');
+    const fd = r.financialData || {}, ks = r.defaultKeyStatistics || {}, sp = r.summaryProfile || {};
+    if (sp.sector||sp.industry)         a.segmento   = sp.sector||sp.industry;
+    if (fd.returnOnEquity)              a.roe        = +(fd.returnOnEquity*100).toFixed(2);
+    if (ks.returnOnCapital)             a.roic       = +(ks.returnOnCapital*100).toFixed(2);
+    else if (fd.returnOnAssets)         a.roic       = +(fd.returnOnAssets*100).toFixed(2);
+    if (fd.profitMargins)               a.margemliq  = +(fd.profitMargins*100).toFixed(2);
+    if (fd.totalDebt&&fd.ebitda>0)      a.dlebitda   = +((fd.totalDebt-(fd.totalCash||0))/fd.ebitda).toFixed(2);
+    if (ks.floatShares&&ks.sharesOutstanding>0) a.freefloat = +((ks.floatShares/ks.sharesOutstanding)*100).toFixed(1);
+    else if (r.freeFloat)               a.freefloat  = r.freeFloat;
+    if (r.tagAlong!==undefined)         a.takalong   = r.tagAlong;
+    if (fd.freeCashflow)                a.fcl        = Math.round(fd.freeCashflow/1000);
+    if (r.earningsPerShare)             a.lpaAtual   = +(r.earningsPerShare).toFixed(2);
+    if (fd.netIncome)                   a.lucroAtual = Math.round(fd.netIncome/1000);
+    if (ks.payoutRatio)                 a.payoutAtual= +(ks.payoutRatio*100).toFixed(1);
+    const ld = r.listingDate||ks.dateFirstTradeDateEpochUtc;
+    if (ld) { const d=typeof ld==='number'?new Date(ld*1000):new Date(ld); a.ipo=(Date.now()-d.getTime())/(1000*60*60*24*365)>=5?'sim':'nao'; }
+    a._brapiUpdated = Date.now();
+    ckSave(); renderChecklistAtivos();
+    toast(`✅ ${a.ticker} atualizado!`);
+  } catch(err) { toast(`⚠ Erro: ${err.message}`, false); }
+}
+
+// ── Salvar ativo
+function ckSalvarAtivo() {
+  const ticker = document.getElementById('ck-f-ticker')?.value.trim().toUpperCase();
+  if (!ticker) { toast('Informe o ticker.', false); return; }
+  ckLoad();
+  if (!ckEditId && ckAtivos.find(x => x.ticker === ticker)) {
+    if (!confirm(`${ticker} já existe no checklist. Adicionar mesmo assim?`)) return;
+  }
+  const gN = fid => { const v=document.getElementById('ck-f-'+fid)?.value; return (v===''||v==null)?null:Number(v); };
+  const gS = fid => document.getElementById('ck-f-'+fid)?.value.trim()||'';
+  const gH = fid => document.getElementById('ck-f-'+fid)?.value||'nd';
+  const prev = ckEditId ? ckAtivos.find(x=>x.id===ckEditId) : null;
+
+  const ativo = {
+    id:           ckEditId || ('ck_'+Date.now()),
+    ticker,
+    segmento:     gS('segmento'),
+    takalong:     gN('takalong'),
+    freefloat:    gN('freefloat'),
+    payoutAtual:  gN('payout-atual'),
+    payoutMedEmp: gN('payout-med-emp'),
+    payoutMedSeg: gN('payout-med-seg'),
+    payoutHist:   ckGetHist('payout'),
+    lucro10:      gH('lucro10'),
+    lucroAtual:   gN('lucro-atual'),
+    lucroHist:    ckGetHist('lucro'),
+    lpa5:         gH('lpa5'),
+    lpaAtual:     gN('lpa-atual'),
+    lpaHist:      ckGetHist('lpa'),
+    ipo:          gH('ipo'),
+    roe:          gN('roe'),
+    dlebitda:     gN('dlebitda'),
+    roic:         gN('roic'),
+    margemliq:    gN('margemliq'),
+    fcl:          gN('fcl'),
+    fclpos:       gH('fclpos'),
+    obs:          gS('obs'),
+    _ts:          prev?._ts || Date.now(),
+    _brapiUpdated: prev?._brapiUpdated || null,
+  };
+
+  if (ckEditId) {
+    const idx = ckAtivos.findIndex(x=>x.id===ckEditId);
+    if (idx >= 0) ckAtivos[idx] = ativo;
+  } else {
+    ckAtivos.push(ativo);
+  }
+  ckSave(); ckFecharModal(); renderChecklistAtivos();
+  toast(`✅ ${ticker} ${ckEditId ? 'atualizado' : 'adicionado'} ao checklist!`);
+}
+
+function ckEditarAtivo(id) { ckAbrirModal(id); }
+
+function ckRemoverAtivo(id) {
+  ckLoad();
+  const a = ckAtivos.find(x=>x.id===id);
+  if (!a || !confirm(`Remover ${a.ticker} do checklist?`)) return;
+  ckAtivos = ckAtivos.filter(x=>x.id!==id);
+  ckSave(); renderChecklistAtivos();
+  toast(`${a.ticker} removido.`);
+}
+
+// ── Preview formatado em tempo real (valores em R$ mil)
+function ckFmtPreview(fieldId, rawVal) {
+  const el = document.getElementById('ck-f-' + fieldId + '-preview');
+  if (!el) return;
+  if (rawVal === '' || rawVal == null) { el.textContent = ''; return; }
+  const n = Number(rawVal);
+  let txt;
+  if (Math.abs(n) >= 1e6)      txt = `= R$ ${(n/1e6).toFixed(2).replace('.',',')}B`;
+  else if (Math.abs(n) >= 1e3) txt = `= R$ ${(n/1e3).toFixed(2).replace('.',',')}M`;
+  else                          txt = `= R$ ${n.toLocaleString('pt-BR')} mil`;
+  el.textContent = txt;
+  el.style.color = n >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+(function ckInit() { ckLoad(); })();
+</script>
+
 <!-- ─── Botão flutuante do Assistente ────────────────────────────────────── -->
 <button onclick="iaAssistAbrir()" title="Abrir assistente de IA"
   style="position:fixed;bottom:1.2rem;right:1.2rem;z-index:4999;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#818cf8,#6366f1);border:none;cursor:pointer;font-size:1.3rem;box-shadow:0 4px 20px #6366f150;transition:transform .2s"
   onmouseenter="this.style.transform='scale(1.1)'" onmouseleave="this.style.transform='scale(1)'">
   🤖
 </button>
+
+<!-- ══════════════ PAGE: TESTE — ENERGIA CVM ══════════════ -->
+<div class="page" id="page-teste">
+  <div class="sec-head">
+    <div class="sec-title">⚡ ENERGIA — CVM × BRAPI</div>
+    <div class="frow" style="gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-green" onclick="testeBuscarTodos()" id="btn-teste-buscar">🔄 Buscar Dados</button>
+      <button class="btn" style="background:#818cf818;color:#818cf8;border:1px solid #818cf830" onclick="testeLimpar()">🗑 Limpar</button>
+    </div>
+  </div>
+
+  <div style="font-size:.58rem;color:var(--dim);margin-bottom:.9rem;line-height:1.7">
+    Cruza dados históricos (5 anos) da <strong style="color:var(--green)">API CVM</strong> com cotações e indicadores da <strong style="color:var(--papel)">API Brapi</strong>
+    para 5 empresas do segmento <strong style="color:var(--yellow)">Energia Elétrica</strong> listadas na B3.
+    Token Brapi configurado na aba <strong>Token</strong>.
+  </div>
+
+  <!-- empresas fixas -->
+  <div class="g3" style="margin-bottom:1rem" id="teste-empresa-cards">
+    <!-- gerado por JS -->
+  </div>
+
+  <!-- status -->
+  <div id="teste-status" style="display:none;font-size:.6rem;color:var(--dim);padding:.5rem .8rem;background:var(--bg3);border-radius:8px;border:1px solid var(--border2);margin-bottom:.9rem;line-height:1.9"></div>
+
+  <!-- tabela comparativa -->
+  <div class="card" id="teste-tabela-wrap" style="display:none">
+    <div class="card-label">📊 COMPARATIVO — 5 ANOS DE DADOS</div>
+    <div style="overflow-x:auto">
+      <table class="tbl" id="teste-tbl" style="min-width:900px">
+        <thead>
+          <tr>
+            <th>EMPRESA</th>
+            <th>TICKER</th>
+            <th>PREÇO ATUAL</th>
+            <th>VAR. HOJE</th>
+            <th>P/L</th>
+            <th>P/VP</th>
+            <th>DY</th>
+            <th>ROE (CVM)</th>
+            <th>MARGEM LÍQ (CVM)</th>
+            <th>RECEITA 5A (R$)</th>
+            <th>LUCRO 5A (R$)</th>
+            <th>CRESC. RECEITA</th>
+            <th>CRESC. LUCRO</th>
+            <th>FONTE</th>
+          </tr>
+        </thead>
+        <tbody id="teste-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- cards individuais com histórico CVM -->
+  <div id="teste-historico-wrap" style="margin-top:1rem"></div>
+
+</div><!-- /page-teste -->
+
+<script>
+// ══════════════════════════════════════════════════════════
+//  TESTE — ENERGIA CVM × BRAPI
+// ══════════════════════════════════════════════════════════
+
+const TESTE_EMPRESAS = [
+  { nome: 'Engie Brasil',   ticker: 'EGIE3',  cnpj: '02.474.103/0001-19', cor: '#00e5a0' },
+  { nome: 'Taesa',          ticker: 'TAEE11', cnpj: '07.859.971/0001-30', cor: '#38bdf8' },
+  { nome: 'Copel',          ticker: 'CPLE6',  cnpj: '76.483.817/0001-20', cor: '#fb923c' },
+  { nome: 'Cemig',          ticker: 'CMIG4',  cnpj: '17.155.730/0001-64', cor: '#a78bfa' },
+  { nome: 'Auren Energia',  ticker: 'AURE3',  cnpj: '08.821.055/0001-94', cor: '#fbbf24' },
+];
+
+const TESTE_ANOS = 5;
+
+// Estado
+let testeResultados = {};
+
+function testeBrapiToken() {
+  return localStorage.getItem('brapi-token') || localStorage.getItem('brapiToken') || '';
+}
+
+function testeFmtMoeda(v) {
+  if (v == null || isNaN(v)) return '—';
+  const abs = Math.abs(v);
+  if (abs >= 1e9)  return 'R$ ' + (v/1e9).toFixed(2).replace('.',',') + 'B';
+  if (abs >= 1e6)  return 'R$ ' + (v/1e6).toFixed(2).replace('.',',') + 'M';
+  if (abs >= 1e3)  return 'R$ ' + (v/1e3).toFixed(1).replace('.',',') + 'k';
+  return 'R$ ' + v.toFixed(2).replace('.',',');
+}
+
+function testeFmtPct(v, decimals=1) {
+  if (v == null || isNaN(v)) return '—';
+  const s = v >= 0 ? '+' : '';
+  return s + v.toFixed(decimals).replace('.',',') + '%';
+}
+
+function testeCorPct(v) {
+  if (v == null || isNaN(v)) return 'var(--dim)';
+  return v >= 0 ? 'var(--green)' : 'var(--red)';
+}
+
+// Renderiza cards de empresa (status individual)
+function testeRenderCards() {
+  const wrap = document.getElementById('teste-empresa-cards');
+  wrap.innerHTML = TESTE_EMPRESAS.map(e => {
+    const r = testeResultados[e.ticker];
+    const status = !r ? 'idle' : r.loading ? 'loading' : r.erro ? 'erro' : 'ok';
+    const statusHtml = {
+      idle:    `<span style="color:var(--dim2)">Aguardando...</span>`,
+      loading: `<span style="color:var(--yellow);animation:pulse 1s infinite">⟳ Buscando...</span>`,
+      erro:    `<span style="color:var(--red)">⚠ ${r.erro}</span>`,
+      ok:      `<span style="color:var(--green)">✓ OK — Brapi + CVM</span>`,
+    }[status];
+    return `
+    <div class="card" style="border-left:3px solid ${e.cor}">
+      <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${e.cor};letter-spacing:.06em">${e.ticker}</div>
+        <div style="font-size:.55rem;color:var(--dim)">${e.nome}</div>
+      </div>
+      <div style="font-size:.52rem;color:var(--dim2);margin-bottom:.3rem">CNPJ: ${e.cnpj}</div>
+      <div style="font-size:.58rem">${statusHtml}</div>
+      ${status==='ok' ? `
+        <hr style="margin:.5rem 0">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">
+          <div><div style="font-size:.44rem;color:var(--dim)">PREÇO</div><div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--hi)">${r.brapi?.preco ? 'R$ '+r.brapi.preco.toFixed(2).replace('.',',') : '—'}</div></div>
+          <div><div style="font-size:.44rem;color:var(--dim)">DY</div><div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;color:var(--green)">${r.brapi?.dy ? r.brapi.dy.toFixed(2).replace('.',',')+' %' : '—'}</div></div>
+          <div><div style="font-size:.44rem;color:var(--dim)">P/L</div><div style="font-size:.75rem;color:var(--hi)">${r.brapi?.pl != null ? r.brapi.pl.toFixed(1) : '—'}</div></div>
+          <div><div style="font-size:.44rem;color:var(--dim)">ROE CVM</div><div style="font-size:.75rem;color:var(--papel)">${r.cvm?.roe != null ? r.cvm.roe.toFixed(1)+'%' : '—'}</div></div>
+        </div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// Busca dados Brapi de um ticker
+async function testeBuscarBrapi(ticker) {
+  const token = testeBrapiToken();
+  const base = 'https://brapi.dev/api/quote/';
+  const params = 'modules=financialData,defaultKeyStatistics,summaryDetail' + (token ? `&token=${token}` : '');
+  const url = `${base}${ticker}?${params}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Brapi HTTP ${res.status}`);
+  const data = await res.json();
+  const r = data.results?.[0];
+  if (!r) throw new Error('Sem dados Brapi');
+  const fd = r.financialData || {};
+  const ks = r.defaultKeyStatistics || {};
+  const sd = r.summaryDetail || {};
+  return {
+    preco:        r.regularMarketPrice ?? null,
+    varHoje:      r.regularMarketChangePercent ?? null,
+    pl:           r.priceEarningsRatio ?? ks.trailingPE ?? null,
+    pvp:          ks.priceToBook ?? null,
+    dy:           (sd.dividendYield ?? r.dividendYield ?? 0) * (sd.dividendYield > 1 ? 1 : 100),
+    roe:          fd.returnOnEquity != null ? fd.returnOnEquity * 100 : null,
+    margemLiq:    fd.profitMargins  != null ? fd.profitMargins * 100  : null,
+    ebitda:       fd.ebitda ?? null,
+    receitaTotal: fd.totalRevenue ?? null,
+    lucroLiq:     fd.netIncome ?? r.netIncome ?? null,
+  };
+}
+
+// Busca dados históricos CVM (5 anos)
+async function testeBuscarCvm(cnpj, anos) {
+  const cnpjLimpo = cnpj.replace(/\D/g, '');
+  const anoAtual = new Date().getFullYear();
+  const anoInicio = anoAtual - anos;
+
+  // Endpoints CVM dados abertos
+  const urls = [];
+  for (let a = anoInicio; a < anoAtual; a++) {
+    // DRE anual
+    urls.push(`https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_DRE_con_${a}.csv`);
+  }
+
+  const dadosAnuais = {};
+
+  // Busca cada ano
+  for (let a = anoInicio; a < anoAtual; a++) {
+    try {
+      // DRE
+      const urlDRE = `https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_DRE_con_${a}.csv`;
+      const resDRE = await fetch(urlDRE);
+      if (!resDRE.ok) continue;
+      const txtDRE = await resDRE.text();
+      const dreLinhas = txtDRE.split('\n');
+      const cabDRE = dreLinhas[0].split(';');
+      const iCNPJ = cabDRE.indexOf('CNPJ_CIA');
+      const iConta = cabDRE.indexOf('CD_CONTA');
+      const iDescr = cabDRE.indexOf('DS_CONTA');
+      const iValor = cabDRE.indexOf('VL_CONTA');
+      const iOrdem = cabDRE.indexOf('ORDEM_EXERC');
+
+      let receitaLiq = null, lucroLiq = null, ebit = null;
+      for (let i = 1; i < dreLinhas.length; i++) {
+        const cols = dreLinhas[i].split(';');
+        if (!cols[iCNPJ]) continue;
+        const cnpjLinha = cols[iCNPJ].replace(/\D/g, '');
+        if (cnpjLinha !== cnpjLimpo) continue;
+        if (cols[iOrdem] && cols[iOrdem].trim() !== 'ÚLTIMO') continue;
+        const conta = cols[iConta]?.trim();
+        const vl = parseFloat(cols[iValor]?.replace(',','.'));
+        if (isNaN(vl)) continue;
+        if (conta === '3.01')  receitaLiq = vl;
+        if (conta === '3.11')  lucroLiq   = vl;
+        if (conta === '3.05')  ebit       = vl;
+      }
+
+      // BPA (Balanço Ativo) para patrimônio
+      const urlBPA = `https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_BPA_con_${a}.csv`;
+      const resBPA = await fetch(urlBPA);
+      let totalAtivo = null, patrimonioLiq = null;
+      if (resBPA.ok) {
+        const txtBPA = await resBPA.text();
+        const bpaLinhas = txtBPA.split('\n');
+        const cabBPA = bpaLinhas[0].split(';');
+        const iBcnpj  = cabBPA.indexOf('CNPJ_CIA');
+        const iBconta = cabBPA.indexOf('CD_CONTA');
+        const iBvalor = cabBPA.indexOf('VL_CONTA');
+        const iBordem = cabBPA.indexOf('ORDEM_EXERC');
+        for (let i = 1; i < bpaLinhas.length; i++) {
+          const cols = bpaLinhas[i].split(';');
+          if (!cols[iBcnpj]) continue;
+          const cnpjLinha = cols[iBcnpj].replace(/\D/g, '');
+          if (cnpjLinha !== cnpjLimpo) continue;
+          if (cols[iBordem] && cols[iBordem].trim() !== 'ÚLTIMO') continue;
+          const conta = cols[iBconta]?.trim();
+          const vl = parseFloat(cols[iBvalor]?.replace(',','.'));
+          if (isNaN(vl)) continue;
+          if (conta === '1')   totalAtivo = vl;
+        }
+      }
+
+      // BPP (Passivo) para PL
+      const urlBPP = `https://dados.cvm.gov.br/dados/CIA_ABERTA/DOC/DFP/DADOS/dfp_cia_aberta_BPP_con_${a}.csv`;
+      const resBPP = await fetch(urlBPP);
+      if (resBPP.ok) {
+        const txtBPP = await resBPP.text();
+        const bppLinhas = txtBPP.split('\n');
+        const cabBPP = bppLinhas[0].split(';');
+        const iPcnpj  = cabBPP.indexOf('CNPJ_CIA');
+        const iPconta = cabBPP.indexOf('CD_CONTA');
+        const iPvalor = cabBPP.indexOf('VL_CONTA');
+        const iPordem = cabBPP.indexOf('ORDEM_EXERC');
+        for (let i = 1; i < bppLinhas.length; i++) {
+          const cols = bppLinhas[i].split(';');
+          if (!cols[iPcnpj]) continue;
+          const cnpjLinha = cols[iPcnpj].replace(/\D/g, '');
+          if (cnpjLinha !== cnpjLimpo) continue;
+          if (cols[iPordem] && cols[iPordem].trim() !== 'ÚLTIMO') continue;
+          const conta = cols[iPconta]?.trim();
+          const vl = parseFloat(cols[iPvalor]?.replace(',','.'));
+          if (isNaN(vl)) continue;
+          if (conta === '2.03') patrimonioLiq = vl;
+        }
+      }
+
+      if (receitaLiq || lucroLiq) {
+        dadosAnuais[a] = {
+          receitaLiq,
+          lucroLiq,
+          ebit,
+          totalAtivo,
+          patrimonioLiq,
+          roe: (lucroLiq && patrimonioLiq && patrimonioLiq > 0) ? (lucroLiq / patrimonioLiq) * 100 : null,
+          margemLiq: (lucroLiq && receitaLiq && receitaLiq > 0) ? (lucroLiq / receitaLiq) * 100 : null,
+        };
+      }
+    } catch(e) {
+      console.warn(`CVM ${cnpj} ${a}:`, e.message);
+    }
+  }
+
+  // Calcula ROE e margem médios
+  const anos5 = Object.values(dadosAnuais);
+  const roeVals  = anos5.map(d => d.roe).filter(v => v != null);
+  const margVals = anos5.map(d => d.margemLiq).filter(v => v != null);
+  const recVals  = anos5.map(d => d.receitaLiq).filter(v => v != null);
+  const lucVals  = anos5.map(d => d.lucroLiq).filter(v => v != null);
+
+  const media = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+
+  // Crescimento: (último - primeiro) / |primeiro| * 100
+  const crescimento = arr => {
+    if (arr.length < 2) return null;
+    const f = arr[0], l = arr[arr.length-1];
+    if (!f || f === 0) return null;
+    return ((l - f) / Math.abs(f)) * 100;
+  };
+
+  return {
+    anos: dadosAnuais,
+    roe:         media(roeVals),
+    margemLiq:   media(margVals),
+    crescReceita: crescimento(recVals),
+    crescLucro:   crescimento(lucVals),
+    receitaInicio: recVals[0] ?? null,
+    receitaFim:    recVals[recVals.length-1] ?? null,
+    lucroInicio:   lucVals[0] ?? null,
+    lucroFim:      lucVals[lucVals.length-1] ?? null,
+  };
+}
+
+// Atualiza status log
+function testeLog(msg) {
+  const el = document.getElementById('teste-status');
+  el.style.display = 'block';
+  el.innerHTML += `<span>▸ ${msg}</span><br>`;
+}
+
+function testeLimpar() {
+  testeResultados = {};
+  document.getElementById('teste-status').style.display = 'none';
+  document.getElementById('teste-status').innerHTML = '';
+  document.getElementById('teste-tabela-wrap').style.display = 'none';
+  document.getElementById('teste-tbody').innerHTML = '';
+  document.getElementById('teste-historico-wrap').innerHTML = '';
+  testeRenderCards();
+}
+
+async function testeBuscarTodos() {
+  const btn = document.getElementById('btn-teste-buscar');
+  btn.disabled = true; btn.textContent = '⟳ Buscando...';
+  document.getElementById('teste-status').innerHTML = '';
+  document.getElementById('teste-status').style.display = 'block';
+  document.getElementById('teste-tabela-wrap').style.display = 'none';
+  document.getElementById('teste-historico-wrap').innerHTML = '';
+
+  testeLog('Iniciando busca para 5 empresas de energia...');
+
+  for (const emp of TESTE_EMPRESAS) {
+    testeResultados[emp.ticker] = { loading: true };
+    testeRenderCards();
+    testeLog(`Buscando <strong style="color:${emp.cor}">${emp.ticker}</strong> — ${emp.nome}...`);
+
+    try {
+      // Brapi
+      testeLog(`  [Brapi] Cotação e indicadores de ${emp.ticker}...`);
+      let brapiData = null;
+      try {
+        brapiData = await testeBuscarBrapi(emp.ticker);
+        testeLog(`  [Brapi] ✓ ${emp.ticker}: R$ ${brapiData.preco?.toFixed(2) ?? '?'}`);
+      } catch(e) {
+        testeLog(`  [Brapi] ⚠ ${emp.ticker}: ${e.message}`);
+      }
+
+      // CVM
+      testeLog(`  [CVM] Buscando ${TESTE_ANOS} anos de demonstrações para CNPJ ${emp.cnpj}...`);
+      let cvmData = null;
+      try {
+        cvmData = await testeBuscarCvm(emp.cnpj, TESTE_ANOS);
+        const qtdAnos = Object.keys(cvmData.anos).length;
+        testeLog(`  [CVM] ✓ ${emp.ticker}: ${qtdAnos} anos encontrados. ROE médio: ${cvmData.roe?.toFixed(1) ?? '—'}%`);
+      } catch(e) {
+        testeLog(`  [CVM] ⚠ ${emp.ticker}: ${e.message}`);
+      }
+
+      testeResultados[emp.ticker] = {
+        loading: false,
+        brapi: brapiData,
+        cvm: cvmData,
+        emp,
+      };
+
+    } catch(e) {
+      testeResultados[emp.ticker] = { loading: false, erro: e.message, emp };
+      testeLog(`  ✗ Erro geral ${emp.ticker}: ${e.message}`);
+    }
+
+    testeRenderCards();
+  }
+
+  testeLog('✅ Busca concluída! Renderizando tabela...');
+  testeRenderTabela();
+  testeRenderHistorico();
+  btn.disabled = false; btn.textContent = '🔄 Buscar Dados';
+}
+
+function testeRenderTabela() {
+  const tbody = document.getElementById('teste-tbody');
+  tbody.innerHTML = '';
+
+  for (const emp of TESTE_EMPRESAS) {
+    const r = testeResultados[emp.ticker];
+    if (!r || r.loading || r.erro) continue;
+    const b = r.brapi || {};
+    const c = r.cvm   || {};
+
+    // Fonte
+    const temBrapi = !!r.brapi;
+    const temCvm   = c.roe != null || c.margemLiq != null;
+    const fonte = [temBrapi && '<span style="color:var(--papel)">Brapi</span>', temCvm && '<span style="color:var(--green)">CVM</span>'].filter(Boolean).join(' + ');
+
+    // Crescimento receita/lucro
+    const cRec = c.crescReceita;
+    const cLuc = c.crescLucro;
+
+    // ROE: preferir CVM, fallback Brapi
+    const roe = c.roe ?? b.roe;
+    const marg = c.margemLiq ?? b.margemLiq;
+
+    tbody.innerHTML += `
+    <tr>
+      <td><span style="font-weight:700;color:var(--hi)">${emp.nome}</span></td>
+      <td><span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:${emp.cor}">${emp.ticker}</span></td>
+      <td><span style="font-family:'Bebas Neue',sans-serif;color:var(--hi)">${b.preco != null ? 'R$ '+b.preco.toFixed(2).replace('.',',') : '—'}</span></td>
+      <td style="color:${testeCorPct(b.varHoje)}">${testeFmtPct(b.varHoje)}</td>
+      <td>${b.pl != null ? b.pl.toFixed(1) : '—'}</td>
+      <td>${b.pvp != null ? b.pvp.toFixed(2) : '—'}</td>
+      <td style="color:var(--green)">${b.dy != null ? b.dy.toFixed(2).replace('.',',')+'%' : '—'}</td>
+      <td style="color:${roe!=null?(roe>10?'var(--green)':'var(--yellow)'):'var(--dim)'}">${roe != null ? roe.toFixed(1)+'%' : '—'}</td>
+      <td style="color:${marg!=null?(marg>10?'var(--green)':'var(--yellow)'):'var(--dim)'}">${marg != null ? marg.toFixed(1)+'%' : '—'}</td>
+      <td style="font-size:.58rem">${c.receitaFim != null ? testeFmtMoeda(c.receitaFim*1000) : '—'}</td>
+      <td style="font-size:.58rem">${c.lucroFim   != null ? testeFmtMoeda(c.lucroFim*1000)   : '—'}</td>
+      <td style="color:${testeCorPct(cRec)}">${testeFmtPct(cRec)}</td>
+      <td style="color:${testeCorPct(cLuc)}">${testeFmtPct(cLuc)}</td>
+      <td style="font-size:.52rem">${fonte || '—'}</td>
+    </tr>`;
+  }
+
+  document.getElementById('teste-tabela-wrap').style.display = '';
+}
+
+function testeRenderHistorico() {
+  const wrap = document.getElementById('teste-historico-wrap');
+  wrap.innerHTML = '';
+
+  for (const emp of TESTE_EMPRESAS) {
+    const r = testeResultados[emp.ticker];
+    if (!r || r.loading || r.erro || !r.cvm) continue;
+    const anos = r.cvm.anos;
+    const anosKeys = Object.keys(anos).sort();
+    if (!anosKeys.length) continue;
+
+    const linhas = anosKeys.map(a => {
+      const d = anos[a];
+      const roe  = d.roe  != null ? d.roe.toFixed(1)+'%'  : '—';
+      const marg = d.margemLiq != null ? d.margemLiq.toFixed(1)+'%' : '—';
+      const rec  = d.receitaLiq != null ? testeFmtMoeda(d.receitaLiq*1000) : '—';
+      const luc  = d.lucroLiq   != null ? testeFmtMoeda(d.lucroLiq*1000)   : '—';
+      const pl   = d.patrimonioLiq != null ? testeFmtMoeda(d.patrimonioLiq*1000) : '—';
+      const lucColor = d.lucroLiq != null ? (d.lucroLiq >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--dim)';
+      return `<tr>
+        <td style="color:var(--dim);font-weight:700">${a}</td>
+        <td>${rec}</td>
+        <td style="color:${lucColor}">${luc}</td>
+        <td style="color:${d.roe!=null?(d.roe>10?'var(--green)':'var(--yellow)'):'var(--dim)'}">${roe}</td>
+        <td style="color:${d.margemLiq!=null?(d.margemLiq>10?'var(--green)':'var(--yellow)'):'var(--dim)'}">${marg}</td>
+        <td style="color:var(--papel)">${pl}</td>
+      </tr>`;
+    }).join('');
+
+    wrap.innerHTML += `
+    <div class="card" style="margin-bottom:.8rem;border-left:3px solid ${emp.cor}">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:${emp.cor}">${emp.ticker}</div>
+        <div style="font-size:.58rem;color:var(--dim)">${emp.nome}</div>
+        <span style="font-size:.48rem;background:${emp.cor}18;color:${emp.cor};border:1px solid ${emp.cor}30;border-radius:4px;padding:1px 6px">CVM · ${anosKeys.length} anos</span>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="tbl" style="min-width:560px">
+          <thead><tr>
+            <th>ANO</th><th>RECEITA LÍQ.</th><th>LUCRO LÍQ.</th><th>ROE</th><th>MARGEM LÍQ.</th><th>PATR. LÍQ.</th>
+          </tr></thead>
+          <tbody>${linhas}</tbody>
+        </table>
+      </div>
+      ${r.cvm.crescReceita != null ? `
+      <div style="margin-top:.6rem;display:flex;gap:1rem;flex-wrap:wrap">
+        <div style="font-size:.55rem">
+          <span style="color:var(--dim)">Cresc. Receita ${TESTE_ANOS}a: </span>
+          <span style="font-weight:700;color:${testeCorPct(r.cvm.crescReceita)}">${testeFmtPct(r.cvm.crescReceita)}</span>
+        </div>
+        <div style="font-size:.55rem">
+          <span style="color:var(--dim)">Cresc. Lucro ${TESTE_ANOS}a: </span>
+          <span style="font-weight:700;color:${testeCorPct(r.cvm.crescLucro)}">${testeFmtPct(r.cvm.crescLucro)}</span>
+        </div>
+        ${r.brapi?.dy != null ? `<div style="font-size:.55rem"><span style="color:var(--dim)">DY atual: </span><span style="font-weight:700;color:var(--green)">${r.brapi.dy.toFixed(2)}%</span></div>` : ''}
+        ${r.brapi?.pl != null ? `<div style="font-size:.55rem"><span style="color:var(--dim)">P/L atual: </span><span style="font-weight:700;color:var(--hi)">${r.brapi.pl.toFixed(1)}</span></div>` : ''}
+      </div>` : ''}
+    </div>`;
+  }
+}
+
+// Inicializa cards ao entrar na aba
+(function() {
+  // Renderiza cards vazios ao carregar
+  setTimeout(testeRenderCards, 100);
+})();
+</script>
 
 </body>
 </html>
