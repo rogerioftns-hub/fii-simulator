@@ -22963,6 +22963,173 @@ function advClearChat() {
 
   </div><!-- /cvm-bancos-painel -->
 
+  <!-- ═══════════════════════════════════════════════════════════
+       PAINEL CVM — PETRÓLEO & GÁS
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="cvm-petroleo-painel" style="margin-top:2rem">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;padding-bottom:.6rem;border-bottom:1px solid var(--border2)">
+      <div>
+        <div style="font-size:.62rem;font-weight:600;color:#fb923c;letter-spacing:.1em;text-transform:uppercase">🛢️ Fluxo de Caixa — Petróleo & Gás · CVM</div>
+        <div style="font-size:.52rem;color:var(--dim);margin-top:.2rem">FCO · CAPEX · FCL · Dados reais DFP/ITR · Fonte: CVM Dados Abertos</div>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;overflow:hidden">
+          <button id="ptr-btn-dfp" onclick="ptrSetTipo('dfp')"
+            style="font-size:.52rem;padding:.25rem .6rem;border:none;cursor:pointer;transition:all .2s;background:#fb923c;color:#07080f;font-family:inherit;font-weight:600">DFP Anual</button>
+          <button id="ptr-btn-itr" onclick="ptrSetTipo('itr')"
+            style="font-size:.52rem;padding:.25rem .6rem;border:none;cursor:pointer;transition:all .2s;background:transparent;color:var(--dim);font-family:inherit">ITR Trim.</button>
+        </div>
+        <div style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;overflow:hidden">
+          <button onclick="ptrSetMetrica('fco')"  id="ptr-m-fco"  style="font-size:.52rem;padding:.25rem .55rem;border:none;cursor:pointer;font-family:inherit;background:#fb923c;color:#07080f;font-weight:600;transition:all .2s">FCO</button>
+          <button onclick="ptrSetMetrica('capex')" id="ptr-m-capex" style="font-size:.52rem;padding:.25rem .55rem;border:none;cursor:pointer;font-family:inherit;background:transparent;color:var(--dim);transition:all .2s">CAPEX</button>
+          <button onclick="ptrSetMetrica('fcl')"  id="ptr-m-fcl"  style="font-size:.52rem;padding:.25rem .55rem;border:none;cursor:pointer;font-family:inherit;background:transparent;color:var(--dim);transition:all .2s">FCL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aviso sobre natureza E&P -->
+    <div style="font-size:.5rem;color:var(--yellow);background:#fbbf2408;border:1px solid #fbbf2420;border-radius:6px;padding:.4rem .7rem;margin-bottom:.9rem;line-height:1.7">
+      ⚠️ <strong>FCO de E&P</strong> (PETR4, PRIO3, RRRP3, RECV3) reflete receitas de petróleo menos custos operacionais. <strong>CAPEX alto</strong> é normal — perfuração, plataformas e aquisição de campos. CSAN3 e UGPA3 são distribuição/logística com CAPEX menor. <strong>RECV3</strong>: dados CVM disponíveis a partir de 2021 (IPO mai/2021).
+    </div>
+
+    <!-- KPI cards -->
+    <div id="ptr-kpi-row" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
+
+    <!-- Seletor de empresa -->
+    <div id="ptr-empresa-tabs" style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.8rem"></div>
+
+    <!-- Gráfico -->
+    <div class="card" style="margin-bottom:1rem;padding:.8rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
+        <div id="ptr-chart-title" style="font-size:.56rem;color:var(--hi);font-weight:600;letter-spacing:.06em"></div>
+        <div style="font-size:.48rem;color:var(--dim2)">valores em R$ (fonte CVM: R$ mil)</div>
+      </div>
+      <div id="ptr-chart-wrap" style="width:100%;overflow-x:auto"></div>
+    </div>
+
+    <!-- Tabela comparativa -->
+    <div class="card" style="padding:.8rem">
+      <div style="font-size:.56rem;color:var(--hi);font-weight:600;letter-spacing:.06em;margin-bottom:.6rem">📋 COMPARATIVO — PETRÓLEO & GÁS</div>
+      <div style="overflow-x:auto">
+        <table id="ptr-tabela" style="width:100%;border-collapse:collapse;font-size:.52rem">
+          <thead id="ptr-thead"></thead>
+          <tbody id="ptr-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /cvm-petroleo-painel -->
+
+  <!-- ═══════════════════════════════════════════════════════════
+       🏗️ PAINEL CVM — CONSTRUÇÃO CIVIL
+       ═══════════════════════════════════════════════════════════ -->
+  <div id="cvm-construcao-painel" style="margin-top:2rem">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;padding-bottom:.6rem;border-bottom:1px solid var(--border2)">
+      <div>
+        <div style="font-size:.62rem;font-weight:600;color:#f97316;letter-spacing:.1em;text-transform:uppercase">🏗️ Fluxo de Caixa — Construção Civil · CVM</div>
+        <div style="font-size:.52rem;color:var(--dim);margin-top:.2rem">FCO · CAPEX · FCL · Dados reais DFP/ITR · Fonte: CVM Dados Abertos</div>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;overflow:hidden">
+          <button id="cns-btn-dfp" onclick="cnsSetTipo('dfp')"
+            style="font-size:.52rem;padding:.25rem .6rem;border:none;cursor:pointer;transition:all .2s;background:#f97316;color:#07080f;font-family:inherit;font-weight:600">DFP Anual</button>
+          <button id="cns-btn-itr" onclick="cnsSetTipo('itr')"
+            style="font-size:.52rem;padding:.25rem .6rem;border:none;cursor:pointer;transition:all .2s;background:transparent;color:var(--dim);font-family:inherit">ITR Trim.</button>
+        </div>
+        <div style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;overflow:hidden">
+          <button onclick="cnsSetMetrica('fco')"  id="cns-m-fco"  style="font-size:.52rem;padding:.25rem .55rem;border:none;cursor:pointer;font-family:inherit;background:#f97316;color:#07080f;font-weight:600;transition:all .2s">FCO</button>
+          <button onclick="cnsSetMetrica('capex')" id="cns-m-capex" style="font-size:.52rem;padding:.25rem .55rem;border:none;cursor:pointer;font-family:inherit;background:transparent;color:var(--dim);transition:all .2s">CAPEX</button>
+          <button onclick="cnsSetMetrica('fcl')"  id="cns-m-fcl"  style="font-size:.52rem;padding:.25rem .55rem;border:none;cursor:pointer;font-family:inherit;background:transparent;color:var(--dim);transition:all .2s">FCL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Aviso setorial -->
+    <div style="font-size:.5rem;color:#f9731699;background:#f9731608;border:1px solid #f9731620;border-radius:6px;padding:.4rem .7rem;margin-bottom:.9rem;line-height:1.7">
+      🏠 <strong>FCO incorporadoras</strong> reflete ciclo de obras — valores negativos em expansão são normais. <strong>CAPEX</strong> inclui aquisição de terrenos e construção. FCL positivo sinaliza maturidade do ciclo.
+    </div>
+
+    <!-- KPI cards -->
+    <div id="cns-kpi-row" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
+
+    <!-- Seletor de empresa -->
+    <div id="cns-empresa-tabs" style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.8rem"></div>
+
+    <!-- Gráfico -->
+    <div class="card" style="margin-bottom:1rem;padding:.8rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
+        <div id="cns-chart-title" style="font-size:.56rem;color:var(--hi);font-weight:600;letter-spacing:.06em"></div>
+        <div style="font-size:.48rem;color:var(--dim2)">valores em R$ (fonte CVM: R$ mil)</div>
+      </div>
+      <div id="cns-chart-wrap" style="width:100%;overflow-x:auto"></div>
+    </div>
+
+    <!-- Tabela comparativa -->
+    <div class="card" style="padding:.8rem">
+      <div style="font-size:.56rem;color:var(--hi);font-weight:600;letter-spacing:.06em;margin-bottom:.6rem">📋 COMPARATIVO — TODAS AS CONSTRUTORAS</div>
+      <div style="overflow-x:auto">
+        <table id="cns-tabela" style="width:100%;border-collapse:collapse;font-size:.52rem">
+          <thead id="cns-thead"></thead>
+          <tbody id="cns-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /cvm-construcao-painel -->
+
+  <div id="cvm-telecom-painel" style="margin-top:2rem">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-bottom:1rem;padding-bottom:.6rem;border-bottom:1px solid var(--border2)">
+      <div>
+        <div style="font-size:.62rem;font-weight:600;color:var(--papel);letter-spacing:.1em;text-transform:uppercase">📡 Fluxo de Caixa — Telecom · CVM</div>
+        <div style="font-size:.52rem;color:var(--dim);margin-top:.2rem">FCO · CAPEX · FCL · Dados reais DFP/ITR · Fonte: CVM Dados Abertos</div>
+      </div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
+        <div style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;overflow:hidden">
+          <button id="tlk-btn-dfp" onclick="tlkSetTipo('dfp')"
+            style="font-size:.52rem;padding:.25rem .6rem;border:none;cursor:pointer;transition:all .2s;background:var(--papel);color:#07080f;font-family:inherit;font-weight:600">DFP Anual</button>
+          <button id="tlk-btn-itr" onclick="tlkSetTipo('itr')"
+            style="font-size:.52rem;padding:.25rem .6rem;border:none;cursor:pointer;transition:all .2s;background:transparent;color:var(--dim);font-family:inherit">ITR Trim.</button>
+        </div>
+        <div style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;overflow:hidden">
+          <button onclick="tlkSetMetrica('fco')"  id="tlk-m-fco"  style="font-size:.52rem;padding:.25rem .55rem;border:none;cursor:pointer;font-family:inherit;background:var(--papel);color:#07080f;font-weight:600;transition:all .2s">FCO</button>
+          <button onclick="tlkSetMetrica('capex')" id="tlk-m-capex" style="font-size:.52rem;padding:.25rem .55rem;border:none;cursor:pointer;font-family:inherit;background:transparent;color:var(--dim);transition:all .2s">CAPEX</button>
+          <button onclick="tlkSetMetrica('fcl')"  id="tlk-m-fcl"  style="font-size:.52rem;padding:.25rem .55rem;border:none;cursor:pointer;font-family:inherit;background:transparent;color:var(--dim);transition:all .2s">FCL</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI cards -->
+    <div id="tlk-kpi-row" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin-bottom:1rem"></div>
+
+    <!-- Seletor de empresa -->
+    <div id="tlk-empresa-tabs" style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.8rem"></div>
+
+    <!-- Gráfico -->
+    <div class="card" style="margin-bottom:1rem;padding:.8rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem">
+        <div id="tlk-chart-title" style="font-size:.56rem;color:var(--hi);font-weight:600;letter-spacing:.06em"></div>
+        <div style="font-size:.48rem;color:var(--dim2)">valores em R$ (fonte CVM: R$ mil)</div>
+      </div>
+      <div id="tlk-chart-wrap" style="width:100%;overflow-x:auto"></div>
+    </div>
+
+    <!-- Tabela comparativa -->
+    <div class="card" style="padding:.8rem">
+      <div style="font-size:.56rem;color:var(--hi);font-weight:600;letter-spacing:.06em;margin-bottom:.6rem">📋 COMPARATIVO — TODAS AS TELECOM</div>
+      <div style="overflow-x:auto">
+        <table id="tlk-tabela" style="width:100%;border-collapse:collapse;font-size:.52rem">
+          <thead id="tlk-thead"></thead>
+          <tbody id="tlk-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /cvm-telecom-painel -->
+
+
 </div><!-- /page-setorial -->
 
 </div><!-- /main-content -->
@@ -23944,6 +24111,8 @@ const SETORIAL_SETORES = [
         hist:{ 2015:{rec:18200,luc:980,pl:14800,fcl:1200}, 2016:{rec:20400,luc:1180,pl:16200,fcl:1380}, 2017:{rec:22800,luc:1380,pl:18400,fcl:1580}, 2018:{rec:24800,luc:1280,pl:20800,fcl:1480}, 2019:{rec:26400,luc:1480,pl:24200,fcl:1680}, 2020:{rec:28400,luc:1820,pl:29400,fcl:2100}, 2021:{rec:38200,luc:2480,pl:39800,fcl:2700}, 2022:{rec:56800,luc:3120,pl:50200,fcl:3400}, 2023:{rec:68400,luc:1980,pl:48600,fcl:2200}, 2024:{rec:72100,luc:2240,pl:51400,fcl:2600} }},
       { ticker:'UGPA3', nome:'Ultrapar',         dy:3.8,  pl:12.8, pvp:2.1,  roe:16.4, marg:4.2,  dlEb:'2.1',
         hist:{ 2015:{rec:52000,luc:480,pl:2280,fcl:680}, 2016:{rec:54000,luc:520,pl:2480,fcl:720}, 2017:{rec:58000,luc:540,pl:2680,fcl:760}, 2018:{rec:62000,luc:560,pl:2920,fcl:800}, 2019:{rec:64000,luc:520,pl:3080,fcl:840}, 2020:{rec:68400,luc:580,pl:3540,fcl:1100}, 2021:{rec:92800,luc:980,pl:3920,fcl:1400}, 2022:{rec:128000,luc:1480,pl:4300,fcl:1800}, 2023:{rec:118000,luc:1680,pl:4700,fcl:2100}, 2024:{rec:122000,luc:1840,pl:5100,fcl:2300} }},
+      { ticker:'RECV3', nome:'PetroRecôncavo',   dy:6.2,  pl:8.4,  pvp:2.1,  roe:24.8, marg:38.4, dlEb:'1.6',
+        hist:{ 2015:{rec:0,luc:0,pl:0,fcl:0}, 2016:{rec:0,luc:0,pl:0,fcl:0}, 2017:{rec:0,luc:0,pl:0,fcl:0}, 2018:{rec:0,luc:0,pl:0,fcl:0}, 2019:{rec:0,luc:0,pl:0,fcl:0}, 2020:{rec:0,luc:0,pl:0,fcl:0}, 2021:{rec:1480,luc:220,pl:1180,fcl:280}, 2022:{rec:2980,luc:820,pl:3040,fcl:980}, 2023:{rec:3420,luc:980,pl:3680,fcl:1120}, 2024:{rec:3840,luc:1080,pl:4120,fcl:1240} }},
     ]
   },
   {
@@ -24287,6 +24456,18 @@ function stSelecionarSetor(id) {
   stRenderAtivoSelector();
   stRenderScorePanel();
   stRenderSetor();
+  // Controla visibilidade dos painéis CVM por segmento
+  const paineis = {
+    energia:    'cvm-energia-painel',
+    bancos:     'cvm-bancos-painel',
+    petroleo:   'cvm-petroleo-painel',
+    construcao: 'cvm-construcao-painel',
+    telecom:    'cvm-telecom-painel',
+  };
+  Object.entries(paineis).forEach(([seg, elId]) => {
+    const el = document.getElementById(elId);
+    if (el) el.style.display = seg === id ? 'block' : 'none';
+  });
 }
 
 // ── Log de status
@@ -24930,6 +25111,215 @@ function setorialLimparCache() {
 }
 
 // ── Init: busca todos os setores automaticamente se cache vazio/stale
+
+// ═══════════════════════════════════════════════════════════
+//  CVM — TELECOM
+// ═══════════════════════════════════════════════════════════
+
+const CVM_TELECOM_DATA = {"dfp": [{"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2015-12-31", "fco": 7548893, "capex": 18601377, "fcl": -11052484}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2015-12-31", "fco": -2299276, "capex": 1566759, "fcl": -3866035}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2016-12-31", "fco": 10185455, "capex": 5107672, "fcl": 5077783}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2016-12-31", "fco": 705272, "capex": 3182040, "fcl": -2476768}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2017-12-31", "fco": 11972725, "capex": 7706643, "fcl": 4266082}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2017-12-31", "fco": 390322, "capex": 550190, "fcl": -159868}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2018-12-31", "fco": 10074919, "capex": 3547148, "fcl": 6527771}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2018-12-31", "fco": 2375265, "capex": 884424, "fcl": 1490841}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2018-12-31", "fco": 187333, "capex": 2232711, "fcl": -2045378}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2019-12-31", "fco": 17270117, "capex": 7657731, "fcl": 9612386}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2019-12-31", "fco": 7233179, "capex": 3713852, "fcl": 3519327}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2019-12-31", "fco": -1186304, "capex": 3326799, "fcl": -4513103}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2020-12-31", "fco": 19095813, "capex": 6120930, "fcl": 12974883}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2020-12-31", "fco": 8673871, "capex": 5293356, "fcl": 3380515}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2020-12-31", "fco": -430354, "capex": 1569800, "fcl": -2000154}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2021-12-31", "fco": 17972921, "capex": 8001869, "fcl": 9971052}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2021-12-31", "fco": 10078087, "capex": 6689396, "fcl": 3388691}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2021-12-31", "fco": 362559, "capex": 1879376, "fcl": -1516817}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2022-12-31", "fco": 18562278, "capex": 14523117, "fcl": 4039161}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2022-12-31", "fco": 8537370, "capex": 9064049, "fcl": -526679}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2022-12-31", "fco": -3015148, "capex": 16428880, "fcl": -19444028}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2023-12-31", "fco": 18744014, "capex": 7215031, "fcl": 11528983}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2023-12-31", "fco": 12573553, "capex": 4261703, "fcl": 8311850}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2023-12-31", "fco": -3063936, "capex": 1585015, "fcl": -4648951}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2024-12-31", "fco": 19825205, "capex": 8881941, "fcl": 10943264}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2024-12-31", "fco": 12331543, "capex": 4953872, "fcl": 7377671}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2024-12-31", "fco": -1665405, "capex": 398940, "fcl": -2064345}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2025-12-31", "fco": 20530525, "capex": 9953079, "fcl": 10577446}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2025-12-31", "fco": 13440069, "capex": 3560621, "fcl": 9879448}], "itr": [{"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2015-03-31", "fco": 772856, "capex": 1817077, "fcl": -1044221}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2015-03-31", "fco": -551093, "capex": 545172, "fcl": -1096265}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2015-06-30", "fco": 2721001, "capex": 13433265, "fcl": -10712264}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2015-06-30", "fco": -1801453, "capex": 150620, "fcl": -1952073}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2015-09-30", "fco": 4537291, "capex": 16073619, "fcl": -11536328}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2015-09-30", "fco": -1881050, "capex": 1593745, "fcl": -3474795}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2016-03-31", "fco": 1312364, "capex": 1037035, "fcl": 275329}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2016-03-31", "fco": -221055, "capex": 1007764, "fcl": -1228819}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2016-06-30", "fco": 4070188, "capex": 1684428, "fcl": 2385760}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2016-06-30", "fco": -1064606, "capex": 2962410, "fcl": -4027016}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2016-09-30", "fco": 6914086, "capex": 3181669, "fcl": 3732417}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2016-09-30", "fco": 26585, "capex": 3026392, "fcl": -2999807}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2017-03-31", "fco": 1324898, "capex": 1892522, "fcl": -567624}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2017-03-31", "fco": 52335, "capex": 158318, "fcl": -105983}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2017-06-30", "fco": 4618985, "capex": 3465429, "fcl": 1153556}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2017-06-30", "fco": 143992, "capex": 151557, "fcl": -7565}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2017-09-30", "fco": 8328481, "capex": 4997450, "fcl": 3331031}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2017-09-30", "fco": 444244, "capex": 290659, "fcl": 153585}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2018-03-31", "fco": 1903271, "capex": 1187594, "fcl": 715677}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2018-03-31", "fco": 16220, "capex": 162965, "fcl": -146745}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2018-06-30", "fco": 3739609, "capex": 1394926, "fcl": 2344683}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2018-06-30", "fco": -21919, "capex": 2253476, "fcl": -2275395}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2018-09-30", "fco": 5549985, "capex": 1381752, "fcl": 4168233}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2018-09-30", "fco": -55117, "capex": 2235082, "fcl": -2290199}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2019-03-31", "fco": 3487994, "capex": 2089699, "fcl": 1398295}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2019-03-31", "fco": 339956, "capex": 604467, "fcl": -264511}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2019-03-31", "fco": -1224461, "capex": 143839, "fcl": -1368300}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2019-06-30", "fco": 7828986, "capex": 4122600, "fcl": 3706386}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2019-06-30", "fco": 1412890, "capex": 1305387, "fcl": 107503}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2019-06-30", "fco": -938695, "capex": 1730227, "fcl": -2668922}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2019-09-30", "fco": 12475698, "capex": 5696906, "fcl": 6778792}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2019-09-30", "fco": 3481136, "capex": 2508750, "fcl": 972386}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2019-09-30", "fco": -1260613, "capex": 2635491, "fcl": -3896104}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2020-03-31", "fco": 4522935, "capex": 1499853, "fcl": 3023082}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2020-03-31", "fco": 489086, "capex": 281227, "fcl": 207859}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2020-03-31", "fco": -533942, "capex": 2818281, "fcl": -3352223}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2020-06-30", "fco": 9607668, "capex": 3403881, "fcl": 6203787}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2020-06-30", "fco": 2792746, "capex": 1187616, "fcl": 1605130}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2020-06-30", "fco": -612032, "capex": 1979221, "fcl": -2591253}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2020-09-30", "fco": 14826385, "capex": 4365449, "fcl": 10460936}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2020-09-30", "fco": 4975286, "capex": 3272867, "fcl": 1702419}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2020-09-30", "fco": -698210, "capex": 2328865, "fcl": -3027075}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2021-03-31", "fco": 4536341, "capex": 1834040, "fcl": 2702301}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2021-03-31", "fco": 1949595, "capex": 854368, "fcl": 1095227}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2021-03-31", "fco": -858855, "capex": 536281, "fcl": -1395136}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2021-06-30", "fco": 8588017, "capex": 3827770, "fcl": 4760247}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2021-06-30", "fco": 4182080, "capex": 3532110, "fcl": 649970}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2021-06-30", "fco": -971687, "capex": 951301, "fcl": -1922988}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2021-09-30", "fco": 13900348, "capex": 5747601, "fcl": 8152747}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2021-09-30", "fco": 6954867, "capex": 4357956, "fcl": 2596911}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2021-09-30", "fco": -109964, "capex": 1484374, "fcl": -1594338}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2022-03-31", "fco": 4433763, "capex": 1581814, "fcl": 2851949}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2022-03-31", "fco": 1119554, "capex": 831179, "fcl": 288375}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2022-03-31", "fco": -348760, "capex": 324419, "fcl": -673179}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2022-06-30", "fco": 8990805, "capex": 8614694, "fcl": 376111}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2022-06-30", "fco": 2329558, "capex": 5566294, "fcl": -3236736}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2022-06-30", "fco": -2021602, "capex": 15789489, "fcl": -17811091}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2022-09-30", "fco": 13881934, "capex": 11264745, "fcl": 2617189}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2022-09-30", "fco": 5210344, "capex": 6858797, "fcl": -1648453}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2022-09-30", "fco": -2897876, "capex": 15388816, "fcl": -18286692}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2023-03-31", "fco": 4807473, "capex": 584369, "fcl": 4223104}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2023-03-31", "fco": 2128206, "capex": 582997, "fcl": 1545209}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2023-03-31", "fco": -1333360, "capex": 55496, "fcl": -1388856}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2023-06-30", "fco": 10145520, "capex": 2938516, "fcl": 7207004}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2023-06-30", "fco": 4240336, "capex": 167971, "fcl": 4072365}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2023-06-30", "fco": -1167607, "capex": 240191, "fcl": -1407798}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2023-09-30", "fco": 14935455, "capex": 4983068, "fcl": 9952387}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2023-09-30", "fco": 7724562, "capex": 1376393, "fcl": 6348169}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2023-09-30", "fco": -1736999, "capex": 508148, "fcl": -2245147}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2024-03-31", "fco": 4912441, "capex": 1911957, "fcl": 3000484}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2024-03-31", "fco": 1645687, "capex": 731943, "fcl": 913744}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2024-03-31", "fco": -577067, "capex": 41164, "fcl": -618231}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2024-06-30", "fco": 10538570, "capex": 4069454, "fcl": 6469116}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2024-06-30", "fco": 4332194, "capex": 1508240, "fcl": 2823954}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2024-06-30", "fco": -903957, "capex": 12371, "fcl": -916328}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2024-09-30", "fco": 15269932, "capex": 6279473, "fcl": 8990459}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2024-09-30", "fco": 7810170, "capex": 3256358, "fcl": 4553812}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2024-09-30", "fco": -1864493, "capex": 64748, "fcl": -1929241}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2025-03-31", "fco": 5043557, "capex": 2360797, "fcl": 2682760}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2025-03-31", "fco": 2495952, "capex": 1332594, "fcl": 1163358}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2025-03-31", "fco": 18319, "capex": 254332, "fcl": -236013}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2025-06-30", "fco": 10898329, "capex": 4509104, "fcl": 6389225}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2025-06-30", "fco": 5466634, "capex": 2133212, "fcl": 3333422}, {"Ticker": "OIBR3", "Empresa": "OI S.A.", "Periodo": "2025-06-30", "fco": -117172, "capex": 27970, "fcl": -145142}, {"Ticker": "VIVT3", "Empresa": "Telefônica Brasil", "Periodo": "2025-09-30", "fco": 15507989, "capex": 6661510, "fcl": 8846479}, {"Ticker": "TIMS3", "Empresa": "TIM S.A.", "Periodo": "2025-09-30", "fco": 9169560, "capex": 3376594, "fcl": 5792966}]};
+
+const TLK_CORES = {
+  VIVT3:'#22d3ee', TIMS3:'#a78bfa', OIBR3:'#f87171'
+};
+const TLK_LABELS = { fco:'FCO', capex:'CAPEX', fcl:'FCL' };
+
+let tlkTipo    = 'dfp';
+let tlkMetrica = 'fco';
+let tlkEmpresa = null;
+
+function initTelecom() {
+  const tickers = [...new Set(CVM_TELECOM_DATA.dfp.map(d => d.Ticker))];
+  tlkEmpresa = tickers[0];
+  tlkRenderEmpresaTabs();
+  tlkRenderKPIs();
+  tlkRenderChart();
+  tlkRenderTabela();
+}
+
+function tlkSetTipo(t) {
+  tlkTipo = t;
+  document.getElementById('tlk-btn-dfp').style.background = t==='dfp' ? 'var(--papel)' : 'transparent';
+  document.getElementById('tlk-btn-dfp').style.color      = t==='dfp' ? '#07080f' : 'var(--dim)';
+  document.getElementById('tlk-btn-itr').style.background = t==='itr' ? 'var(--papel)' : 'transparent';
+  document.getElementById('tlk-btn-itr').style.color      = t==='itr' ? '#07080f' : 'var(--dim)';
+  tlkRenderKPIs(); tlkRenderChart(); tlkRenderTabela();
+}
+
+function tlkSetMetrica(m) {
+  tlkMetrica = m;
+  const cores = { fco:'var(--papel)', capex:'var(--tijolo)', fcl:'var(--green)' };
+  ['fco','capex','fcl'].forEach(k => {
+    const btn = document.getElementById('tlk-m-'+k);
+    btn.style.background = k===m ? cores[k] : 'transparent';
+    btn.style.color      = k===m ? '#07080f' : 'var(--dim)';
+    btn.style.fontWeight = k===m ? '600' : '400';
+  });
+  tlkRenderChart();
+}
+
+function tlkSetEmpresa(t) {
+  tlkEmpresa = t;
+  tlkRenderEmpresaTabs();
+  tlkRenderChart();
+}
+
+function tlkGetRows() {
+  return CVM_TELECOM_DATA[tlkTipo].filter(d => !tlkEmpresa || d.Ticker === tlkEmpresa);
+}
+
+function tlkFmtPeriodo(p) {
+  const d = new Date(p);
+  const m = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return m[d.getUTCMonth()] + '/' + String(d.getUTCFullYear()).slice(2);
+}
+
+function tlkRenderEmpresaTabs() {
+  const tickers = [...new Set(CVM_TELECOM_DATA.dfp.map(d => d.Ticker))];
+  document.getElementById('tlk-empresa-tabs').innerHTML = tickers.map(t => {
+    const emp = CVM_TELECOM_DATA.dfp.find(d => d.Ticker === t);
+    const ativo = t === tlkEmpresa;
+    const cor = TLK_CORES[t] || '#64748b';
+    return `<button onclick="tlkSetEmpresa('${t}')" style="
+      font-size:.5rem;padding:.25rem .6rem;border-radius:5px;cursor:pointer;
+      border:1px solid ${ativo ? cor : 'var(--border2)'};
+      background:${ativo ? cor+'22' : 'var(--bg3)'};
+      color:${ativo ? cor : 'var(--dim)'};font-family:inherit;
+      transition:all .2s;font-weight:${ativo?'600':'400'}
+    ">${t} <span style="opacity:.6;font-weight:400">${emp?.Empresa||''}</span></button>`;
+  }).join('');
+}
+
+function tlkRenderKPIs() {
+  const tickers = [...new Set(CVM_TELECOM_DATA[tlkTipo].map(d => d.Ticker))];
+  document.getElementById('tlk-kpi-row').innerHTML = tickers.map(t => {
+    const rows  = CVM_TELECOM_DATA[tlkTipo].filter(d => d.Ticker === t);
+    const ultimo = rows[rows.length - 1];
+    if (!ultimo) return '';
+    const cor    = TLK_CORES[t] || '#64748b';
+    const periodo = tlkFmtPeriodo(ultimo.Periodo);
+    return `<div class="card" style="border-color:${cor}33;padding:.6rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+        <div style="font-size:.56rem;font-weight:700;color:${cor}">${t}</div>
+        <div style="font-size:.44rem;color:var(--dim2)">${periodo}</div>
+      </div>
+      <div style="font-size:.44rem;color:var(--dim);margin-bottom:.5rem">${ultimo.Empresa}</div>
+      <div style="display:flex;flex-direction:column;gap:.2rem">
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:.48rem;color:var(--dim)">FCO</span>
+          <span style="font-size:.52rem;color:${ultimo.fco>=0?'var(--green)':'var(--red)'};font-family:'Bebas Neue',sans-serif;letter-spacing:.04em">${cvmFmt(ultimo.fco)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:.48rem;color:var(--dim)">CAPEX</span>
+          <span style="font-size:.52rem;color:var(--tijolo);font-family:'Bebas Neue',sans-serif;letter-spacing:.04em">${cvmFmt(ultimo.capex)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:.2rem;margin-top:.1rem">
+          <span style="font-size:.48rem;color:var(--dim)">FCL</span>
+          <span style="font-size:.56rem;color:${ultimo.fcl>=0?'var(--green)':'var(--red)'};font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;font-weight:600">${cvmFmt(ultimo.fcl)}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function tlkRenderChart() {
+  const rows = tlkGetRows().sort((a,b) => a.Periodo.localeCompare(b.Periodo));
+  const wrap  = document.getElementById('tlk-chart-wrap');
+  const title = document.getElementById('tlk-chart-title');
+  const emp   = CVM_TELECOM_DATA.dfp.find(d => d.Ticker === tlkEmpresa);
+  title.textContent = `${TLK_LABELS[tlkMetrica]} — ${tlkEmpresa} · ${emp?.Empresa||''} · ${tlkTipo.toUpperCase()}`;
+
+  if (!rows.length) { wrap.innerHTML = '<div style="font-size:.52rem;color:var(--dim);padding:.5rem">Sem dados</div>'; return; }
+
+  const vals = rows.map(r => r[tlkMetrica]);
+  const maxV = Math.max(...vals.map(Math.abs), 1);
+  const cor  = tlkMetrica==='fco' ? '#38bdf8' : tlkMetrica==='capex' ? '#fb923c' : '#00e5a0';
+  const BAR_W = 30, BAR_GAP = 8;
+  const W = Math.max(rows.length * (BAR_W + BAR_GAP), 300);
+  const H = 150; const PAD = 20; const ZERO = H / 2;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('width', W); svg.setAttribute('height', H + 22);
+  svg.style.display = 'block';
+
+  const zl = document.createElementNS('http://www.w3.org/2000/svg','line');
+  zl.setAttribute('x1','0'); zl.setAttribute('y1',ZERO);
+  zl.setAttribute('x2',W);  zl.setAttribute('y2',ZERO);
+  zl.setAttribute('stroke','#1c1f38'); zl.setAttribute('stroke-width','1');
+  svg.appendChild(zl);
+
+  rows.forEach((r, i) => {
+    const v    = r[tlkMetrica];
+    const barH = Math.max(Math.abs(v) / maxV * (H/2 - PAD), 2);
+    const x    = i * (BAR_W + BAR_GAP) + 4;
+    const y    = v >= 0 ? ZERO - barH : ZERO;
+    const fill = v >= 0 ? cor : '#f87171';
+    const ttTxt = `${tlkFmtPeriodo(r.Periodo)}  ${TLK_LABELS[tlkMetrica]}: ${cvmFmt(v)}`;
+
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x',x); rect.setAttribute('y',y);
+    rect.setAttribute('width',BAR_W); rect.setAttribute('height',barH);
+    rect.setAttribute('fill',fill); rect.setAttribute('rx','2');
+    rect.style.opacity = '.82'; rect.style.cursor = 'default';
+    rect.style.transition = 'opacity .15s';
+    rect.addEventListener('mouseenter', () => cvmShowTT(rect, ttTxt));
+    rect.addEventListener('mouseleave', () => cvmHideTT(rect));
+    svg.appendChild(rect);
+
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x', x + BAR_W/2); txt.setAttribute('y', H + 14);
+    txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','6');
+    txt.setAttribute('fill','#64748b'); txt.setAttribute('font-family','IBM Plex Mono,monospace');
+    txt.textContent = tlkFmtPeriodo(r.Periodo);
+    svg.appendChild(txt);
+  });
+
+  wrap.innerHTML = '';
+  const sd = document.createElement('div');
+  sd.style.overflowX = 'auto';
+  sd.appendChild(svg);
+  wrap.appendChild(sd);
+}
+
+function tlkRenderTabela() {
+  const fonte   = CVM_TELECOM_DATA[tlkTipo];
+  const tickers = [...new Set(fonte.map(d => d.Ticker))];
+  const periodos = [...new Set(fonte.map(d => d.Periodo))].sort().slice(-6);
+  const thS = 'font-size:.48rem;color:var(--dim);padding:.3rem .5rem;text-align:right;border-bottom:1px solid var(--border2);white-space:nowrap;font-weight:500';
+
+  const thead = `<tr>
+    <th style="${thS};text-align:left">Empresa</th>
+    <th style="${thS};text-align:left">Ticker</th>
+    ${periodos.map(p=>`<th colspan="3" style="${thS};text-align:center;color:var(--hi)">${tlkFmtPeriodo(p)}</th>`).join('')}
+  </tr><tr>
+    <th style="${thS};text-align:left"></th><th style="${thS};text-align:left"></th>
+    ${periodos.map(()=>`
+      <th style="${thS};color:var(--papel)">FCO</th>
+      <th style="${thS};color:var(--tijolo)">CAPEX</th>
+      <th style="${thS};color:var(--green)">FCL</th>`).join('')}
+  </tr>`;
+
+  const tbody = tickers.map(t => {
+    const emp = fonte.find(d => d.Ticker === t);
+    const cor = TLK_CORES[t] || '#64748b';
+    const cells = periodos.map(p => {
+      const row = fonte.find(d => d.Ticker === t && d.Periodo === p);
+      const td  = (v, c) => `<td style="font-size:.48rem;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;padding:.25rem .5rem;text-align:right;color:${v===undefined?'var(--dim2)':v>=0?c:'var(--red)'};border-bottom:1px solid var(--border)">${v===undefined?'—':cvmFmt(v)}</td>`;
+      return row
+        ? td(row.fco,'var(--papel)') + td(row.capex,'var(--tijolo)') + td(row.fcl,'var(--green)')
+        : `<td colspan="3" style="font-size:.44rem;color:var(--dim2);text-align:center;border-bottom:1px solid var(--border)">—</td>`;
+    }).join('');
+    return `<tr>
+      <td style="font-size:.5rem;color:var(--dim);padding:.25rem .5rem;border-bottom:1px solid var(--border);white-space:nowrap">${emp?.Empresa||t}</td>
+      <td style="font-size:.5rem;color:${cor};padding:.25rem .5rem;border-bottom:1px solid var(--border);font-weight:700">${t}</td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  document.getElementById('tlk-thead').innerHTML = thead;
+  document.getElementById('tlk-tbody').innerHTML = tbody;
+}
+
+
 function setorialInit() {
   stRenderTabs();
   stRenderAtivoSelector();
@@ -24943,6 +25333,23 @@ function setorialInit() {
   cvmInit();
   // Inicia painel Bancos
   bnkInit();
+  // Inicia painel Petróleo & Gás
+  initPetroleo();
+  // Inicia painel Construção Civil
+  initConstrucao();
+  initTelecom();
+  // Visibilidade inicial dos painéis CVM (começa em energia)
+  const paineisCVM = {
+    energia:    'cvm-energia-painel',
+    bancos:     'cvm-bancos-painel',
+    petroleo:   'cvm-petroleo-painel',
+    construcao: 'cvm-construcao-painel',
+    telecom:    'cvm-telecom-painel',
+  };
+  Object.entries(paineisCVM).forEach(([seg, elId]) => {
+    const el = document.getElementById(elId);
+    if (el) el.style.display = seg === setorialAtivo ? 'block' : 'none';
+  });
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -25481,7 +25888,445 @@ function bnkRenderTabela() {
 }
 
 
-</script>
+// ═══════════════════════════════════════════════════════════
+//  CVM — PETRÓLEO & GÁS
+// ═══════════════════════════════════════════════════════════
 
-</body>
+const CVM_PETROLEO_DATA = {"dfp": [{"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2016-12-31", "fco": 2235238.0, "capex": 1127892.0, "fcl": 1107346.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2017-12-31", "fco": 1792909.0, "capex": 1149726.0, "fcl": 643183.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2018-12-31", "fco": 2693814.0, "capex": 1390831.0, "fcl": 1302983.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2019-12-31", "fco": 2807999.0, "capex": 859773.0, "fcl": 1948226.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2020-12-31", "fco": 2142815.0, "capex": 2351855.0, "fcl": -209040.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2021-12-31", "fco": 5221982.0, "capex": 5090004.0, "fcl": 131978.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2022-12-31", "fco": 9972232.0, "capex": 24086398.0, "fcl": -14114166.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2023-12-31", "fco": 10276444.0, "capex": 7750398.0, "fcl": 2526046.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2024-12-31", "fco": 13081286.0, "capex": 9284194.0, "fcl": 3797092.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2016-12-31", "fco": 89709000.0, "capex": 49744000.0, "fcl": 39965000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2017-12-31", "fco": 86467000.0, "capex": 46575000.0, "fcl": 39892000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2018-12-31", "fco": 95846000.0, "capex": 44148000.0, "fcl": 51698000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2019-12-31", "fco": 101766000.0, "capex": 97180000.0, "fcl": 4586000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2020-12-31", "fco": 148106000.0, "capex": 35286000.0, "fcl": 112820000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2021-12-31", "fco": 203126000.0, "capex": 34264000.0, "fcl": 168862000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2022-12-31", "fco": 255410000.0, "capex": 66866000.0, "fcl": 188544000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2023-12-31", "fco": 215696000.0, "capex": 60435000.0, "fcl": 155261000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2024-12-31", "fco": 204037000.0, "capex": 79983000.0, "fcl": 124054000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2025-12-31", "fco": 200333000.0, "capex": 108714000.0, "fcl": 91619000.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2016-12-31", "fco": 114000.0, "capex": 395179.0, "fcl": -281179.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2017-12-31", "fco": 51536.0, "capex": 148555.0, "fcl": -97019.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2018-12-31", "fco": 270116.0, "capex": 362710.0, "fcl": -92594.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2019-12-31", "fco": 444671.0, "capex": 1814839.0, "fcl": -1370168.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2020-12-31", "fco": 1617546.0, "capex": 857583.0, "fcl": 759963.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2021-12-31", "fco": 2183736.0, "capex": 4776796.0, "fcl": -2593060.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2022-12-31", "fco": 4927159.0, "capex": 3731556.01, "fcl": 1195602.99}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2023-12-31", "fco": 7740287.0, "capex": 13323637.0, "fcl": -5583350.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2024-12-31", "fco": 9669485.0, "capex": 14814285.0, "fcl": -5144800.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2019-12-31", "fco": -6363.0, "capex": 9619.0, "fcl": -15982.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2020-12-31", "fco": 55547.0, "capex": 1419388.0, "fcl": -1363841.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2021-12-31", "fco": 62839.0, "capex": 2329389.0, "fcl": -2266550.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2022-12-31", "fco": 90305.0, "capex": 2618860.0, "fcl": -2528555.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2023-12-31", "fco": 1008698.0, "capex": 8618745.0, "fcl": -7610047.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2024-12-31", "fco": 1854060.0, "capex": 4073241.0, "fcl": -2219181.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2016-12-31", "fco": 2513670.0, "capex": 1877276.0, "fcl": 636394.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2017-12-31", "fco": 2279420.0, "capex": 2080529.0, "fcl": 198891.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2018-12-31", "fco": 2888959.0, "capex": 3221123.0, "fcl": -332164.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2019-12-31", "fco": 2924852.0, "capex": 1874548.0, "fcl": 1050304.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2020-12-31", "fco": 3138119.0, "capex": 2296428.0, "fcl": 841691.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2021-12-31", "fco": 2585960.0, "capex": 1465245.0, "fcl": 1120715.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2022-12-31", "fco": 2004694.0, "capex": 1473131.0, "fcl": 531563.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2023-12-31", "fco": 3849822.0, "capex": 1611455.0, "fcl": 2238367.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2024-12-31", "fco": 3735576.0, "capex": 7774724.0, "fcl": -4039148.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2025-12-31", "fco": 5452502.0, "capex": 4488505.0, "fcl": 963997.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2021-12-31", "fco": 638899.0, "capex": 1334653.0, "fcl": -695754.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2022-12-31", "fco": 1506150.0, "capex": 1799094.0, "fcl": -292944.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2023-12-31", "fco": 1391806.0, "capex": 1838704.0, "fcl": -446898.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2024-12-31", "fco": 2219127.0, "capex": 1602586.0, "fcl": 616541.0}], "itr": [{"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2016-03-31", "fco": 317060.0, "capex": 106595.0, "fcl": 210465.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2016-06-30", "fco": 926324.0, "capex": 413677.0, "fcl": 512647.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2016-09-30", "fco": 1617992.0, "capex": 589118.0, "fcl": 1028874.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2017-03-31", "fco": 430107.0, "capex": 346719.0, "fcl": 83388.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2017-06-30", "fco": 916160.0, "capex": 459727.0, "fcl": 456433.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2017-09-30", "fco": 1454577.0, "capex": 678910.0, "fcl": 775667.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2018-03-31", "fco": 1532441.0, "capex": 388838.0, "fcl": 1143603.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2018-06-30", "fco": 1882168.0, "capex": 968074.0, "fcl": 914094.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2018-09-30", "fco": 2430823.0, "capex": 1112717.0, "fcl": 1318106.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2019-03-31", "fco": 239673.0, "capex": 177299.0, "fcl": 62374.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2019-06-30", "fco": 874716.0, "capex": 369191.0, "fcl": 505525.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2019-09-30", "fco": 1864100.0, "capex": 589664.0, "fcl": 1274436.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2020-03-31", "fco": -38274.0, "capex": 799232.0, "fcl": -837506.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2020-06-30", "fco": 820037.0, "capex": 1483476.0, "fcl": -663439.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2020-09-30", "fco": 1488976.0, "capex": 2072387.0, "fcl": -583411.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2021-03-31", "fco": 842744.0, "capex": 467800.0, "fcl": 374944.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2021-06-30", "fco": 2758904.0, "capex": 1792868.0, "fcl": 966036.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2021-09-30", "fco": 3955146.0, "capex": 2999202.0, "fcl": 955944.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2022-03-31", "fco": 1300340.0, "capex": 2338953.0, "fcl": -1038613.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2022-06-30", "fco": 3904170.0, "capex": 5887538.0, "fcl": -1983368.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2022-09-30", "fco": 7542736.0, "capex": 11893717.0, "fcl": -4350981.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2023-03-31", "fco": 1817017.0, "capex": 2303650.0, "fcl": -486633.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2023-06-30", "fco": 4924376.0, "capex": 3782117.0, "fcl": 1142259.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2023-09-30", "fco": 8288625.0, "capex": 6497301.0, "fcl": 1791324.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2024-03-31", "fco": 1946085.0, "capex": 1984468.0, "fcl": -38383.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2024-06-30", "fco": 6113859.0, "capex": 3546524.0, "fcl": 2567335.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2024-09-30", "fco": 9376319.0, "capex": 6653530.0, "fcl": 2722789.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2025-03-31", "fco": 1729904.0, "capex": 3594179.0, "fcl": -1864275.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2025-06-30", "fco": 5658583.0, "capex": 5480295.0, "fcl": 178288.0}, {"Ticker": "CSAN3", "Empresa": "Cosan", "Periodo": "2025-09-30", "fco": 9669530.0, "capex": 7949153.0, "fcl": 1720377.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2016-03-31", "fco": 17307000.0, "capex": 14941000.0, "fcl": 2366000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2016-06-30", "fco": 39250000.0, "capex": 26835000.0, "fcl": 12415000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2016-09-30", "fco": 65965000.0, "capex": 37152000.0, "fcl": 28813000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2017-03-31", "fco": 23225000.0, "capex": 10336000.0, "fcl": 12889000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2017-06-30", "fco": 42878000.0, "capex": 21341000.0, "fcl": 21537000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2017-09-30", "fco": 66900000.0, "capex": 33174000.0, "fcl": 33726000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2018-03-31", "fco": 22218000.0, "capex": 9941000.0, "fcl": 12277000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2018-06-30", "fco": 47813000.0, "capex": 20120000.0, "fcl": 27693000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2018-09-30", "fco": 69738000.0, "capex": 34067000.0, "fcl": 35671000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2019-03-31", "fco": 17749000.0, "capex": 6174000.0, "fcl": 11575000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2019-06-30", "fco": 38249000.0, "capex": 14203000.0, "fcl": 24046000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2019-09-30", "fco": 71073000.0, "capex": 22158000.0, "fcl": 48915000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2020-03-31", "fco": 34991000.0, "capex": 8342000.0, "fcl": 26649000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2020-06-30", "fco": 64301000.0, "capex": 21862000.0, "fcl": 42439000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2020-09-30", "fco": 110404000.0, "capex": 27893000.0, "fcl": 82511000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2021-03-31", "fco": 40070000.0, "capex": 8985000.0, "fcl": 31085000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2021-06-30", "fco": 96634000.0, "capex": 16931000.0, "fcl": 79703000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2021-09-30", "fco": 151734000.0, "capex": 24808000.0, "fcl": 126926000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2022-03-31", "fco": 52824000.0, "capex": 14832000.0, "fcl": 37992000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2022-06-30", "fco": 124628000.0, "capex": 31355000.0, "fcl": 93273000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2022-09-30", "fco": 187835000.0, "capex": 39102000.0, "fcl": 148733000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2023-03-31", "fco": 53759000.0, "capex": 17471000.0, "fcl": 36288000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2023-06-30", "fco": 101510000.0, "capex": 29638000.0, "fcl": 71872000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2023-09-30", "fco": 158038000.0, "capex": 43950000.0, "fcl": 114088000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2024-03-31", "fco": 46481000.0, "capex": 21313000.0, "fcl": 25168000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2024-06-30", "fco": 93651000.0, "capex": 32990000.0, "fcl": 60661000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2024-09-30", "fco": 156371000.0, "capex": 59734000.0, "fcl": 96637000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2025-03-31", "fco": 49338000.0, "capex": 23298000.0, "fcl": 26040000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2025-06-30", "fco": 91762000.0, "capex": 46477000.0, "fcl": 45285000.0}, {"Ticker": "PETR4", "Empresa": "Petrobras", "Periodo": "2025-09-30", "fco": 145417000.0, "capex": 73117000.0, "fcl": 72300000.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2016-03-31", "fco": 45983.0, "capex": 164074.0, "fcl": -118091.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2016-06-30", "fco": 28497.0, "capex": 289286.0, "fcl": -260789.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2016-09-30", "fco": 36046.0, "capex": 307539.0, "fcl": -271493.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2017-03-31", "fco": -19201.0, "capex": 124797.0, "fcl": -143998.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2017-06-30", "fco": -10072.0, "capex": 132876.0, "fcl": -142948.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2017-09-30", "fco": 26243.0, "capex": 140524.0, "fcl": -114281.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2018-03-31", "fco": -17962.0, "capex": 18857.0, "fcl": -36819.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2018-06-30", "fco": 77058.0, "capex": 203739.0, "fcl": -126681.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2018-09-30", "fco": 167710.0, "capex": 160531.0, "fcl": 7179.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2019-03-31", "fco": 44927.0, "capex": 1566824.0, "fcl": -1521897.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2019-06-30", "fco": 374038.0, "capex": 1629236.0, "fcl": -1255198.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2019-09-30", "fco": 521799.0, "capex": 1591928.0, "fcl": -1070129.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2020-03-31", "fco": 236752.0, "capex": 1016924.0, "fcl": -780172.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2020-06-30", "fco": 791434.0, "capex": 888180.0, "fcl": -96746.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2020-09-30", "fco": 1254191.0, "capex": 1029377.0, "fcl": 224814.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2021-03-31", "fco": 723130.0, "capex": 376098.0, "fcl": 347032.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2021-06-30", "fco": 804781.0, "capex": 1564825.0, "fcl": -760044.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2021-09-30", "fco": 1514308.0, "capex": 3436107.0, "fcl": -1921799.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2022-03-31", "fco": 969766.0, "capex": 327534.0, "fcl": 642232.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2022-06-30", "fco": 1671174.0, "capex": 2280695.0, "fcl": -609521.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2022-09-30", "fco": 3517988.0, "capex": 2888181.0, "fcl": 629807.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2023-03-31", "fco": -90108.0, "capex": 10022303.0, "fcl": -10112411.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2023-06-30", "fco": 2327947.0, "capex": 11421484.0, "fcl": -9093537.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2023-09-30", "fco": 4939467.0, "capex": 12533960.0, "fcl": -7594493.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2024-03-31", "fco": 1614537.0, "capex": 1491428.0, "fcl": 123109.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2024-06-30", "fco": 3223349.0, "capex": 2175125.0, "fcl": 1048224.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2024-09-30", "fco": 6400258.0, "capex": 3677739.0, "fcl": 2722519.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2025-03-31", "fco": 256811.0, "capex": 1592862.0, "fcl": -1336051.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2025-06-30", "fco": 3618494.0, "capex": 5109756.0, "fcl": -1491262.0}, {"Ticker": "PRIO3", "Empresa": "PetroRio", "Periodo": "2025-09-30", "fco": 5149508.0, "capex": 6607948.0, "fcl": -1458440.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2020-03-31", "fco": 46919.0, "capex": 370.0, "fcl": 46549.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2020-06-30", "fco": -21285.0, "capex": 1499.0, "fcl": -22784.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2020-09-30", "fco": -46529.0, "capex": 41398.0, "fcl": -87927.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2021-03-31", "fco": 63089.0, "capex": 28423.0, "fcl": 34666.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2021-06-30", "fco": 102018.0, "capex": 689092.0, "fcl": -587074.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2021-09-30", "fco": 156426.0, "capex": 974454.0, "fcl": -818028.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2022-03-31", "fco": 4043.0, "capex": 667645.0, "fcl": -663602.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2022-06-30", "fco": 113745.0, "capex": 2038409.0, "fcl": -1924664.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2022-09-30", "fco": 142724.0, "capex": 2157548.0, "fcl": -2014824.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2023-03-31", "fco": 48113.0, "capex": 199899.0, "fcl": -151786.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2023-06-30", "fco": -54591.0, "capex": 8259361.0, "fcl": -8313952.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2023-09-30", "fco": 397165.0, "capex": 8617449.0, "fcl": -8220284.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2024-03-31", "fco": 113702.0, "capex": 1442984.0, "fcl": -1329282.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2024-06-30", "fco": 1071838.0, "capex": 2034553.0, "fcl": -962715.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2024-09-30", "fco": 1200066.0, "capex": 2099962.0, "fcl": -899896.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2025-03-31", "fco": 808573.0, "capex": 1695302.0, "fcl": -886729.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2025-06-30", "fco": 2157980.0, "capex": 2795213.0, "fcl": -637233.0}, {"Ticker": "RRRP3", "Empresa": "3R Petroleum", "Periodo": "2025-09-30", "fco": 3451138.0, "capex": 4564249.0, "fcl": -1113111.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2016-03-31", "fco": -176450.0, "capex": 296587.0, "fcl": -473037.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2016-06-30", "fco": 692881.0, "capex": 661738.0, "fcl": 31143.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2016-09-30", "fco": 1423782.0, "capex": 1099225.0, "fcl": 324557.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2017-03-31", "fco": 402171.0, "capex": 422510.0, "fcl": -20339.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2017-06-30", "fco": 1257758.0, "capex": 1017448.0, "fcl": 240310.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2017-09-30", "fco": 1763822.0, "capex": 1400658.0, "fcl": 363164.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2018-03-31", "fco": -113088.0, "capex": 666820.0, "fcl": -779908.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2018-06-30", "fco": 629575.0, "capex": 1614808.0, "fcl": -985233.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2018-09-30", "fco": 1442524.0, "capex": 2460242.0, "fcl": -1017718.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2019-03-31", "fco": 462403.0, "capex": 214105.0, "fcl": 248298.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2019-06-30", "fco": 1527246.0, "capex": 968914.0, "fcl": 558332.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2019-09-30", "fco": 2449065.0, "capex": 1679308.0, "fcl": 769757.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2020-03-31", "fco": 931992.0, "capex": 363879.0, "fcl": 568113.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2020-06-30", "fco": 1802751.0, "capex": 443094.0, "fcl": 1359657.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2020-09-30", "fco": 2630320.0, "capex": 2286501.0, "fcl": 343819.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2021-03-31", "fco": 128424.0, "capex": 299734.0, "fcl": -171310.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2021-06-30", "fco": 1278072.0, "capex": 709969.0, "fcl": 568103.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2021-09-30", "fco": 1882443.0, "capex": 1097399.0, "fcl": 785044.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2022-03-31", "fco": -1183073.0, "capex": 213491.0, "fcl": -1396564.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2022-06-30", "fco": -806579.0, "capex": 693731.0, "fcl": -1500310.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2022-09-30", "fco": 486145.0, "capex": 1100101.0, "fcl": -613956.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2023-03-31", "fco": -711252.0, "capex": 306616.0, "fcl": -1017868.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2023-06-30", "fco": 187052.0, "capex": 546752.0, "fcl": -359700.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2023-09-30", "fco": 2088476.0, "capex": 1081169.0, "fcl": 1007307.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2024-03-31", "fco": -573237.0, "capex": 1873175.0, "fcl": -2446412.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2024-06-30", "fco": 724508.0, "capex": 3872587.0, "fcl": -3148079.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2024-09-30", "fco": 1504981.0, "capex": 4469371.0, "fcl": -2964390.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2025-03-31", "fco": 3019.0, "capex": 431627.0, "fcl": -428608.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2025-06-30", "fco": 941553.0, "capex": 1316470.0, "fcl": -374917.0}, {"Ticker": "UGPA3", "Empresa": "Ultrapar", "Periodo": "2025-09-30", "fco": 3070902.0, "capex": 1978940.0, "fcl": 1091962.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2021-03-31", "fco": 137658.0, "capex": 199722.0, "fcl": -62064.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2021-06-30", "fco": 258246.0, "capex": 1057626.0, "fcl": -799380.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2021-09-30", "fco": 392607.0, "capex": 973175.0, "fcl": -580568.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2022-03-31", "fco": 233574.0, "capex": 234502.0, "fcl": -928.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2022-06-30", "fco": 618556.0, "capex": 1380352.0, "fcl": -761796.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2022-09-30", "fco": 1094983.0, "capex": 1590842.0, "fcl": -495859.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2023-03-31", "fco": 398033.0, "capex": 869410.0, "fcl": -471377.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2023-06-30", "fco": 720357.0, "capex": 1194494.0, "fcl": -474137.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2023-09-30", "fco": 1083619.0, "capex": 1541119.0, "fcl": -457500.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2024-03-31", "fco": 465986.0, "capex": 298604.0, "fcl": 167382.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2024-06-30", "fco": 1090400.0, "capex": 1327457.0, "fcl": -237057.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2024-09-30", "fco": 1611594.0, "capex": 1451692.0, "fcl": 159902.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2025-03-31", "fco": 505006.0, "capex": 297789.0, "fcl": 207217.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2025-06-30", "fco": 827539.0, "capex": 720186.0, "fcl": 107353.0},
+{"Ticker": "RECV3", "Empresa": "PetroRecôncavo", "Periodo": "2025-09-30", "fco": 1215398.0, "capex": 1329436.0, "fcl": -114038.0}]};
+
+const PTR_CORES = {
+  PETR4:'#fb923c', PRIO3:'#00e5a0', RRRP3:'#f87171',
+  CSAN3:'#818cf8', UGPA3:'#38bdf8', RECV3:'#fbbf24'
+};
+const PTR_LABELS = { fco:'FCO', capex:'CAPEX', fcl:'FCL' };
+
+let ptrTipo    = 'dfp';
+let ptrMetrica = 'fco';
+let ptrEmpresa = null;
+
+function initPetroleo() {
+  const tickers = [...new Set(CVM_PETROLEO_DATA.dfp.map(d => d.Ticker))];
+  ptrEmpresa = tickers[0];
+  ptrRenderEmpresaTabs();
+  ptrRenderKPIs();
+  ptrRenderChart();
+  ptrRenderTabela();
+}
+
+function ptrSetTipo(t) {
+  ptrTipo = t;
+  const cores = { dfp: '#fb923c', itr: 'transparent' };
+  document.getElementById('ptr-btn-dfp').style.background = t==='dfp' ? '#fb923c' : 'transparent';
+  document.getElementById('ptr-btn-dfp').style.color      = t==='dfp' ? '#07080f' : 'var(--dim)';
+  document.getElementById('ptr-btn-dfp').style.fontWeight = t==='dfp' ? '600' : '400';
+  document.getElementById('ptr-btn-itr').style.background = t==='itr' ? '#fb923c' : 'transparent';
+  document.getElementById('ptr-btn-itr').style.color      = t==='itr' ? '#07080f' : 'var(--dim)';
+  document.getElementById('ptr-btn-itr').style.fontWeight = t==='itr' ? '600' : '400';
+  ptrRenderKPIs(); ptrRenderChart(); ptrRenderTabela();
+}
+
+function ptrSetMetrica(m) {
+  ptrMetrica = m;
+  const cores = { fco:'#38bdf8', capex:'#fb923c', fcl:'#00e5a0' };
+  ['fco','capex','fcl'].forEach(k => {
+    const btn = document.getElementById('ptr-m-'+k);
+    btn.style.background = k===m ? cores[k] : 'transparent';
+    btn.style.color      = k===m ? '#07080f' : 'var(--dim)';
+    btn.style.fontWeight = k===m ? '600' : '400';
+  });
+  ptrRenderChart();
+}
+
+function ptrSetEmpresa(t) {
+  ptrEmpresa = t;
+  ptrRenderEmpresaTabs();
+  ptrRenderChart();
+}
+
+function ptrGetRows() {
+  return CVM_PETROLEO_DATA[ptrTipo].filter(d => !ptrEmpresa || d.Ticker === ptrEmpresa);
+}
+
+function ptrFmtPeriodo(p) {
+  const d = new Date(p);
+  const m = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return m[d.getUTCMonth()] + '/' + String(d.getUTCFullYear()).slice(2);
+}
+
+function ptrRenderEmpresaTabs() {
+  const tickers = [...new Set(CVM_PETROLEO_DATA.dfp.map(d => d.Ticker))];
+  document.getElementById('ptr-empresa-tabs').innerHTML = tickers.map(t => {
+    const emp  = CVM_PETROLEO_DATA.dfp.find(d => d.Ticker === t);
+    const ativo = t === ptrEmpresa;
+    const cor  = PTR_CORES[t] || '#64748b';
+    return `<button onclick="ptrSetEmpresa('${t}')" style="
+      font-size:.5rem;padding:.25rem .6rem;border-radius:5px;cursor:pointer;
+      border:1px solid ${ativo ? cor : 'var(--border2)'};
+      background:${ativo ? cor+'22' : 'var(--bg3)'};
+      color:${ativo ? cor : 'var(--dim)'};font-family:inherit;
+      transition:all .2s;font-weight:${ativo?'600':'400'}
+    ">${t} <span style="opacity:.6;font-weight:400">${emp?.Empresa||''}</span></button>`;
+  }).join('');
+}
+
+function ptrRenderKPIs() {
+  const tickers = [...new Set(CVM_PETROLEO_DATA[ptrTipo].map(d => d.Ticker))];
+  document.getElementById('ptr-kpi-row').innerHTML = tickers.map(t => {
+    const rows  = CVM_PETROLEO_DATA[ptrTipo].filter(d => d.Ticker === t);
+    const ultimo = rows[rows.length - 1];
+    if (!ultimo) return '';
+    const cor    = PTR_CORES[t] || '#64748b';
+    const periodo = ptrFmtPeriodo(ultimo.Periodo);
+    return `<div class="card" style="border-color:${cor}33;padding:.6rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+        <div style="font-size:.56rem;font-weight:700;color:${cor}">${t}</div>
+        <div style="font-size:.44rem;color:var(--dim2)">${periodo}</div>
+      </div>
+      <div style="font-size:.44rem;color:var(--dim);margin-bottom:.5rem">${ultimo.Empresa}</div>
+      <div style="display:flex;flex-direction:column;gap:.2rem">
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:.48rem;color:var(--dim)">FCO</span>
+          <span style="font-size:.52rem;color:${ultimo.fco>=0?'var(--green)':'var(--red)'};font-family:'Bebas Neue',sans-serif;letter-spacing:.04em">${cvmFmt(ultimo.fco)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:.48rem;color:var(--dim)">CAPEX</span>
+          <span style="font-size:.52rem;color:var(--tijolo);font-family:'Bebas Neue',sans-serif;letter-spacing:.04em">${cvmFmt(ultimo.capex)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:.2rem;margin-top:.1rem">
+          <span style="font-size:.48rem;color:var(--dim)">FCL</span>
+          <span style="font-size:.56rem;color:${ultimo.fcl>=0?'var(--green)':'var(--red)'};font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;font-weight:600">${cvmFmt(ultimo.fcl)}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function ptrRenderChart() {
+  const rows  = ptrGetRows().sort((a,b) => a.Periodo.localeCompare(b.Periodo));
+  const wrap  = document.getElementById('ptr-chart-wrap');
+  const title = document.getElementById('ptr-chart-title');
+  const emp   = CVM_PETROLEO_DATA.dfp.find(d => d.Ticker === ptrEmpresa);
+  title.textContent = `${PTR_LABELS[ptrMetrica]} — ${ptrEmpresa} · ${emp?.Empresa||''} · ${ptrTipo.toUpperCase()}`;
+
+  if (!rows.length) { wrap.innerHTML = '<div style="font-size:.52rem;color:var(--dim);padding:.5rem">Sem dados</div>'; return; }
+
+  const vals = rows.map(r => r[ptrMetrica]);
+  const maxV = Math.max(...vals.map(Math.abs), 1);
+  const cor  = ptrMetrica==='fco' ? '#38bdf8' : ptrMetrica==='capex' ? '#fb923c' : '#00e5a0';
+  const BAR_W = 30, BAR_GAP = 8;
+  const W = Math.max(rows.length * (BAR_W + BAR_GAP), 300);
+  const H = 150; const PAD = 20; const ZERO = H / 2;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('width', W); svg.setAttribute('height', H + 22);
+  svg.style.display = 'block';
+
+  const zl = document.createElementNS('http://www.w3.org/2000/svg','line');
+  zl.setAttribute('x1','0'); zl.setAttribute('y1',ZERO);
+  zl.setAttribute('x2',W);  zl.setAttribute('y2',ZERO);
+  zl.setAttribute('stroke','#1c1f38'); zl.setAttribute('stroke-width','1');
+  svg.appendChild(zl);
+
+  rows.forEach((r, i) => {
+    const v    = r[ptrMetrica];
+    const barH = Math.max(Math.abs(v) / maxV * (H/2 - PAD), 2);
+    const x    = i * (BAR_W + BAR_GAP) + 4;
+    const y    = v >= 0 ? ZERO - barH : ZERO;
+    const fill = v >= 0 ? cor : '#f87171';
+    const ttTxt = `${ptrFmtPeriodo(r.Periodo)}  ${PTR_LABELS[ptrMetrica]}: ${cvmFmt(v)}`;
+
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x',x); rect.setAttribute('y',y);
+    rect.setAttribute('width',BAR_W); rect.setAttribute('height',barH);
+    rect.setAttribute('fill',fill); rect.setAttribute('rx','2');
+    rect.style.opacity = '.82'; rect.style.cursor = 'default';
+    rect.style.transition = 'opacity .15s';
+    rect.addEventListener('mouseenter', () => cvmShowTT(rect, ttTxt));
+    rect.addEventListener('mouseleave', () => cvmHideTT(rect));
+    svg.appendChild(rect);
+
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x', x + BAR_W/2); txt.setAttribute('y', H + 14);
+    txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','6');
+    txt.setAttribute('fill','#64748b'); txt.setAttribute('font-family','IBM Plex Mono,monospace');
+    txt.textContent = ptrFmtPeriodo(r.Periodo);
+    svg.appendChild(txt);
+  });
+
+  wrap.innerHTML = '';
+  const sd = document.createElement('div');
+  sd.style.overflowX = 'auto';
+  sd.appendChild(svg);
+  wrap.appendChild(sd);
+}
+
+function ptrRenderTabela() {
+  const fonte   = CVM_PETROLEO_DATA[ptrTipo];
+  const tickers = [...new Set(fonte.map(d => d.Ticker))];
+  const periodos = [...new Set(fonte.map(d => d.Periodo))].sort().slice(-6);
+  const thS = 'font-size:.48rem;color:var(--dim);padding:.3rem .5rem;text-align:right;border-bottom:1px solid var(--border2);white-space:nowrap;font-weight:500';
+
+  const thead = `<tr>
+    <th style="${thS};text-align:left">Empresa</th>
+    <th style="${thS};text-align:left">Ticker</th>
+    ${periodos.map(p=>`<th colspan="3" style="${thS};text-align:center;color:var(--hi)">${ptrFmtPeriodo(p)}</th>`).join('')}
+  </tr><tr>
+    <th style="${thS};text-align:left"></th><th style="${thS};text-align:left"></th>
+    ${periodos.map(()=>`
+      <th style="${thS};color:var(--papel)">FCO</th>
+      <th style="${thS};color:var(--tijolo)">CAPEX</th>
+      <th style="${thS};color:var(--green)">FCL</th>`).join('')}
+  </tr>`;
+
+  const tbody = tickers.map(t => {
+    const emp = fonte.find(d => d.Ticker === t);
+    const cor = PTR_CORES[t] || '#64748b';
+    const cells = periodos.map(p => {
+      const row = fonte.find(d => d.Ticker === t && d.Periodo === p);
+      const td  = (v, c) => `<td style="font-size:.48rem;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;padding:.25rem .5rem;text-align:right;color:${v===undefined?'var(--dim2)':v>=0?c:'var(--red)'};border-bottom:1px solid var(--border)">${v===undefined?'—':cvmFmt(v)}</td>`;
+      return row
+        ? td(row.fco,'var(--papel)') + td(row.capex,'var(--tijolo)') + td(row.fcl,'var(--green)')
+        : `<td colspan="3" style="font-size:.44rem;color:var(--dim2);text-align:center;border-bottom:1px solid var(--border)">—</td>`;
+    }).join('');
+    return `<tr>
+      <td style="font-size:.5rem;color:var(--dim);padding:.25rem .5rem;border-bottom:1px solid var(--border);white-space:nowrap">${emp?.Empresa||t}</td>
+      <td style="font-size:.5rem;color:${cor};padding:.25rem .5rem;border-bottom:1px solid var(--border);font-weight:700">${t}</td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  document.getElementById('ptr-thead').innerHTML = thead;
+  document.getElementById('ptr-tbody').innerHTML = tbody;
+}
+
+
+// ═══════════════════════════════════════════════════════════
+//  CVM — CONSTRUÇÃO CIVIL
+// ═══════════════════════════════════════════════════════════
+
+const CVM_CONSTRUCAO_DATA = {"dfp":[{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2015-12-31","fco":-284678,"capex":676982,"fcl":-961660},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2015-12-31","fco":478129,"capex":394239,"fcl":83890},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2015-12-31","fco":-217756,"capex":600722,"fcl":-818478},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2015-12-31","fco":25975,"capex":135660,"fcl":-109685},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2015-12-31","fco":-30791,"capex":263500,"fcl":-294291},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2015-12-31","fco":284159,"capex":46250,"fcl":237909},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2016-12-31","fco":-676219,"capex":848758,"fcl":-1524977},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2016-12-31","fco":307941,"capex":64540,"fcl":243401},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2016-12-31","fco":-299552,"capex":299323,"fcl":-598875},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2016-12-31","fco":52776,"capex":137703,"fcl":-84927},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2016-12-31","fco":-85999,"capex":200856,"fcl":-286855},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2016-12-31","fco":124899,"capex":229081,"fcl":-104182},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2017-12-31","fco":-106540,"capex":215970,"fcl":-322510},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2017-12-31","fco":93362,"capex":692847,"fcl":-599485},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2017-12-31","fco":-212477,"capex":225881,"fcl":-438358},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2017-12-31","fco":80865,"capex":214052,"fcl":-133187},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2017-12-31","fco":-64300,"capex":56666,"fcl":-120966},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2017-12-31","fco":255544,"capex":121206,"fcl":134338},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2018-12-31","fco":-147606,"capex":161676,"fcl":-309282},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2018-12-31","fco":32308,"capex":896063,"fcl":-863755},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2018-12-31","fco":-288800,"capex":453652,"fcl":-742452},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2018-12-31","fco":241653,"capex":319248,"fcl":-77595},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2018-12-31","fco":-381860,"capex":253765,"fcl":-635625},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2018-12-31","fco":173872,"capex":40929,"fcl":132943},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2019-12-31","fco":58970,"capex":243567,"fcl":-184597},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2019-12-31","fco":-619708,"capex":551948,"fcl":-1171656},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2019-12-31","fco":-178513,"capex":62792,"fcl":-241305},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2019-12-31","fco":155,"capex":179649,"fcl":-179494},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2019-12-31","fco":-53738,"capex":243140,"fcl":-296878},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2019-12-31","fco":-12862,"capex":25322,"fcl":-38184},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2019-12-31","fco":115459,"capex":18929,"fcl":96530},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2019-12-31","fco":625926,"capex":18486,"fcl":607440},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2020-12-31","fco":1270850,"capex":464826,"fcl":806024},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2020-12-31","fco":237969,"capex":262182,"fcl":-24213},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2020-12-31","fco":-202357,"capex":1073108,"fcl":-1275465},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2020-12-31","fco":-119842,"capex":83251,"fcl":-203093},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2020-12-31","fco":-112197,"capex":174858,"fcl":-287055},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2020-12-31","fco":1486,"capex":240766,"fcl":-239280},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2020-12-31","fco":52781,"capex":180681,"fcl":-127900},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2020-12-31","fco":1000242,"capex":563333,"fcl":436909},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2021-12-31","fco":-540603,"capex":739154,"fcl":-1279757},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2021-12-31","fco":-364899,"capex":271789,"fcl":-636688},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2021-12-31","fco":-204474,"capex":387242,"fcl":-591716},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2021-12-31","fco":-5034,"capex":156279,"fcl":-161313},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2021-12-31","fco":-70415,"capex":27991,"fcl":-98406},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2021-12-31","fco":11382,"capex":569260,"fcl":-557878},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2021-12-31","fco":336952,"capex":267725,"fcl":69227},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2021-12-31","fco":1132009,"capex":440103,"fcl":691906},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2022-12-31","fco":-632930,"capex":374632,"fcl":-1007562},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2022-12-31","fco":-268887,"capex":443874,"fcl":-712761},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2022-12-31","fco":-133797,"capex":217894,"fcl":-351691},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2022-12-31","fco":-151536,"capex":354001,"fcl":-505537},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2022-12-31","fco":-21627,"capex":284555,"fcl":-306182},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2022-12-31","fco":-27293,"capex":194041,"fcl":-221334},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2022-12-31","fco":201140,"capex":62958,"fcl":138182},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2022-12-31","fco":262354,"capex":1652621,"fcl":-1390267},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2023-12-31","fco":-572952,"capex":1218550,"fcl":-1791502},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2023-12-31","fco":-463248,"capex":234701,"fcl":-697949},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2023-12-31","fco":-163074,"capex":268796,"fcl":-431870},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2023-12-31","fco":-182436,"capex":223940,"fcl":-406376},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2023-12-31","fco":128921,"capex":120911,"fcl":8010},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2023-12-31","fco":-44528,"capex":145294,"fcl":-189822},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2023-12-31","fco":332886,"capex":72709,"fcl":260177},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2023-12-31","fco":255455,"capex":425246,"fcl":-169791},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2024-12-31","fco":214052,"capex":84833,"fcl":129219},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2024-12-31","fco":-552684,"capex":155194,"fcl":-707878},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2024-12-31","fco":-180861,"capex":323534,"fcl":-504395},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2024-12-31","fco":306461,"capex":49251,"fcl":257210},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2024-12-31","fco":31974,"capex":362616,"fcl":-330642},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2024-12-31","fco":-78684,"capex":112996,"fcl":-191680},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2024-12-31","fco":516652,"capex":278465,"fcl":238187},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2024-12-31","fco":331916,"capex":626831,"fcl":-294915},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2025-12-31","fco":330847,"capex":264020,"fcl":66827},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2025-12-31","fco":292838,"capex":39833,"fcl":253005}],"itr":[{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2015-03-31","fco":-105193,"capex":285600,"fcl":-390793},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2015-03-31","fco":31108,"capex":147760,"fcl":-116652},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2015-03-31","fco":-55892,"capex":173477,"fcl":-229369},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2015-03-31","fco":36951,"capex":63356,"fcl":-26405},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2015-03-31","fco":60557,"capex":1723,"fcl":58834},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2015-03-31","fco":36694,"capex":80782,"fcl":-44088},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2015-06-30","fco":19903,"capex":238221,"fcl":-218318},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2015-06-30","fco":141914,"capex":219292,"fcl":-77378},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2015-06-30","fco":-90705,"capex":311123,"fcl":-401828},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2015-06-30","fco":10516,"capex":111442,"fcl":-100926},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2015-06-30","fco":46749,"capex":77163,"fcl":-30414},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2015-06-30","fco":128978,"capex":141137,"fcl":-12159},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2015-09-30","fco":45398,"capex":255666,"fcl":-210268},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2015-09-30","fco":275819,"capex":289695,"fcl":-13876},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2015-09-30","fco":-134885,"capex":473909,"fcl":-608794},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2015-09-30","fco":37841,"capex":38389,"fcl":-548},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2015-09-30","fco":35100,"capex":174346,"fcl":-139246},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2015-09-30","fco":211455,"capex":12685,"fcl":198770},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2016-03-31","fco":-156614,"capex":252468,"fcl":-409082},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2016-03-31","fco":100830,"capex":151738,"fcl":-50908},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2016-03-31","fco":-57852,"capex":78493,"fcl":-136345},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2016-03-31","fco":73954,"capex":19819,"fcl":54135},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2016-03-31","fco":-23209,"capex":9924,"fcl":-33133},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2016-03-31","fco":-19672,"capex":45283,"fcl":-64955},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2016-06-30","fco":-21256,"capex":323773,"fcl":-345029},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2016-06-30","fco":148030,"capex":186579,"fcl":-38549},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2016-06-30","fco":-135196,"capex":152442,"fcl":-287638},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2016-06-30","fco":104981,"capex":1997,"fcl":102984},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2016-06-30","fco":-28544,"capex":148653,"fcl":-177197},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2016-06-30","fco":119997,"capex":71903,"fcl":48094},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2016-09-30","fco":-381555,"capex":671223,"fcl":-1052778},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2016-09-30","fco":192378,"capex":256071,"fcl":-63693},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2016-09-30","fco":-195243,"capex":295557,"fcl":-490800},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2016-09-30","fco":-4337,"capex":129079,"fcl":-133416},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2016-09-30","fco":-67179,"capex":203045,"fcl":-270224},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2016-09-30","fco":24871,"capex":7164,"fcl":17707},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2017-03-31","fco":-58495,"capex":121198,"fcl":-179693},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2017-03-31","fco":252127,"capex":71193,"fcl":180934},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2017-03-31","fco":-41944,"capex":9833,"fcl":-51777},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2017-03-31","fco":3013,"capex":13960,"fcl":-10947},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2017-03-31","fco":-33165,"capex":35470,"fcl":-68635},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2017-03-31","fco":60210,"capex":212750,"fcl":-152540},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2017-06-30","fco":-202784,"capex":117143,"fcl":-319927},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2017-06-30","fco":116523,"capex":58687,"fcl":57836},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2017-06-30","fco":-113177,"capex":113517,"fcl":-226694},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2017-06-30","fco":-1308,"capex":17836,"fcl":-19144},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2017-06-30","fco":-88434,"capex":53785,"fcl":-142219},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2017-06-30","fco":48697,"capex":163832,"fcl":-115135},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2017-09-30","fco":-11829,"capex":26806,"fcl":-38635},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2017-09-30","fco":113632,"capex":812293,"fcl":-698661},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2017-09-30","fco":-160045,"capex":135691,"fcl":-295736},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2017-09-30","fco":108940,"capex":122873,"fcl":-13933},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2017-09-30","fco":-95055,"capex":26128,"fcl":-121183},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2017-09-30","fco":86347,"capex":84824,"fcl":1523},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2018-03-31","fco":19439,"capex":36677,"fcl":-17238},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2018-03-31","fco":-19614,"capex":108117,"fcl":-127731},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2018-03-31","fco":-58048,"capex":104415,"fcl":-162463},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2018-03-31","fco":84526,"capex":179778,"fcl":-95252},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2018-03-31","fco":-19523,"capex":105626,"fcl":-125149},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2018-03-31","fco":73345,"capex":105527,"fcl":-32182},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2018-06-30","fco":-474567,"capex":113169,"fcl":-587736},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2018-06-30","fco":34924,"capex":517427,"fcl":-482503},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2018-06-30","fco":-103753,"capex":157274,"fcl":-261027},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2018-06-30","fco":134524,"capex":159217,"fcl":-24693},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2018-06-30","fco":-34787,"capex":151988,"fcl":-186775},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2018-06-30","fco":76425,"capex":41025,"fcl":35400},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2018-09-30","fco":-64770,"capex":808481,"fcl":-873251},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2018-09-30","fco":108111,"capex":301551,"fcl":-193440},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2018-09-30","fco":-219786,"capex":288365,"fcl":-508151},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2018-09-30","fco":163382,"capex":289652,"fcl":-126270},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2018-09-30","fco":-378008,"capex":280812,"fcl":-658820},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2018-09-30","fco":124837,"capex":703,"fcl":124134},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2019-03-31","fco":78985,"capex":19675,"fcl":59310},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2019-03-31","fco":-39080,"capex":175288,"fcl":-214368},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2019-03-31","fco":-18443,"capex":96135,"fcl":-114578},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2019-03-31","fco":32422,"capex":52592,"fcl":-20170},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2019-03-31","fco":-39536,"capex":26575,"fcl":-66111},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2019-03-31","fco":57291,"capex":311461,"fcl":-254170},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2019-06-30","fco":93881,"capex":15091,"fcl":78790},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2019-06-30","fco":-216275,"capex":60913,"fcl":-277188},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2019-06-30","fco":-63341,"capex":144446,"fcl":-207787},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2019-06-30","fco":161952,"capex":187994,"fcl":-26042},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2019-06-30","fco":-19844,"capex":96955,"fcl":-116799},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2019-06-30","fco":46453,"capex":343892,"fcl":-297439},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2019-09-30","fco":-35750,"capex":104943,"fcl":-140693},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2019-09-30","fco":-438918,"capex":128888,"fcl":-567806},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2019-09-30","fco":-146921,"capex":69573,"fcl":-216494},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2019-09-30","fco":212246,"capex":209456,"fcl":2790},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2019-09-30","fco":-33143,"capex":195431,"fcl":-228574},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2019-09-30","fco":215418,"capex":216752,"fcl":-1334},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2020-03-31","fco":-93865,"capex":177287,"fcl":-271152},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2020-03-31","fco":-142114,"capex":407871,"fcl":-549985},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2020-03-31","fco":-31611,"capex":28460,"fcl":-60071},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2020-03-31","fco":-86209,"capex":24882,"fcl":-111091},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2020-03-31","fco":-37052,"capex":30074,"fcl":-67126},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2020-03-31","fco":-10554,"capex":15274,"fcl":-25828},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2020-03-31","fco":-64002,"capex":434,"fcl":-64436},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2020-03-31","fco":53526,"capex":33414,"fcl":20112},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2020-06-30","fco":-170718,"capex":37251,"fcl":-207969},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2020-06-30","fco":-814,"capex":391568,"fcl":-392382},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2020-06-30","fco":-120990,"capex":245962,"fcl":-366952},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2020-06-30","fco":28281,"capex":388307,"fcl":-360026},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2020-06-30","fco":-51874,"capex":3445,"fcl":-55319},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2020-06-30","fco":-13282,"capex":12458,"fcl":-25740},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2020-06-30","fco":23483,"capex":128062,"fcl":-104579},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2020-06-30","fco":106908,"capex":70035,"fcl":36873},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2020-09-30","fco":1071277,"capex":1246427,"fcl":-175150},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2020-09-30","fco":137587,"capex":405147,"fcl":-267560},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2020-09-30","fco":-73284,"capex":451994,"fcl":-525278},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2020-09-30","fco":-74846,"capex":204255,"fcl":-279101},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2020-09-30","fco":-74515,"capex":96777,"fcl":-171292},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2020-09-30","fco":-14547,"capex":13511,"fcl":-28058},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2020-09-30","fco":-23166,"capex":89096,"fcl":-112262},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2020-09-30","fco":600548,"capex":421995,"fcl":178553},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2021-03-31","fco":-72565,"capex":161852,"fcl":-234417},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2021-03-31","fco":-76368,"capex":225148,"fcl":-301516},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2021-03-31","fco":-79451,"capex":201628,"fcl":-281079},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2021-03-31","fco":-34302,"capex":264886,"fcl":-299188},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2021-03-31","fco":21629,"capex":37555,"fcl":-15926},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2021-03-31","fco":4654,"capex":104898,"fcl":-100244},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2021-03-31","fco":56946,"capex":31416,"fcl":25530},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2021-03-31","fco":223458,"capex":48966,"fcl":174492},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2021-06-30","fco":-185093,"capex":369126,"fcl":-554219},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2021-06-30","fco":-139842,"capex":44033,"fcl":-183875},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2021-06-30","fco":-160019,"capex":70764,"fcl":-230783},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2021-06-30","fco":-61630,"capex":243763,"fcl":-305393},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2021-06-30","fco":-24400,"capex":41756,"fcl":-66156},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2021-06-30","fco":6970,"capex":216828,"fcl":-209858},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2021-06-30","fco":102807,"capex":50561,"fcl":52246},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2021-06-30","fco":435289,"capex":43670,"fcl":391619},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2021-09-30","fco":-171365,"capex":444478,"fcl":-615843},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2021-09-30","fco":-234288,"capex":195103,"fcl":-429391},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2021-09-30","fco":-155402,"capex":209069,"fcl":-364471},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2021-09-30","fco":-2657,"capex":84190,"fcl":-86847},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2021-09-30","fco":-71724,"capex":4020,"fcl":-75744},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2021-09-30","fco":12329,"capex":808836,"fcl":-796507},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2021-09-30","fco":168054,"capex":113560,"fcl":54494},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2021-09-30","fco":644276,"capex":82776,"fcl":561500},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2022-03-31","fco":7587,"capex":75643,"fcl":-68056},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2022-03-31","fco":-158383,"capex":134018,"fcl":-292401},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2022-03-31","fco":-24022,"capex":169056,"fcl":-193078},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2022-03-31","fco":-18035,"capex":17237,"fcl":-35272},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2022-03-31","fco":53344,"capex":35774,"fcl":17570},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2022-03-31","fco":6225,"capex":19726,"fcl":-13501},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2022-03-31","fco":29056,"capex":42231,"fcl":-13175},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2022-03-31","fco":20539,"capex":354889,"fcl":-334350},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2022-06-30","fco":-154490,"capex":125252,"fcl":-279742},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2022-06-30","fco":-155210,"capex":321507,"fcl":-476717},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2022-06-30","fco":-66019,"capex":239075,"fcl":-305094},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2022-06-30","fco":-106321,"capex":128683,"fcl":-235004},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2022-06-30","fco":15525,"capex":135740,"fcl":-120215},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2022-06-30","fco":7957,"capex":113713,"fcl":-105756},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2022-06-30","fco":41476,"capex":36669,"fcl":4807},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2022-06-30","fco":-25269,"capex":810741,"fcl":-836010},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2022-09-30","fco":-443461,"capex":244527,"fcl":-687988},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2022-09-30","fco":-378122,"capex":601511,"fcl":-979633},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2022-09-30","fco":-98320,"capex":359045,"fcl":-457365},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2022-09-30","fco":8534,"capex":51494,"fcl":-42960},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2022-09-30","fco":74218,"capex":53415,"fcl":20803},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2022-09-30","fco":7260,"capex":175681,"fcl":-168421},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2022-09-30","fco":159224,"capex":54873,"fcl":104351},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2022-09-30","fco":170512,"capex":847869,"fcl":-677357},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2023-03-31","fco":-113418,"capex":518023,"fcl":-631441},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2023-03-31","fco":-176603,"capex":580764,"fcl":-757367},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2023-03-31","fco":-52231,"capex":106864,"fcl":-159095},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2023-03-31","fco":91376,"capex":27901,"fcl":63475},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2023-03-31","fco":-45942,"capex":53377,"fcl":-99319},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2023-03-31","fco":1681,"capex":33547,"fcl":-31866},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2023-03-31","fco":101994,"capex":61101,"fcl":40893},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2023-03-31","fco":-69205,"capex":178375,"fcl":-247580},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2023-06-30","fco":-370997,"capex":866511,"fcl":-1237508},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2023-06-30","fco":-492031,"capex":168175,"fcl":-660206},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2023-06-30","fco":-95392,"capex":162150,"fcl":-257542},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2023-06-30","fco":189484,"capex":80358,"fcl":109126},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2023-06-30","fco":-43134,"capex":142577,"fcl":-185711},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2023-06-30","fco":-25697,"capex":30163,"fcl":-55860},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2023-06-30","fco":107467,"capex":71772,"fcl":35695},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2023-06-30","fco":-50083,"capex":433323,"fcl":-483406},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2023-09-30","fco":-350735,"capex":1174794,"fcl":-1525529},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2023-09-30","fco":-812185,"capex":440322,"fcl":-1252507},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2023-09-30","fco":-112911,"capex":215399,"fcl":-328310},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2023-09-30","fco":-248695,"capex":276915,"fcl":-525610},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2023-09-30","fco":-194104,"capex":234863,"fcl":-428967},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2023-09-30","fco":-36040,"capex":35288,"fcl":-71328},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2023-09-30","fco":219870,"capex":148740,"fcl":71130},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2023-09-30","fco":60833,"capex":641327,"fcl":-580494},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2024-03-31","fco":24550,"capex":22606,"fcl":1944},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2024-03-31","fco":-142256,"capex":57447,"fcl":-199703},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2024-03-31","fco":-30699,"capex":77579,"fcl":-108278},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2024-03-31","fco":50287,"capex":40656,"fcl":9631},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2024-03-31","fco":-219713,"capex":245117,"fcl":-464830},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2024-03-31","fco":-18523,"capex":170956,"fcl":-189479},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2024-03-31","fco":87558,"capex":45662,"fcl":41896},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2024-03-31","fco":-140947,"capex":127641,"fcl":-268588},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2024-06-30","fco":-8386,"capex":236311,"fcl":-244697},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2024-06-30","fco":-423865,"capex":517801,"fcl":-941666},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2024-06-30","fco":-65860,"capex":170210,"fcl":-236070},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2024-06-30","fco":163498,"capex":54167,"fcl":109331},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2024-06-30","fco":-202607,"capex":282598,"fcl":-485205},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2024-06-30","fco":-38857,"capex":87393,"fcl":-126250},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2024-06-30","fco":283043,"capex":300923,"fcl":-17880},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2024-06-30","fco":-3003,"capex":28770,"fcl":-31773},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2024-09-30","fco":-304399,"capex":58864,"fcl":-363263},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2024-09-30","fco":-704997,"capex":969605,"fcl":-1674602},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2024-09-30","fco":-158570,"capex":62701,"fcl":-221271},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2024-09-30","fco":168900,"capex":107451,"fcl":61449},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2024-09-30","fco":-169137,"capex":583374,"fcl":-752511},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2024-09-30","fco":-56655,"capex":58638,"fcl":-115293},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2024-09-30","fco":443550,"capex":347449,"fcl":96101},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2024-09-30","fco":184664,"capex":1080921,"fcl":-896257},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2025-03-31","fco":-103040,"capex":186847,"fcl":-289887},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2025-03-31","fco":112001,"capex":80954,"fcl":31047},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2025-03-31","fco":-29852,"capex":27739,"fcl":-57591},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2025-03-31","fco":191881,"capex":10106,"fcl":181775},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2025-03-31","fco":30294,"capex":161304,"fcl":-131010},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2025-03-31","fco":-27164,"capex":118666,"fcl":-145830},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2025-03-31","fco":125727,"capex":91796,"fcl":33931},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2025-03-31","fco":-189531,"capex":174352,"fcl":-363883},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2025-06-30","fco":-440914,"capex":701073,"fcl":-1141987},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2025-06-30","fco":172635,"capex":309626,"fcl":-136991},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2025-06-30","fco":-51861,"capex":1123,"fcl":-52984},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2025-06-30","fco":273222,"capex":77228,"fcl":195994},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2025-06-30","fco":75398,"capex":220568,"fcl":-145170},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2025-06-30","fco":-61518,"capex":169219,"fcl":-230737},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2025-06-30","fco":234912,"capex":168420,"fcl":66492},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2025-06-30","fco":48162,"capex":69736,"fcl":-21574},{"Ticker":"CYRE3","Empresa":"Cyrela","Periodo":"2025-09-30","fco":-453453,"capex":1077972,"fcl":-1531425},{"Ticker":"MRVE3","Empresa":"MRV Engenharia","Periodo":"2025-09-30","fco":203481,"capex":172411,"fcl":31070},{"Ticker":"EVEN3","Empresa":"Even Construtora","Periodo":"2025-09-30","fco":-196789,"capex":238234,"fcl":-435023},{"Ticker":"TEND3","Empresa":"Tenda","Periodo":"2025-09-30","fco":310527,"capex":83518,"fcl":227009},{"Ticker":"DIRR3","Empresa":"Direcional","Periodo":"2025-09-30","fco":174579,"capex":443988,"fcl":-269409},{"Ticker":"LAVV3","Empresa":"Lavvi","Periodo":"2025-09-30","fco":-68790,"capex":216719,"fcl":-285509},{"Ticker":"CURY3","Empresa":"Cury Construtora","Periodo":"2025-09-30","fco":408623,"capex":251449,"fcl":157174},{"Ticker":"DTEX3","Empresa":"Dexco","Periodo":"2025-09-30","fco":122344,"capex":112075,"fcl":10269}]};
+
+const CNS_CORES = {
+  CYRE3:'#f97316', MRVE3:'#ef4444', EVEN3:'#22d3ee',
+  TEND3:'#a78bfa', DIRR3:'#34d399', CURY3:'#fbbf24',
+  LAVV3:'#f472b6', DTEX3:'#818cf8'
+};
+const CNS_LABELS = { fco:'FCO', capex:'CAPEX', fcl:'FCL' };
+
+let cnsTipo    = 'dfp';
+let cnsMetrica = 'fco';
+let cnsEmpresa = null;
+
+function initConstrucao() {
+  const tickers = [...new Set(CVM_CONSTRUCAO_DATA.dfp.map(d => d.Ticker))];
+  cnsEmpresa = tickers[0];
+  cnsRenderEmpresaTabs();
+  cnsRenderKPIs();
+  cnsRenderChart();
+  cnsRenderTabela();
+}
+
+function cnsSetTipo(t) {
+  cnsTipo = t;
+  document.getElementById('cns-btn-dfp').style.background = t==='dfp' ? '#f97316' : 'transparent';
+  document.getElementById('cns-btn-dfp').style.color      = t==='dfp' ? '#07080f' : 'var(--dim)';
+  document.getElementById('cns-btn-itr').style.background = t==='itr' ? '#f97316' : 'transparent';
+  document.getElementById('cns-btn-itr').style.color      = t==='itr' ? '#07080f' : 'var(--dim)';
+  cnsRenderKPIs(); cnsRenderChart(); cnsRenderTabela();
+}
+
+function cnsSetMetrica(m) {
+  cnsMetrica = m;
+  const cores = { fco:'#f97316', capex:'var(--tijolo)', fcl:'var(--green)' };
+  ['fco','capex','fcl'].forEach(k => {
+    const btn = document.getElementById('cns-m-'+k);
+    btn.style.background = k===m ? cores[k] : 'transparent';
+    btn.style.color      = k===m ? '#07080f' : 'var(--dim)';
+    btn.style.fontWeight = k===m ? '600' : '400';
+  });
+  cnsRenderChart();
+}
+
+function cnsSetEmpresa(t) {
+  cnsEmpresa = t;
+  cnsRenderEmpresaTabs();
+  cnsRenderChart();
+}
+
+function cnsGetRows() {
+  return CVM_CONSTRUCAO_DATA[cnsTipo].filter(d => !cnsEmpresa || d.Ticker === cnsEmpresa);
+}
+
+function cnsFmtPeriodo(p) {
+  const d = new Date(p);
+  const m = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return m[d.getUTCMonth()] + '/' + String(d.getUTCFullYear()).slice(2);
+}
+
+function cnsRenderEmpresaTabs() {
+  const tickers = [...new Set(CVM_CONSTRUCAO_DATA.dfp.map(d => d.Ticker))];
+  document.getElementById('cns-empresa-tabs').innerHTML = tickers.map(t => {
+    const emp   = CVM_CONSTRUCAO_DATA.dfp.find(d => d.Ticker === t);
+    const ativo = t === cnsEmpresa;
+    const cor   = CNS_CORES[t] || '#64748b';
+    return `<button onclick="cnsSetEmpresa('${t}')" style="
+      font-size:.5rem;padding:.25rem .6rem;border-radius:5px;cursor:pointer;
+      border:1px solid ${ativo ? cor : 'var(--border2)'};
+      background:${ativo ? cor+'22' : 'var(--bg3)'};
+      color:${ativo ? cor : 'var(--dim)'};font-family:inherit;
+      transition:all .2s;font-weight:${ativo?'600':'400'}
+    ">${t} <span style="opacity:.6;font-weight:400">${emp?.Empresa||''}</span></button>`;
+  }).join('');
+}
+
+function cnsRenderKPIs() {
+  const tickers = [...new Set(CVM_CONSTRUCAO_DATA[cnsTipo].map(d => d.Ticker))];
+  document.getElementById('cns-kpi-row').innerHTML = tickers.map(t => {
+    const rows   = CVM_CONSTRUCAO_DATA[cnsTipo].filter(d => d.Ticker === t);
+    const ultimo = rows[rows.length - 1];
+    if (!ultimo) return '';
+    const cor    = CNS_CORES[t] || '#64748b';
+    const periodo = cnsFmtPeriodo(ultimo.Periodo);
+    return `<div class="card" style="border-color:${cor}33;padding:.6rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem">
+        <div style="font-size:.56rem;font-weight:700;color:${cor}">${t}</div>
+        <div style="font-size:.44rem;color:var(--dim2)">${periodo}</div>
+      </div>
+      <div style="font-size:.44rem;color:var(--dim);margin-bottom:.5rem">${ultimo.Empresa}</div>
+      <div style="display:flex;flex-direction:column;gap:.2rem">
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:.48rem;color:var(--dim)">FCO</span>
+          <span style="font-size:.52rem;color:${ultimo.fco>=0?'var(--green)':'var(--red)'};font-family:'Bebas Neue',sans-serif;letter-spacing:.04em">${cvmFmt(ultimo.fco)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="font-size:.48rem;color:var(--dim)">CAPEX</span>
+          <span style="font-size:.52rem;color:var(--tijolo);font-family:'Bebas Neue',sans-serif;letter-spacing:.04em">${cvmFmt(ultimo.capex)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;border-top:1px solid var(--border);padding-top:.2rem;margin-top:.1rem">
+          <span style="font-size:.48rem;color:var(--dim)">FCL</span>
+          <span style="font-size:.56rem;color:${ultimo.fcl>=0?'var(--green)':'var(--red)'};font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;font-weight:600">${cvmFmt(ultimo.fcl)}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function cnsRenderChart() {
+  const rows  = cnsGetRows().sort((a,b) => a.Periodo.localeCompare(b.Periodo));
+  const wrap  = document.getElementById('cns-chart-wrap');
+  const title = document.getElementById('cns-chart-title');
+  const emp   = CVM_CONSTRUCAO_DATA.dfp.find(d => d.Ticker === cnsEmpresa);
+  title.textContent = `${CNS_LABELS[cnsMetrica]} — ${cnsEmpresa} · ${emp?.Empresa||''} · ${cnsTipo.toUpperCase()}`;
+
+  if (!rows.length) { wrap.innerHTML = '<div style="font-size:.52rem;color:var(--dim);padding:.5rem">Sem dados</div>'; return; }
+
+  const vals = rows.map(r => r[cnsMetrica]);
+  const maxV = Math.max(...vals.map(Math.abs), 1);
+  const cor  = cnsMetrica==='fco' ? '#f97316' : cnsMetrica==='capex' ? '#fb923c' : '#00e5a0';
+  const BAR_W = 30, BAR_GAP = 8;
+  const W = Math.max(rows.length * (BAR_W + BAR_GAP), 300);
+  const H = 150; const PAD = 20; const ZERO = H / 2;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('width', W); svg.setAttribute('height', H + 22);
+  svg.style.display = 'block';
+
+  const zl = document.createElementNS('http://www.w3.org/2000/svg','line');
+  zl.setAttribute('x1','0'); zl.setAttribute('y1',ZERO);
+  zl.setAttribute('x2',W);  zl.setAttribute('y2',ZERO);
+  zl.setAttribute('stroke','#1c1f38'); zl.setAttribute('stroke-width','1');
+  svg.appendChild(zl);
+
+  rows.forEach((r, i) => {
+    const v    = r[cnsMetrica];
+    const barH = Math.max(Math.abs(v) / maxV * (H/2 - PAD), 2);
+    const x    = i * (BAR_W + BAR_GAP) + 4;
+    const y    = v >= 0 ? ZERO - barH : ZERO;
+    const fill = v >= 0 ? cor : '#f87171';
+    const ttTxt = `${cnsFmtPeriodo(r.Periodo)}  ${CNS_LABELS[cnsMetrica]}: ${cvmFmt(v)}`;
+
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x',x); rect.setAttribute('y',y);
+    rect.setAttribute('width',BAR_W); rect.setAttribute('height',barH);
+    rect.setAttribute('fill',fill); rect.setAttribute('rx','2');
+    rect.style.opacity = '.82'; rect.style.cursor = 'default';
+    rect.style.transition = 'opacity .15s';
+    rect.addEventListener('mouseenter', () => cvmShowTT(rect, ttTxt));
+    rect.addEventListener('mouseleave', () => cvmHideTT(rect));
+    svg.appendChild(rect);
+
+    const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+    txt.setAttribute('x', x + BAR_W/2); txt.setAttribute('y', H + 14);
+    txt.setAttribute('text-anchor','middle'); txt.setAttribute('font-size','6');
+    txt.setAttribute('fill','#64748b'); txt.setAttribute('font-family','IBM Plex Mono,monospace');
+    txt.textContent = cnsFmtPeriodo(r.Periodo);
+    svg.appendChild(txt);
+  });
+
+  wrap.innerHTML = '';
+  const sd = document.createElement('div');
+  sd.style.overflowX = 'auto';
+  sd.appendChild(svg);
+  wrap.appendChild(sd);
+}
+
+function cnsRenderTabela() {
+  const fonte   = CVM_CONSTRUCAO_DATA[cnsTipo];
+  const tickers = [...new Set(fonte.map(d => d.Ticker))];
+  const periodos = [...new Set(fonte.map(d => d.Periodo))].sort().slice(-6);
+  const thS = 'font-size:.48rem;color:var(--dim);padding:.3rem .5rem;text-align:right;border-bottom:1px solid var(--border2);white-space:nowrap;font-weight:500';
+
+  const thead = `<tr>
+    <th style="${thS};text-align:left">Empresa</th>
+    <th style="${thS};text-align:left">Ticker</th>
+    ${periodos.map(p=>`<th colspan="3" style="${thS};text-align:center;color:var(--hi)">${cnsFmtPeriodo(p)}</th>`).join('')}
+  </tr><tr>
+    <th style="${thS};text-align:left"></th><th style="${thS};text-align:left"></th>
+    ${periodos.map(()=>`
+      <th style="${thS};color:var(--papel)">FCO</th>
+      <th style="${thS};color:var(--tijolo)">CAPEX</th>
+      <th style="${thS};color:var(--green)">FCL</th>`).join('')}
+  </tr>`;
+
+  const tbody = tickers.map(t => {
+    const emp = fonte.find(d => d.Ticker === t);
+    const cor = CNS_CORES[t] || '#64748b';
+    const cells = periodos.map(p => {
+      const row = fonte.find(d => d.Ticker === t && d.Periodo === p);
+      const td  = (v, c) => `<td style="font-size:.48rem;font-family:'Bebas Neue',sans-serif;letter-spacing:.04em;padding:.25rem .5rem;text-align:right;color:${v===undefined?'var(--dim2)':v>=0?c:'var(--red)'};border-bottom:1px solid var(--border)">${v===undefined?'—':cvmFmt(v)}</td>`;
+      return row
+        ? td(row.fco,'var(--papel)') + td(row.capex,'var(--tijolo)') + td(row.fcl,'var(--green)')
+        : `<td colspan="3" style="font-size:.44rem;color:var(--dim2);text-align:center;border-bottom:1px solid var(--border)">—</td>`;
+    }).join('');
+    return `<tr>
+      <td style="font-size:.5rem;color:var(--dim);padding:.25rem .5rem;border-bottom:1px solid var(--border);white-space:nowrap">${emp?.Empresa||t}</td>
+      <td style="font-size:.5rem;color:${cor};padding:.25rem .5rem;border-bottom:1px solid var(--border);font-weight:700">${t}</td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  document.getElementById('cns-thead').innerHTML = thead;
+  document.getElementById('cns-tbody').innerHTML = tbody;
+}
+
+</script>
 </html>
