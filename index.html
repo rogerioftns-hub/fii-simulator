@@ -312,6 +312,7 @@
 
     /* ── MODAL ── */
     .modal-overlay { display:none; position:fixed; inset:0; background:#00000090; z-index:200; align-items:center; justify-content:center; }
+    .modal-overlay.active { display:flex; }
     .modal-overlay.on { display:flex; }
     .modal { background:var(--bg2); border:1.5px solid var(--border2); border-radius:14px; padding:1.5rem; min-width:340px; max-width:480px; width:90%; }
 
@@ -925,6 +926,7 @@
     <div class="nav-tab"   data-page="watchlist"    onclick="goPage('watchlist')"><span class="nav-tab-icon">👁️</span> Watchlist</div>
     <div class="nav-tab"   data-page="totais"       onclick="goPage('totais')"><span class="nav-tab-icon">📊</span> Totais</div>
     <div class="nav-tab"   data-page="dividendos"    onclick="goPage('dividendos')"><span class="nav-tab-icon">💰</span> Dividendos</div>
+    <div class="nav-tab"   data-page="recdy"          onclick="goPage('recdy')"><span class="nav-tab-icon">📆</span> Rec. DY</div>
     <div class="nav-tab"   data-page="rendimentos"    onclick="goPage('rendimentos')"><span class="nav-tab-icon">📆</span> Rendimentos Diários</div>
     <div class="nav-tab"   data-page="calculadorair"  onclick="goPage('calculadorair')"><span class="nav-tab-icon">🧾</span> Calculadora IR <span id="ir-badge-nav" style="display:none;background:#f87171;color:#fff;font-size:.42rem;font-weight:700;border-radius:8px;padding:1px 5px;margin-left:2px;line-height:1.4"></span></div>
     <div class="nav-tab"   data-page="metas"          onclick="goPage('metas')"><span class="nav-tab-icon">🎯</span> Metas</div>
@@ -1050,6 +1052,14 @@
           </div>
         </div>
 
+        <!-- Posição atual -->
+        <div style="margin-bottom:.45rem">
+          <div style="font-size:.5rem;color:var(--dim);margin-bottom:.2rem">POSIÇÃO ATUAL (cotas já possuídas)</div>
+          <input type="number" id="nt-qtd-atual" placeholder="0" step="1" min="0"
+            style="background:var(--bg3);border-color:#818cf840"
+            oninput="novaCalcFii()"/>
+        </div>
+
         <!-- Tipo + DY row -->
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:.45rem;margin-bottom:.55rem">
           <div>
@@ -1110,6 +1120,24 @@
             <div>
               <div style="font-size:.44rem;color:var(--dim)">SALDO ATUAL</div>
               <div id="nt-total-saldo" class="num" style="font-size:.85rem;color:var(--hi)">—</div>
+            </div>
+          </div>
+          <!-- Novo PM row -->
+          <div id="nt-novo-pm-row" style="display:none;margin-top:.45rem;padding-top:.4rem;border-top:1px solid var(--border2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem">
+              <div>
+                <div style="font-size:.44rem;color:var(--dim)">PM ATUAL</div>
+                <div id="nt-pm-antes" class="num" style="font-size:.82rem;color:var(--dim2)">—</div>
+              </div>
+              <div style="font-size:.7rem;color:var(--border2)">→</div>
+              <div>
+                <div style="font-size:.44rem;color:var(--papel);letter-spacing:.05em">NOVO PREÇO MÉDIO</div>
+                <div id="nt-pm-depois" class="num" style="font-size:.95rem;color:var(--papel);font-weight:700">—</div>
+              </div>
+              <div>
+                <div style="font-size:.44rem;color:var(--dim)">Δ PM</div>
+                <div id="nt-pm-delta" class="num" style="font-size:.82rem">—</div>
+              </div>
             </div>
           </div>
           <!-- Alerta de cotas parciais -->
@@ -1196,6 +1224,14 @@
               oninput="novaCalcAcao()"/>
           </div>
         </div>
+        <!-- Posição atual -->
+        <div style="margin-bottom:.45rem">
+          <div style="font-size:.5rem;color:var(--dim);margin-bottom:.2rem">POSIÇÃO ATUAL (ações já possuídas)</div>
+          <input type="number" id="na-qtd-atual" placeholder="0" step="1" min="0"
+            style="background:var(--bg3);border-color:#818cf840"
+            oninput="novaCalcAcao()"/>
+        </div>
+
 
         <!-- Modo toggle -->
         <div style="display:flex;gap:0;border:1px solid var(--border2);border-radius:7px;overflow:hidden;margin-bottom:.45rem">
@@ -1241,6 +1277,24 @@
             <div>
               <div style="font-size:.44rem;color:var(--dim)">RENTAB.</div>
               <div id="na-total-rentab" class="num" style="font-size:.85rem">—</div>
+            </div>
+          </div>
+          <!-- Novo PM row -->
+          <div id="na-novo-pm-row" style="display:none;margin-top:.45rem;padding-top:.4rem;border-top:1px solid var(--border2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem">
+              <div>
+                <div style="font-size:.44rem;color:var(--dim)">PM ATUAL</div>
+                <div id="na-pm-antes" class="num" style="font-size:.82rem;color:var(--dim2)">—</div>
+              </div>
+              <div style="font-size:.7rem;color:var(--border2)">→</div>
+              <div>
+                <div style="font-size:.44rem;color:var(--papel);letter-spacing:.05em">NOVO PREÇO MÉDIO</div>
+                <div id="na-pm-depois" class="num" style="font-size:.95rem;color:var(--papel);font-weight:700">—</div>
+              </div>
+              <div>
+                <div style="font-size:.44rem;color:var(--dim)">Δ PM</div>
+                <div id="na-pm-delta" class="num" style="font-size:.82rem">—</div>
+              </div>
             </div>
           </div>
           <div id="na-troco-alert" style="display:none;margin-top:.3rem;font-size:.48rem;color:var(--yellow)"></div>
@@ -1323,6 +1377,14 @@
           </div>
         </div>
 
+        <!-- Posição atual -->
+        <div style="margin-bottom:.45rem">
+          <div style="font-size:.5rem;color:var(--dim);margin-bottom:.2rem">POSIÇÃO ATUAL (cotas já possuídas)</div>
+          <input type="number" id="ne-qtd-atual" placeholder="0" step="1" min="0"
+            style="background:var(--bg3);border-color:#818cf840"
+            oninput="novaCalcEtf()"/>
+        </div>
+
         <!-- Modo toggle -->
         <div style="display:flex;gap:0;border:1px solid var(--border2);border-radius:7px;overflow:hidden;margin-bottom:.45rem">
           <button id="ne-btn-qtd" onclick="novaSetModo('etf','qtd')"
@@ -1369,6 +1431,24 @@
               <div id="ne-total-rentab" class="num" style="font-size:.85rem">—</div>
             </div>
           </div>
+          <!-- Novo PM row -->
+          <div id="ne-novo-pm-row" style="display:none;margin-top:.45rem;padding-top:.4rem;border-top:1px solid var(--border2)">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.4rem">
+              <div>
+                <div style="font-size:.44rem;color:var(--dim)">PM ATUAL</div>
+                <div id="ne-pm-antes" class="num" style="font-size:.82rem;color:var(--dim2)">—</div>
+              </div>
+              <div style="font-size:.7rem;color:var(--border2)">→</div>
+              <div>
+                <div style="font-size:.44rem;color:var(--papel);letter-spacing:.05em">NOVO PREÇO MÉDIO</div>
+                <div id="ne-pm-depois" class="num" style="font-size:.95rem;color:var(--papel);font-weight:700">—</div>
+              </div>
+              <div>
+                <div style="font-size:.44rem;color:var(--dim)">Δ PM</div>
+                <div id="ne-pm-delta" class="num" style="font-size:.82rem">—</div>
+              </div>
+            </div>
+          </div>
           <div id="ne-troco-alert" style="display:none;margin-top:.3rem;font-size:.48rem;color:var(--yellow)"></div>
         </div>
 
@@ -1390,6 +1470,14 @@
       <label  class="btn" style="background:#1a1f38;color:#64748b;border:1px solid var(--border2);cursor:pointer" title="Importa um relatório JSON de um dia">
         ⬆ Importar dia<input type="file" accept=".json" style="display:none" onchange="rdImportarDia(this)"/>
       </label>
+      <!-- Badge de status do auto-save -->
+      <span id="rd-autosave-badge" title="Auto-save programado: salva automaticamente às 18:45 em dias úteis"
+        style="display:inline-flex;align-items:center;gap:.35rem;background:#00e5a010;
+               border:1px solid #00e5a025;border-radius:20px;padding:.22rem .6rem;
+               font-size:.5rem;color:var(--dim);letter-spacing:.04em;cursor:default;user-select:none">
+        <span id="rd-autosave-dot" style="width:7px;height:7px;border-radius:50%;background:#334155;flex-shrink:0;transition:background .4s"></span>
+        <span id="rd-autosave-label">⏰ auto-save 18:45</span>
+      </span>
     </div>
   </div>
 
@@ -2368,7 +2456,7 @@ function irSavePrej() {
         <div class="card">
           <div class="card-label">aportes por ativo</div>
           <table class="tbl" id="tbl-manual">
-            <thead><tr><th>ATIVO</th><th>PREÇO</th><th>DY/COTA</th><th>BASE</th><th>+ COMPRAR</th><th>TOTAL</th><th>DY TOTAL/MÊS</th></tr></thead>
+            <thead><tr><th>ATIVO</th><th>PREÇO</th><th>DY/COTA</th><th>BASE</th><th>+ COMPRAR</th><th>TOTAL</th><th>NOVO PM</th><th>DY TOTAL/MÊS</th></tr></thead>
             <tbody id="tbody-manual"></tbody>
           </table>
           <div style="margin-top:.7rem">
@@ -2430,7 +2518,7 @@ function irSavePrej() {
         <div class="card">
           <div class="card-label">compras por ação</div>
           <table class="tbl" id="tbl-manual-acoes">
-            <thead><tr><th>ATIVO</th><th>PREÇO</th><th>BASE</th><th>+ COMPRAR</th><th>TOTAL</th><th>SALDO (R$)</th></tr></thead>
+            <thead><tr><th>ATIVO</th><th>PREÇO</th><th>BASE</th><th>+ COMPRAR</th><th>TOTAL</th><th>SALDO (R$)</th><th>NOVO PM</th></tr></thead>
             <tbody id="tbody-manual-acoes"></tbody>
           </table>
           <div style="margin-top:.7rem">
@@ -2487,7 +2575,7 @@ function irSavePrej() {
         <div class="card">
           <div class="card-label">compras por ETF</div>
           <table class="tbl" id="tbl-manual-etfs">
-            <thead><tr><th>ATIVO</th><th>PREÇO</th><th>BASE</th><th>+ COMPRAR</th><th>TOTAL</th><th>SALDO (R$)</th></tr></thead>
+            <thead><tr><th>ATIVO</th><th>PREÇO</th><th>BASE</th><th>+ COMPRAR</th><th>TOTAL</th><th>SALDO (R$)</th><th>NOVO PM</th></tr></thead>
             <tbody id="tbody-manual-etfs"></tbody>
           </table>
         </div>
@@ -3536,7 +3624,7 @@ function goPage(id) {
   if (id==="token")         tokenCarregarNaTela();
   if (id==="setorial")      setorialInit();
   if (id==="dividendos")    renderDividendosPage();
-  if (id==="rendimentos")    renderRendimentosPage();
+  if (id==="rendimentos")    { renderRendimentosPage(); setTimeout(() => { const dot=document.getElementById('rd-autosave-dot'); if(dot) { const t=new Date(); const hoje=t.toISOString().slice(0,10); const jaSalvou=localStorage.getItem(RD_AUTOSAVE_KEY)===hoje; const ehUtil=rdEDiaUtil(t); const badge=document.getElementById('rd-autosave-badge'); const lbl=document.getElementById('rd-autosave-label'); if(!badge)return; if(jaSalvou){dot.style.background='#00e5a0';lbl.textContent='✅ salvo às 18:45';badge.style.color='var(--green)';}else if(!ehUtil){dot.style.background='#334155';lbl.textContent='⏰ auto-save 18:45';badge.style.color='var(--dim2)';}else{dot.style.background='#38bdf8';lbl.textContent='⏰ auto-save 18:45';badge.style.color='var(--dim)';} }}, 100); }
   if (id==="calculadorair")    renderIRPage();
   if (id==="historicocompras") { try { hcRenderTabela(); } catch(e) {} }
   if (id==="historicovendas")  { try { hvRenderTabela(); } catch(e) {} }
@@ -4475,11 +4563,21 @@ function renderSugestaoDetalhe(s, idx) {
     const dyFinal = +(qTotal   * a.dy).toFixed(2);
     const dyGanho = +(qExtra   * a.dy).toFixed(2);
     const pct     = Math.round(dyFinal / maxDyTotal * 100);
+    // Novo PM ponderado
+    const pmAtual = a.pMedio || a.preco || 0;
+    const novoPM  = (qExtra > 0 && pmAtual > 0 && a.cotas > 0)
+      ? (a.cotas * pmAtual + qExtra * a.preco) / qTotal : null;
+    const deltaPM = novoPM !== null ? novoPM - pmAtual : null;
+    const pmCor   = deltaPM !== null ? (deltaPM <= 0 ? 'var(--green)' : 'var(--red)') : '';
+    const pmHtml  = novoPM !== null
+      ? `<div style="font-size:.78rem;color:var(--papel);font-weight:700">R$ ${novoPM.toFixed(2)}</div><div style="font-size:.5rem;color:${pmCor}">${deltaPM<=0?'▼':'▲'} ${Math.abs(deltaPM/pmAtual*100).toFixed(1)}%</div>`
+      : `<span style="color:var(--dim2)">—</span>`;
     return `<tr>
       <td><b style="color:var(--hi)">${esc(a.ticker)}</b> ${chipTipo(a.tipo)}</td>
       <td style="color:#475569">${a.cotas} <span style="font-size:.52rem;color:var(--dim)">(R$${fmt(dyBasA)}/mês)</span></td>
       <td style="color:${qExtra>0?"var(--green)":"var(--dim)"};font-weight:${qExtra>0?600:400}">${qExtra>0?"+"+qExtra:"—"}</td>
       <td><b style="color:var(--hi)">${qTotal}</b></td>
+      <td>${pmHtml}</td>
       <td>
         <div style="display:flex;align-items:center;gap:.4rem">
           <div class="bar-track" style="width:55px"><div class="bar-fill" style="width:${pct}%;background:${s.cor}80"></div></div>
@@ -4538,7 +4636,7 @@ function renderSugestaoDetalhe(s, idx) {
         <div class="card">
           <div class="card-label" style="color:${s.cor}90">${s.icon} ${esc(s.nome)} — carteira após aporte</div>
           <table class="tbl">
-            <thead><tr><th>ATIVO</th><th>BASE (DY atual)</th><th>COMPRAR</th><th>TOTAL COTAS</th><th>DY TOTAL/MÊS</th></tr></thead>
+            <thead><tr><th>ATIVO</th><th>BASE (DY atual)</th><th>COMPRAR</th><th>TOTAL COTAS</th><th>NOVO PM</th><th>DY TOTAL/MÊS</th></tr></thead>
             <tbody>${linhas}</tbody>
           </table>
           <div style="margin-top:.6rem;display:flex;justify-content:space-between;font-size:.6rem;color:var(--dim)">
@@ -4656,6 +4754,7 @@ function renderManualTabela() {
         ${custo>0?`<div style="font-size:.5rem;color:var(--dim2)">R$ ${fmt(custo)}</div>`:""}
       </td>
       <td style="color:var(--hi);font-weight:600">${qTotal}</td>
+      <td>${(()=>{const pm=a.pMedio||a.preco||0;const nPM=(qExtra>0&&pm>0&&qBase>0)?(qBase*pm+qExtra*a.preco)/qTotal:null;if(!nPM)return`<span style="color:var(--dim2)">—</span>`;const d=nPM-pm;const cor=d<=0?"var(--green)":"var(--red)";const arr=d<=0?"▼":"▲";return `<span style="font-size:.72rem;color:var(--papel);font-weight:700">R$ ${nPM.toFixed(2)}</span><div style="font-size:.5rem;color:${cor}">${arr} ${Math.abs(d/pm*100).toFixed(1)}%</div>`;})()}</td>
       <td>
         <span class="num" style="font-size:.82rem;color:var(--green)">R$ ${fmt(dyFinal)}</span>
         ${qExtra>0?`<div style="font-size:.5rem;color:var(--green)">+R$ ${fmt(dyExtra)} ganho</div>`:`<div style="font-size:.5rem;color:var(--dim)">base: R$ ${fmt(dyBaseA)}</div>`}
@@ -7892,11 +7991,21 @@ function renderSugestaoAcoesDetalhe(s,idx) {
     const saldoNovo=+(qtdTotal*a.pAtual).toFixed(2);
     const rentab=calcRentabAcao(a);
     const rCor=rentab>=0?"var(--green)":"var(--red)";
+    // Novo PM ponderado após aporte
+    const pmAtual = a.pMedio || a.pAtual || 0;
+    const novoPM  = (q > 0 && pmAtual > 0 && a.qtd > 0)
+      ? (a.qtd * pmAtual + q * a.pAtual) / qtdTotal : null;
+    const deltaPM = novoPM !== null ? novoPM - pmAtual : null;
+    const pmCor   = deltaPM !== null ? (deltaPM <= 0 ? 'var(--green)' : 'var(--red)') : '';
+    const pmHtml  = novoPM !== null
+      ? `<div style="font-size:.78rem;color:var(--papel);font-weight:700">R$\u00a0${novoPM.toFixed(2)}</div><div style="font-size:.5rem;color:${pmCor}">${deltaPM<=0?'▼':'▲'} ${Math.abs(deltaPM/pmAtual*100).toFixed(1)}%</div>`
+      : `<span style="color:var(--dim2)">—</span>`;
     return `<tr>
       <td><b style="color:var(--hi)">${esc(a.ticker)}</b></td>
       <td style="color:#475569">${a.qtd} <span style="font-size:.52rem;color:var(--dim)">(R$${calcSaldoAcao(a).toFixed(2)})</span></td>
       <td style="color:${q>0?"var(--green)":"var(--dim)"};font-weight:${q>0?600:400}">${q>0?"+"+q:"—"}</td>
       <td><b style="color:var(--hi)">${qtdTotal}</b></td>
+      <td>${pmHtml}</td>
       <td><span class="num" style="color:${s.cor}">R$ ${saldoNovo.toFixed(2)}</span></td>
       <td><span style="color:${rCor}">${rentab>=0?"+":""}${rentab.toFixed(2)}%</span></td>
     </tr>`;
@@ -7907,7 +8016,7 @@ function renderSugestaoAcoesDetalhe(s,idx) {
       <div class="card">
         <div class="card-label" style="color:${s.cor}90">${s.icon} ${esc(s.nome)} — carteira após aporte</div>
         <table class="tbl">
-          <thead><tr><th>ATIVO</th><th>BASE</th><th>COMPRAR</th><th>TOTAL</th><th>NOVO SALDO</th><th>RENTAB.</th></tr></thead>
+          <thead><tr><th>ATIVO</th><th>BASE</th><th>COMPRAR</th><th>TOTAL</th><th>NOVO PM</th><th>NOVO SALDO</th><th>RENTAB.</th></tr></thead>
           <tbody>${linhas}</tbody>
         </table>
         <div style="margin-top:.6rem;display:flex;justify-content:space-between;font-size:.6rem;color:var(--dim)">
@@ -7974,6 +8083,7 @@ function renderManualAcoesTabela() {
           ${custo>0?`<div style="font-size:.5rem;color:var(--dim2)">R$ ${custo.toFixed(2)}</div>`:""}</td>
       <td><b style="color:var(--hi)">${qTotal}</b></td>
       <td><span class="num" style="font-size:.82rem;color:var(--green)">R$ ${(qTotal*(a.pAtual||0)).toFixed(2)}</span></td>
+      <td>${(()=>{const pm=a.pMedio||a.pAtual||0;const qB=a._novo?0:(a.qtd||0);const nPM=(qExtra>0&&pm>0&&qB>0)?(qB*pm+qExtra*(a.pAtual||0))/(qB+qExtra):null;if(!nPM)return`<span style="color:var(--dim2)">—</span>`;const d=nPM-pm;const cor=d<=0?"var(--green)":"var(--red)";const arr=d<=0?"▼":"▲";return `<span style="font-size:.72rem;color:var(--papel);font-weight:700">R$ ${nPM.toFixed(2)}</span> <span style="font-size:.5rem;color:${cor}">${arr} ${Math.abs(d/pm*100).toFixed(1)}%</span>`;})()}</td>
     </tr>`;
   }).join("");
 }
@@ -8248,11 +8358,21 @@ function renderSugestaoEtfsDetalhe(s,idx) {
   const linhas = carteiraEtfs.map(a=>{
     const q=s.compras[a.id]||0; const qtdTotal=a.qtd+q; const saldoNovo=+(qtdTotal*a.pAtual).toFixed(2);
     const pctNovo = calcTotalEtfs()>0?+(qtdTotal*a.pAtual/(calcTotalEtfs()+s.aportado)*100).toFixed(1):0;
+    // Novo PM ponderado
+    const pmAtual = a.pMedio || a.pAtual || 0;
+    const novoPM  = (q > 0 && pmAtual > 0 && a.qtd > 0)
+      ? (a.qtd * pmAtual + q * a.pAtual) / qtdTotal : null;
+    const deltaPM = novoPM !== null ? novoPM - pmAtual : null;
+    const pmCor   = deltaPM !== null ? (deltaPM <= 0 ? 'var(--green)' : 'var(--red)') : '';
+    const pmHtml  = novoPM !== null
+      ? `<div style="font-size:.78rem;color:var(--papel);font-weight:700">R$\u00a0${novoPM.toFixed(2)}</div><div style="font-size:.5rem;color:${pmCor}">${deltaPM<=0?'▼':'▲'} ${Math.abs(deltaPM/pmAtual*100).toFixed(1)}%</div>`
+      : `<span style="color:var(--dim2)">—</span>`;
     return `<tr>
       <td><b style="color:var(--hi)">${esc(a.ticker)}</b></td>
       <td style="color:#475569">${a.qtd} (R$ ${calcSaldoEtf(a).toFixed(2)})</td>
       <td style="color:${q>0?'var(--green)':'var(--dim)'};font-weight:${q>0?600:400}">${q>0?'+'+q:'—'}</td>
       <td><b style="color:var(--hi)">${qtdTotal}</b></td>
+      <td>${pmHtml}</td>
       <td class="num" style="color:${s.cor}">R$ ${saldoNovo.toFixed(2)}</td>
       <td style="font-size:.55rem;color:var(--dim)">${pctNovo}%</td>
     </tr>`;
@@ -8261,7 +8381,7 @@ function renderSugestaoEtfsDetalhe(s,idx) {
     <div class="g2 fade-in" style="align-items:start">
       <div class="card">
         <div class="card-label" style="color:${s.cor}90">${s.icon} ${s.nome} — ETFs após aporte</div>
-        <table class="tbl"><thead><tr><th>ETF</th><th>BASE</th><th>COMPRAR</th><th>TOTAL</th><th>NOVO SALDO</th><th>%</th></tr></thead><tbody>${linhas}</tbody></table>
+        <table class="tbl"><thead><tr><th>ETF</th><th>BASE</th><th>COMPRAR</th><th>TOTAL</th><th>NOVO PM</th><th>NOVO SALDO</th><th>%</th></tr></thead><tbody>${linhas}</tbody></table>
         <div style="margin-top:.5rem;display:flex;justify-content:space-between;font-size:.6rem;color:var(--dim)">
           <span>Investido: <b style="color:var(--hi)">R$ ${s.aportado.toFixed(2)}</b></span>
           <span>Troco: <b style="color:${s.cor}">R$ ${s.restante.toFixed(2)}</b></span>
@@ -8317,6 +8437,7 @@ function renderManualEtfsTabela() {
         ${custo>0?`<div style="font-size:.5rem;color:var(--dim2)">R$ ${custo.toFixed(2)}</div>`:''}</td>
       <td><b style="color:var(--hi)">${qTotal}</b></td>
       <td class="num" style="color:var(--green)">R$ ${(qTotal*(a.pAtual||0)).toFixed(2)}</td>
+      <td>${(()=>{const pm=a.pMedio||a.pAtual||0;const qB=a.qtd||0;const nPM=(qExtra>0&&pm>0&&qB>0)?(qB*pm+qExtra*(a.pAtual||0))/(qB+qExtra):null;if(!nPM)return`<span style="color:var(--dim2)">—</span>`;const d=nPM-pm;const cor=d<=0?"var(--green)":"var(--red)";const arr=d<=0?"▼":"▲";return `<span style="font-size:.72rem;color:var(--papel);font-weight:700">R$ ${nPM.toFixed(2)}</span> <span style="font-size:.5rem;color:${cor}">${arr} ${Math.abs(d/pm*100).toFixed(1)}%</span>`;})()}</td>
     </tr>`;
   }).join('');
 }
@@ -16517,6 +16638,219 @@ function rdCapturarHoje() {
   rdCarregarDia(dateStr);
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+//  AUTO-SAVE 18:45 — Salva rendimentos automaticamente em dias úteis
+// ══════════════════════════════════════════════════════════════════════════
+
+const RD_AUTOSAVE_KEY   = 'rd-autosave-last';   // data do último auto-save (YYYY-MM-DD)
+const RD_AUTOSAVE_HOUR  = 18;
+const RD_AUTOSAVE_MIN   = 45;
+
+/**
+ * Verifica se uma data é dia útil (seg–sex) no Brasil.
+ * Feriados nacionais fixos e móveis são verificados aqui.
+ */
+function rdEDiaUtil(d) {
+  const dow = d.getDay(); // 0=dom … 6=sab
+  if (dow === 0 || dow === 6) return false;
+
+  const mm = d.getMonth() + 1;  // 1-12
+  const dd = d.getDate();
+  const aa = d.getFullYear();
+
+  // Feriados nacionais fixos
+  const fixos = [
+    [1,1],[4,21],[5,1],[9,7],[10,12],[11,2],[11,15],[11,20],[12,25]
+  ];
+  if (fixos.some(([m,dia]) => m === mm && dia === dd)) return false;
+
+  // Carnaval (segunda e terça, 47 dias antes da Páscoa)
+  const pascoa = rdCalcPascoa(aa);
+  const seg47  = new Date(pascoa); seg47.setDate(pascoa.getDate() - 48);
+  const ter47  = new Date(pascoa); ter47.setDate(pascoa.getDate() - 47);
+  // Sexta Santa (2 dias antes da Páscoa)
+  const sextaSanta = new Date(pascoa); sextaSanta.setDate(pascoa.getDate() - 2);
+  // Corpus Christi (60 dias após Páscoa)
+  const corpus = new Date(pascoa); corpus.setDate(pascoa.getDate() + 60);
+
+  const fmoveisFmt = [seg47, ter47, sextaSanta, pascoa, corpus].map(x =>
+    `${x.getMonth()+1}-${x.getDate()}`);
+  if (fmoveisFmt.includes(`${mm}-${dd}`)) return false;
+
+  return true;
+}
+
+/** Algoritmo de Meeus/Jones/Butcher para calcular a Páscoa */
+function rdCalcPascoa(ano) {
+  const a = ano % 19, b = Math.floor(ano/100), c = ano % 100;
+  const d = Math.floor(b/4), e = b % 4;
+  const f = Math.floor((b+8)/25), g = Math.floor((b-f+1)/3);
+  const h = (19*a + b - d - g + 15) % 30;
+  const i = Math.floor(c/4), k = c % 4;
+  const l = (32 + 2*e + 2*i - h - k) % 7;
+  const m = Math.floor((a + 11*h + 22*l) / 451);
+  const mes = Math.floor((h + l - 7*m + 114) / 31);
+  const dia = ((h + l - 7*m + 114) % 31) + 1;
+  return new Date(ano, mes-1, dia);
+}
+
+/** Tenta o auto-save silencioso; retorna false se não era hora */
+function rdAutoSaveTick() {
+  const agora = new Date();
+  if (!rdEDiaUtil(agora)) return false;
+
+  const h = agora.getHours(), m = agora.getMinutes();
+  // Janela de 1 minuto: 18:45:00 → 18:45:59
+  if (h !== RD_AUTOSAVE_HOUR || m !== RD_AUTOSAVE_MIN) return false;
+
+  const hoje = agora.toISOString().slice(0,10);
+  // Evita salvar mais de uma vez no mesmo dia
+  if (localStorage.getItem(RD_AUTOSAVE_KEY) === hoje) return false;
+
+  // Verifica se a carteira tem dados
+  const temDados = (
+    (typeof carteira       !== 'undefined' && carteira.length)       ||
+    (typeof carteiraAcoes  !== 'undefined' && carteiraAcoes.length)  ||
+    (typeof carteiraEtfs   !== 'undefined' && carteiraEtfs.length)
+  );
+  if (!temDados) return false;
+
+  // Executa a captura (reutiliza rdCapturarHoje sem o confirm/toast interativo)
+  rdAutoCapturar(hoje);
+  localStorage.setItem(RD_AUTOSAVE_KEY, hoje);
+  return true;
+}
+
+/** Versão silenciosa de rdCapturarHoje (sem confirm nem toast principal) */
+function rdAutoCapturar(dateStr) {
+  try {
+    const all = rdGetAll();
+
+    const mapAtivo = (a, isEtf) => {
+      const pAtual = isEtf ? a.pAtual : (a.pAtual || a.preco);
+      const pAntes = a._prevClose != null ? a._prevClose : (pAtual - (a._varAbs||0));
+      const qtd    = a.cotas || a.qtd || 0;
+      const saldoAntes  = +(qtd * pAntes).toFixed(2);
+      const saldoDepois = +(qtd * pAtual).toFixed(2);
+      const varAbs = +(saldoDepois - saldoAntes).toFixed(2);
+      const varPct = saldoAntes > 0 ? +((varAbs/saldoAntes)*100).toFixed(2) : (a._varPct||0);
+      const base = {
+        ticker: a.ticker,
+        pMedioBase: a.pMedio || pAtual,
+        precoAnterior: +pAntes.toFixed(4),
+        precoAtual: +pAtual.toFixed(4),
+        varPct: a._varPct != null ? +a._varPct.toFixed(2) : varPct,
+        varAbs, saldoAntes, saldoDepois,
+      };
+      if (a.cotas) { base.cotas = a.cotas; base.dy = +(a.cotas * (a.dy||0)).toFixed(2); }
+      else         { base.qtd   = a.qtd; }
+      return base;
+    };
+
+    const fiisArr  = (typeof carteira      !== 'undefined' ? carteira      : []).map(a => mapAtivo(a, false));
+    const acoesArr = (typeof carteiraAcoes !== 'undefined' ? carteiraAcoes : []).map(a => mapAtivo(a, false));
+    const etfsArr  = (typeof carteiraEtfs  !== 'undefined' ? carteiraEtfs  : []).map(a => mapAtivo(a, true));
+
+    const todos       = [...fiisArr, ...acoesArr, ...etfsArr];
+    const totalAntes  = +todos.reduce((s,x) => s+x.saldoAntes,  0).toFixed(2);
+    const totalDepois = +todos.reduce((s,x) => s+x.saldoDepois, 0).toFixed(2);
+    const rendAbs     = +(totalDepois - totalAntes).toFixed(2);
+    const rendPct     = totalAntes > 0 ? +((rendAbs/totalAntes)*100).toFixed(2) : 0;
+    const dyTotal     = +fiisArr.reduce((s,x) => s+(x.dy||0), 0).toFixed(2);
+
+    const registro = {
+      date: dateStr,
+      capturedAt: Date.now(),
+      autoSaved: true,          // marca para distinguir de capturas manuais
+      fiis: fiisArr, acoes: acoesArr, etfs: etfsArr,
+      totalAntes, totalDepois,
+      rendimentoAbsoluto: rendAbs,
+      rendimentoPct: rendPct,
+      dyTotal,
+    };
+
+    const newAll = all.filter(r => r.date !== dateStr);
+    newAll.push(registro);
+    newAll.sort((a,b) => a.date.localeCompare(b.date));
+    rdSaveAll(newAll);
+
+    // Toast discreto + atualiza UI se a aba estiver aberta
+    if (typeof toast === 'function')
+      toast(`🕕 Auto-save 18:45 — ${rdFormatDate(dateStr)} registrado!`);
+    if (typeof renderRendimentosPage === 'function')
+      renderRendimentosPage();
+
+    console.log(`[RD Auto-Save] ${dateStr} salvo automaticamente às 18:45.`);
+  } catch(err) {
+    console.error('[RD Auto-Save] Erro ao capturar:', err);
+  }
+}
+
+/** Inicializa o temporizador de auto-save */
+(function rdInitAutoSave() {
+  // Verifica a cada 30 segundos para não perder o minuto exato
+  let _rdAutoSaveInterval = null;
+
+  function _updateBadge() {
+    const badge = document.getElementById('rd-autosave-badge');
+    const dot   = document.getElementById('rd-autosave-dot');
+    const lbl   = document.getElementById('rd-autosave-label');
+    if (!badge) return;
+
+    const agora = new Date();
+    const hoje  = agora.toISOString().slice(0,10);
+    const jaSalvou = localStorage.getItem(RD_AUTOSAVE_KEY) === hoje;
+    const ehDiaUtil = rdEDiaUtil(agora);
+    const h = agora.getHours(), m = agora.getMinutes();
+    const dentroJanela = h === RD_AUTOSAVE_HOUR && m === RD_AUTOSAVE_MIN;
+
+    if (jaSalvou) {
+      // Verde: já salvou hoje
+      dot.style.background = '#00e5a0';
+      lbl.textContent = `✅ salvo às 18:45`;
+      badge.style.background = '#00e5a015';
+      badge.style.borderColor = '#00e5a040';
+      badge.style.color = 'var(--green)';
+    } else if (dentroJanela && ehDiaUtil) {
+      // Amarelo pulsante: salvando agora
+      dot.style.background = '#fbbf24';
+      lbl.textContent = `💾 salvando…`;
+      badge.style.color = '#fbbf24';
+    } else if (!ehDiaUtil) {
+      // Dimmed: fim de semana/feriado
+      dot.style.background = '#334155';
+      lbl.textContent = `⏰ auto-save 18:45`;
+      badge.style.color = 'var(--dim2)';
+      badge.style.background = 'transparent';
+      badge.style.borderColor = 'var(--border)';
+    } else {
+      // Azul: aguardando horário
+      dot.style.background = '#38bdf8';
+      lbl.textContent = `⏰ auto-save 18:45`;
+      badge.style.color = 'var(--dim)';
+      badge.style.background = '#38bdf808';
+      badge.style.borderColor = '#38bdf825';
+    }
+  }
+
+  function _start() {
+    if (_rdAutoSaveInterval) return;
+    _rdAutoSaveInterval = setInterval(() => {
+      rdAutoSaveTick();
+      _updateBadge();
+    }, 30_000); // 30 s
+    _updateBadge(); // atualiza imediatamente ao carregar
+    console.log('[RD Auto-Save] Agendador iniciado — salvará às 18:45 em dias úteis.');
+  }
+
+  // Inicia logo que o DOM estiver pronto
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _start);
+  } else {
+    _start();
+  }
+})();
+
 // ─── Renderizar a página ─────────────────────────────────────────────────
 function renderRendimentosPage() {
   const all = rdGetAll();
@@ -16539,6 +16873,7 @@ function renderRendimentosPage() {
           <div style="font-weight:700;color:var(--hi)">${rdFormatDate(r.date)}</div>
           <div style="color:${cor};font-weight:700">${sign}${r.rendimentoPct}%</div>
           <div style="color:var(--dim);font-size:.48rem">R$ ${sign}${r.rendimentoAbsoluto.toFixed(2)}</div>
+          ${r.autoSaved ? '<div style="font-size:.4rem;color:#38bdf8;letter-spacing:.04em;margin-top:1px">⏰ auto</div>' : ''}
         </div>`;
       }).join('');
 
@@ -19586,11 +19921,14 @@ var npCfg = {
     ticker: 'nt-ticker', pmedio: 'nt-pmedio', preco: 'nt-preco',
     dy: 'nt-dy',
     qtdInput: 'nt-cotas', valInput: 'nt-valor',
+    qtdAtual: 'nt-qtd-atual',
     btnQtd: 'nt-btn-qtd', btnVal: 'nt-btn-val',
     rowQtd: 'nt-row-qtd', rowVal: 'nt-row-val',
     bar: 'nt-total-bar', barQtd: 'nt-total-cotas',
     barInv: 'nt-total-investido', barSaldo: 'nt-total-saldo',
     barRenda: 'nt-total-renda', barAlert: 'nt-fracao-alert',
+    novoPmRow: 'nt-novo-pm-row', pmAntes: 'nt-pm-antes',
+    pmDepois: 'nt-pm-depois', pmDelta: 'nt-pm-delta',
     liveDot: 'nt-live-dot', status: 'nt-price-status',
     nomeId: 'nt-nome'
   },
@@ -19598,11 +19936,14 @@ var npCfg = {
     ticker: 'na-ticker', pmedio: 'na-pmedio', preco: 'na-patual',
     dy: null,
     qtdInput: 'na-qtd', valInput: 'na-valor',
+    qtdAtual: 'na-qtd-atual',
     btnQtd: 'na-btn-qtd', btnVal: 'na-btn-val',
     rowQtd: 'na-row-qtd', rowVal: 'na-row-val',
     bar: 'na-total-bar', barQtd: 'na-total-qtd',
     barInv: 'na-total-investido', barSaldo: 'na-total-saldo',
     barRenda: 'na-total-rentab', barAlert: 'na-troco-alert',
+    novoPmRow: 'na-novo-pm-row', pmAntes: 'na-pm-antes',
+    pmDepois: 'na-pm-depois', pmDelta: 'na-pm-delta',
     liveDot: 'na-live-dot', status: 'na-price-status',
     nomeId: 'na-nome'
   },
@@ -19610,11 +19951,14 @@ var npCfg = {
     ticker: 'ne-ticker', pmedio: 'ne-pmedio', preco: 'ne-patual',
     dy: null,
     qtdInput: 'ne-qtd', valInput: 'ne-valor',
+    qtdAtual: 'ne-qtd-atual',
     btnQtd: 'ne-btn-qtd', btnVal: 'ne-btn-val',
     rowQtd: 'ne-row-qtd', rowVal: 'ne-row-val',
     bar: 'ne-total-bar', barQtd: 'ne-total-qtd',
     barInv: 'ne-total-investido', barSaldo: 'ne-total-saldo',
     barRenda: 'ne-total-rentab', barAlert: 'ne-troco-alert',
+    novoPmRow: 'ne-novo-pm-row', pmAntes: 'ne-pm-antes',
+    pmDepois: 'ne-pm-depois', pmDelta: 'ne-pm-delta',
     liveDot: 'ne-live-dot', status: 'ne-price-status',
     nomeId: 'ne-nome'
   }
@@ -19679,6 +20023,12 @@ function novaOnTickerInput(aba) {
   if (found) {
     var p = aba === 'fii' ? (found.preco || found.pAtual) : found.pAtual;
     npPreencherPreco(aba, p, found.pMedio || 0, false);
+    // Auto-preenche posição atual com a quantidade já na carteira
+    var qtdAtualEl = document.getElementById(c.qtdAtual);
+    if (qtdAtualEl && (!qtdAtualEl.value || parseFloat(qtdAtualEl.value) === 0)) {
+      var qtdCarta = found.cotas || found.qtd || found.quantidade || 0;
+      if (qtdCarta > 0) qtdAtualEl.value = qtdCarta;
+    }
     if (statusEl) statusEl.innerHTML = '<span style="color:var(--green)">✓ da carteira</span>';
     return;
   }
@@ -19798,6 +20148,39 @@ function npCalc(aba) {
     }
   }
 
+  // ── Cálculo do Novo Preço Médio Ponderado ────────────────────────────────
+  var pmRowEl  = document.getElementById(c.novoPmRow);
+  var pmAntes  = document.getElementById(c.pmAntes);
+  var pmDepois = document.getElementById(c.pmDepois);
+  var pmDelta  = document.getElementById(c.pmDelta);
+
+  var qtdAtual   = Math.max(0, parseInt(npGet(c.qtdAtual)) || 0);
+  // preço de compra do novo aporte: modo qtd → usa pmedio se informado, senão preco atual
+  // modo val → usa preco atual (compra ao mercado)
+  var precoAporte = (npModo[aba] === 'qtd' && pmedio > 0) ? pmedio : preco;
+
+  if (pmRowEl) {
+    if (qtdAtual > 0 && pmedio > 0 && qtd > 0) {
+      // PM ponderado: (qtdAtual × pmAtual + qtdNova × precoAporte) / totalCotas
+      var novoPM = (qtdAtual * pmedio + qtd * precoAporte) / (qtdAtual + qtd);
+      var deltaPM = novoPM - pmedio;
+      var deltaPct = (deltaPM / pmedio) * 100;
+      var deltaCor = deltaPM <= 0 ? 'var(--green)' : 'var(--red)';
+
+      if (pmAntes)  pmAntes.textContent  = npFmt(pmedio);
+      if (pmDepois) pmDepois.textContent = npFmt(novoPM);
+      if (pmDelta)  {
+        pmDelta.textContent = (deltaPM >= 0 ? '+' : '') + npFmt(deltaPM) +
+                              ' (' + (deltaPct >= 0 ? '+' : '') + deltaPct.toFixed(2) + '%)';
+        pmDelta.style.color = deltaCor;
+      }
+      pmRowEl.style.display = 'block';
+    } else {
+      pmRowEl.style.display = 'none';
+    }
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
   barEl.style.display = 'block';
 }
 
@@ -19837,8 +20220,27 @@ function previewNovo() {
   var rentab  = (pmedio > 0 && pmedio !== preco) ? ((preco - pmedio) / pmedio * 100).toFixed(2) : null;
   var rentCor = rentab !== null ? (parseFloat(rentab) >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--dim)';
 
+  // Calcula novo PM ponderado para preview FII
+  var qtdAtualFii = Math.max(0, parseInt(document.getElementById('nt-qtd-atual') ? document.getElementById('nt-qtd-atual').value : 0) || 0);
+  var novoPMFii = null;
+  if (qtdAtualFii > 0 && pmedio > 0 && cotas > 0) {
+    novoPMFii = (qtdAtualFii * pmedio + cotas * preco) / (qtdAtualFii + cotas);
+  }
+  var novoPMHtmlFii = novoPMFii !== null
+    ? '<div style="background:#818cf810;border:1px solid #818cf830;border-radius:6px;padding:.35rem .6rem;margin-bottom:.4rem">' +
+      '<div style="font-size:.44rem;color:var(--dim);margin-bottom:.15rem">NOVO PREÇO MÉDIO APÓS APORTE</div>' +
+      '<div style="display:flex;align-items:center;gap:.5rem">' +
+      '<span class="num" style="font-size:.75rem;color:var(--dim2)">PM: R$ ' + pmedio.toFixed(2) + '</span>' +
+      '<span style="color:var(--border2)">→</span>' +
+      '<span class="num" style="font-size:.95rem;color:var(--papel);font-weight:700">R$ ' + novoPMFii.toFixed(2) + '</span>' +
+      '<span class="num" style="font-size:.72rem;color:' + (novoPMFii <= pmedio ? 'var(--green)' : 'var(--red)') + '">' +
+      (novoPMFii <= pmedio ? '▼' : '▲') + ' ' + Math.abs(((novoPMFii - pmedio) / pmedio) * 100).toFixed(2) + '%</span>' +
+      '</div></div>'
+    : '';
+
   document.getElementById('nt-preview').innerHTML =
     '<div style="background:var(--bg3);border:1px solid #00e5a025;border-radius:8px;padding:.65rem .8rem;margin-top:.5rem">' +
+    novoPMHtmlFii +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.4rem">' +
     '<div><div style="font-size:.48rem;color:var(--dim)">SALDO ATUAL</div>' +
     '<div class="num" style="font-size:.9rem;color:var(--hi)">R$ ' + saldo.toFixed(2) + '</div></div>' +
@@ -19878,8 +20280,27 @@ function previewNovaAcao() {
   var rentab = pMedio > 0 ? ((pAtual - pMedio) / pMedio * 100).toFixed(2) : '0.00';
   var rentCor = parseFloat(rentab) >= 0 ? 'var(--green)' : 'var(--red)';
 
+  // Calcula novo PM ponderado para preview Ação
+  var qtdAtualAcao = Math.max(0, parseInt(document.getElementById('na-qtd-atual') ? document.getElementById('na-qtd-atual').value : 0) || 0);
+  var novoPMAcao = null;
+  if (qtdAtualAcao > 0 && pMedio > 0 && qtd > 0) {
+    novoPMAcao = (qtdAtualAcao * pMedio + qtd * pAtual) / (qtdAtualAcao + qtd);
+  }
+  var novoPMHtmlAcao = novoPMAcao !== null
+    ? '<div style="background:#818cf810;border:1px solid #818cf830;border-radius:6px;padding:.35rem .6rem;margin-bottom:.4rem">' +
+      '<div style="font-size:.44rem;color:var(--dim);margin-bottom:.15rem">NOVO PREÇO MÉDIO APÓS APORTE</div>' +
+      '<div style="display:flex;align-items:center;gap:.5rem">' +
+      '<span class="num" style="font-size:.75rem;color:var(--dim2)">PM: R$ ' + pMedio.toFixed(2) + '</span>' +
+      '<span style="color:var(--border2)">→</span>' +
+      '<span class="num" style="font-size:.95rem;color:var(--papel);font-weight:700">R$ ' + novoPMAcao.toFixed(2) + '</span>' +
+      '<span class="num" style="font-size:.72rem;color:' + (novoPMAcao <= pMedio ? 'var(--green)' : 'var(--red)') + '">' +
+      (novoPMAcao <= pMedio ? '▼' : '▲') + ' ' + Math.abs(((novoPMAcao - pMedio) / pMedio) * 100).toFixed(2) + '%</span>' +
+      '</div></div>'
+    : '';
+
   document.getElementById('na-preview').innerHTML =
     '<div style="background:var(--bg3);border:1px solid #00e5a025;border-radius:8px;padding:.65rem .8rem;margin-top:.5rem">' +
+    novoPMHtmlAcao +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.4rem">' +
     '<div><div style="font-size:.48rem;color:var(--dim)">SALDO</div>' +
     '<div class="num" style="font-size:.9rem;color:var(--hi)">R$ ' + saldo.toFixed(2) + '</div></div>' +
@@ -19913,8 +20334,27 @@ function previewNovoEtf() {
   var rentab = pMedio > 0 ? ((pAtual - pMedio) / pMedio * 100).toFixed(2) : '0.00';
   var rentCor = parseFloat(rentab) >= 0 ? 'var(--green)' : 'var(--red)';
 
+  // Calcula novo PM ponderado para preview ETF
+  var qtdAtualEtf = Math.max(0, parseInt(document.getElementById('ne-qtd-atual') ? document.getElementById('ne-qtd-atual').value : 0) || 0);
+  var novoPMEtf = null;
+  if (qtdAtualEtf > 0 && pMedio > 0 && qtd > 0) {
+    novoPMEtf = (qtdAtualEtf * pMedio + qtd * pAtual) / (qtdAtualEtf + qtd);
+  }
+  var novoPMHtmlEtf = novoPMEtf !== null
+    ? '<div style="background:#818cf810;border:1px solid #818cf830;border-radius:6px;padding:.35rem .6rem;margin-bottom:.4rem">' +
+      '<div style="font-size:.44rem;color:var(--dim);margin-bottom:.15rem">NOVO PREÇO MÉDIO APÓS APORTE</div>' +
+      '<div style="display:flex;align-items:center;gap:.5rem">' +
+      '<span class="num" style="font-size:.75rem;color:var(--dim2)">PM: R$ ' + pMedio.toFixed(2) + '</span>' +
+      '<span style="color:var(--border2)">→</span>' +
+      '<span class="num" style="font-size:.95rem;color:var(--papel);font-weight:700">R$ ' + novoPMEtf.toFixed(2) + '</span>' +
+      '<span class="num" style="font-size:.72rem;color:' + (novoPMEtf <= pMedio ? 'var(--green)' : 'var(--red)') + '">' +
+      (novoPMEtf <= pMedio ? '▼' : '▲') + ' ' + Math.abs(((novoPMEtf - pMedio) / pMedio) * 100).toFixed(2) + '%</span>' +
+      '</div></div>'
+    : '';
+
   document.getElementById('ne-preview').innerHTML =
     '<div style="background:var(--bg3);border:1px solid #00e5a025;border-radius:8px;padding:.65rem .8rem;margin-top:.5rem">' +
+    novoPMHtmlEtf +
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin-bottom:.4rem">' +
     '<div><div style="font-size:.48rem;color:var(--dim)">SALDO</div>' +
     '<div class="num" style="font-size:.9rem;color:var(--hi)">R$ ' + saldo.toFixed(2) + '</div></div>' +
@@ -23132,6 +23572,156 @@ function advClearChat() {
 
 </div><!-- /page-setorial -->
 
+<!-- ══════════════ PAGE: REC. DY ══════════════ -->
+<div class="page" id="page-recdy">
+  <div class="sec-head">
+    <div class="sec-title">📆 RECEBIMENTOS DY</div>
+    <div class="frow" style="gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-green" onclick="recDyRender()">🔄 Atualizar</button>
+      <select id="recdy-ano" onchange="recDyRender()" style="width:auto;font-size:.62rem">
+        <option value="2025">2025</option>
+        <option value="2026" selected>2026</option>
+        <option value="2027">2027</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- KPI strip -->
+  <div id="recdy-kpis" class="g4" style="margin-bottom:.8rem"></div>
+
+  <!-- Calendário 12 meses -->
+  <div id="recdy-calendar-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-bottom:1rem"></div>
+
+  <!-- Tabela de pagamentos cadastrados -->
+  <div class="card" style="margin-bottom:.8rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.7rem;flex-wrap:wrap;gap:.4rem">
+      <div class="card-label" style="margin-bottom:0">📋 PAGAMENTOS CADASTRADOS</div>
+      <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+        <button class="btn" style="font-size:.52rem;background:#a78bfa18;color:#a78bfa;border:1px solid #a78bfa30" onclick="recDyResetFromCarteira()">🔄 Sincronizar carteira</button>
+        <button class="btn btn-green" onclick="recDyOpenModal()">+ Adicionar</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl" id="recdy-tbl">
+        <thead>
+          <tr>
+            <th>Ticker</th>
+            <th>Tipo</th>
+            <th>Periodicidade</th>
+            <th>Calendário</th>
+            <th>Qtd</th>
+            <th>R$/cota</th>
+            <th>DY/mês</th>
+            <th>Renda/mês</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="recdy-tbl-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal detalhe mês DY -->
+<div class="modal-overlay" id="recdy-mes-modal" onclick="if(event.target===this)recDyFecharMes()" style="z-index:1100">
+  <div class="modal" style="max-width:520px;padding:0;overflow:hidden">
+    <!-- Header colorido -->
+    <div id="recdy-mes-header" style="padding:1rem 1.2rem .8rem;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div id="recdy-mes-titulo" style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:.05em;line-height:1"></div>
+        <div id="recdy-mes-subtitulo" style="font-size:.48rem;color:rgba(255,255,255,.6);margin-top:.2rem;letter-spacing:.07em"></div>
+      </div>
+      <div style="text-align:right">
+        <div id="recdy-mes-total" style="font-family:'Bebas Neue',sans-serif;font-size:1.8rem;line-height:1"></div>
+        <div style="font-size:.42rem;color:rgba(255,255,255,.5);letter-spacing:.06em">TOTAL DO MÊS</div>
+      </div>
+    </div>
+    <!-- Barra de tipos -->
+    <div id="recdy-mes-barra" style="display:flex;height:4px"></div>
+    <!-- Lista de ativos -->
+    <div style="padding:.8rem 1.2rem 1.2rem">
+      <div id="recdy-mes-lista" style="display:flex;flex-direction:column;gap:.4rem;max-height:380px;overflow-y:auto"></div>
+      <div id="recdy-mes-vazio" style="display:none;text-align:center;padding:2rem;color:var(--dim2);font-size:.55rem">
+        Nenhum ativo paga DY neste mês.
+      </div>
+    </div>
+    <!-- Footer -->
+    <div style="padding:.6rem 1.2rem .8rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <div id="recdy-mes-rodape" style="font-size:.44rem;color:var(--dim2)"></div>
+      <button class="btn" onclick="recDyFecharMes()" style="font-size:.52rem">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal adicionar pagamento DY -->
+<div class="modal-overlay" id="recdy-modal" onclick="if(event.target===this)recDyCloseModal()">
+  <div class="modal" style="max-width:440px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--hi)">ADICIONAR ATIVO</div>
+      <button class="btn-icon" onclick="recDyCloseModal()">✕</button>
+    </div>
+    <div class="fcol" style="gap:.55rem">
+      <div>
+        <label style="font-size:.5rem;color:var(--dim);letter-spacing:.06em;display:block;margin-bottom:.2rem">TICKER</label>
+        <input type="text" id="recdy-f-ticker" placeholder="ex: KNCR11" oninput="this.value=this.value.toUpperCase()"/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div>
+          <label style="font-size:.5rem;color:var(--dim);letter-spacing:.06em;display:block;margin-bottom:.2rem">TIPO</label>
+          <select id="recdy-f-tipo" onchange="recDyTipoChange()">
+            <option value="FII">FII</option>
+            <option value="Ação">Ação</option>
+            <option value="ETF">ETF</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:.5rem;color:var(--dim);letter-spacing:.06em;display:block;margin-bottom:.2rem">SUBTIPO</label>
+          <select id="recdy-f-subtipo">
+            <option value="Papel">Papel</option>
+            <option value="Tijolo">Tijolo</option>
+            <option value="Híbrido">Híbrido</option>
+            <option value="Outro">Outro</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div>
+          <label style="font-size:.5rem;color:var(--dim);letter-spacing:.06em;display:block;margin-bottom:.2rem">QUANTIDADE</label>
+          <input type="number" id="recdy-f-qtd" placeholder="ex: 10" min="0"/>
+        </div>
+        <div>
+          <label style="font-size:.5rem;color:var(--dim);letter-spacing:.06em;display:block;margin-bottom:.2rem">R$/COTA (ÚLTIMO)</label>
+          <input type="number" id="recdy-f-rendimento" placeholder="ex: 1.20" step="0.01" min="0"/>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem">
+        <div>
+          <label style="font-size:.5rem;color:var(--dim);letter-spacing:.06em;display:block;margin-bottom:.2rem">COTAÇÃO (R$)</label>
+          <input type="number" id="recdy-f-cotacao" placeholder="ex: 104.27" step="0.01" min="0"/>
+        </div>
+        <div>
+          <label style="font-size:.5rem;color:var(--dim);letter-spacing:.06em;display:block;margin-bottom:.2rem">FREQUÊNCIA</label>
+          <select id="recdy-f-freq" onchange="recDyFreqChange()">
+            <option value="mensal">Mensal</option>
+            <option value="trimestral">Trimestral</option>
+            <option value="semestral">Semestral</option>
+            <option value="anual">Anual</option>
+            <option value="personalizado">Personalizado</option>
+          </select>
+        </div>
+      </div>
+      <div id="recdy-f-meses-wrap">
+        <label style="font-size:.5rem;color:var(--dim);letter-spacing:.06em;display:block;margin-bottom:.35rem">MESES DE PAGAMENTO</label>
+        <div style="display:flex;flex-wrap:wrap;gap:.3rem" id="recdy-f-meses-btns"></div>
+      </div>
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.3rem">
+        <button class="btn" style="background:var(--bg3);color:var(--dim);border:1px solid var(--border2)" onclick="recDyCloseModal()">Cancelar</button>
+        <button class="btn btn-green" onclick="recDySalvar()">💾 Salvar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div><!-- /main-content -->
 </div><!-- /app-shell -->
 
@@ -26328,5 +26918,547 @@ function cnsRenderTabela() {
   document.getElementById('cns-tbody').innerHTML = tbody;
 }
 
+// ══════════════════════════════════════════════
+//  REC. DY — Calendário de Recebimentos
+// ══════════════════════════════════════════════
+
+const RECDY_MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const RECDY_KEY   = 'recdy-ativos';
+let   recDyEditIdx = -1;
+let   recDyMesesSel = [];
+
+// ── Persistência ─────────────────────────────
+function recDyLoad()  { try { return JSON.parse(localStorage.getItem(RECDY_KEY) || '[]'); } catch(e){ return []; } }
+function recDySave(d) { try { localStorage.setItem(RECDY_KEY, JSON.stringify(d)); } catch(e){} }
+
+// ── Meses padrão por frequência ───────────────
+function recDyMesesPadrao(freq) {
+  switch(freq) {
+    case 'mensal':      return [1,2,3,4,5,6,7,8,9,10,11,12];
+    case 'trimestral':  return [3,6,9,12];
+    case 'semestral':   return [6,12];
+    case 'anual':       return [12];
+    default:            return [];
+  }
+}
+
+// ── Render principal ──────────────────────────
+
+// ══════════════════════════════════════════════════════════════════════════
+//  MODAL DETALHE MÊS — abre ao clicar no card do calendário RecDY
+// ══════════════════════════════════════════════════════════════════════════
+function recDyAbrirMes(mes, ano) {
+  const ativos   = recDyLoad();
+  const pagantes = ativos.filter(a => (a.meses || []).includes(mes));
+  const total    = pagantes.reduce((s,a) => s + (a.qtd||0)*(a.rendimento||0), 0);
+  const isHoje   = (new Date().getMonth()+1 === mes) && (new Date().getFullYear() === ano);
+
+  function corAtivo(a) {
+    if (a.tipo === 'FII') return a.subtipo === 'Papel' ? '#38bdf8' : '#fb923c';
+    return '#fbbf24';
+  }
+
+  // ── Título e subtítulo ──────────────────────────────────────────────
+  const nFiis  = pagantes.filter(a => a.tipo === 'FII').length;
+  const nAcoes = pagantes.filter(a => a.tipo === 'Ação').length;
+
+  document.getElementById('recdy-mes-titulo').innerHTML =
+    `${RECDY_MESES[mes-1]} <span style="font-size:.9rem;opacity:.6">${ano}</span>` +
+    (isHoje ? ` <span style="font-size:.42rem;background:#00e5a0;color:#000;border-radius:3px;padding:1px 6px;vertical-align:middle;margin-left:.5rem">MÊS ATUAL</span>` : '');
+  document.getElementById('recdy-mes-titulo').style.color = isHoje ? '#00e5a0' : 'var(--hi)';
+
+  document.getElementById('recdy-mes-subtitulo').textContent =
+    `${pagantes.length} ativo${pagantes.length!==1?'s':''} pagam neste mês` +
+    (nFiis  ? ` · ${nFiis} FII${nFiis!==1?'s':''}` : '') +
+    (nAcoes ? ` · ${nAcoes} ação${nAcoes!==1?'ões':''}` : '');
+
+  document.getElementById('recdy-mes-total').textContent = `R$ ${total.toFixed(2)}`;
+  document.getElementById('recdy-mes-total').style.color = total > 0 ? '#00e5a0' : 'var(--dim2)';
+
+  // ── Barra proporcional FII / Ações ─────────────────────────────────
+  const totalFii  = pagantes.filter(a=>a.tipo==='FII').reduce((s,a)=>s+(a.qtd||0)*(a.rendimento||0),0);
+  const totalAcao = pagantes.filter(a=>a.tipo==='Ação').reduce((s,a)=>s+(a.qtd||0)*(a.rendimento||0),0);
+  const pFii  = total > 0 ? (totalFii/total*100).toFixed(1)  : 0;
+  const pAcao = total > 0 ? (totalAcao/total*100).toFixed(1) : 0;
+  document.getElementById('recdy-mes-barra').innerHTML = total > 0
+    ? `<div title="FIIs: R$ ${totalFii.toFixed(2)} (${pFii}%)"  style="width:${pFii}%;background:#fb923c;transition:width .35s"></div>
+       <div title="Ações: R$ ${totalAcao.toFixed(2)} (${pAcao}%)" style="width:${pAcao}%;background:#fbbf24;transition:width .35s"></div>`
+    : '<div style="width:100%;background:var(--border)"></div>';
+
+  // ── Lista de ativos ordenada por renda desc ─────────────────────────
+  const lista = document.getElementById('recdy-mes-lista');
+  const vazio = document.getElementById('recdy-mes-vazio');
+
+  if (!pagantes.length) {
+    lista.style.display = 'none';
+    vazio.style.display = 'block';
+  } else {
+    lista.style.display = 'flex';
+    vazio.style.display = 'none';
+
+    const sorted = [...pagantes].sort((a,b) =>
+      (b.qtd||0)*(b.rendimento||0) - (a.qtd||0)*(a.rendimento||0));
+
+    const freqMap = {mensal:'Mensal',trimestral:'Trimestral',semestral:'Semestral',anual:'Anual',personalizado:'Irregular'};
+
+    lista.innerHTML = sorted.map(a => {
+      const renda = (a.qtd||0)*(a.rendimento||0);
+      const dy    = a.cotacao > 0 ? (a.rendimento/a.cotacao*100).toFixed(2) : '—';
+      const cor   = corAtivo(a);
+      const pct   = total > 0 ? (renda/total*100).toFixed(1) : 0;
+      const freq  = freqMap[a.freq||'mensal'] || a.freq || '';
+      return `
+        <div style="background:var(--bg3);border:1px solid ${cor}28;border-left:3px solid ${cor};
+          border-radius:6px;padding:.6rem .8rem;
+          display:grid;grid-template-columns:80px 1fr auto;gap:.6rem;align-items:center">
+          <!-- Col 1: identidade -->
+          <div>
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:${cor};letter-spacing:.05em;line-height:1">${a.ticker}</div>
+            <div style="font-size:.41rem;color:var(--dim2);margin-top:2px">${a.tipo}${a.subtipo?' · '+a.subtipo:''}</div>
+            <div style="font-size:.39rem;color:var(--dim2)">${freq}</div>
+          </div>
+          <!-- Col 2: detalhe + barra -->
+          <div>
+            <div style="display:flex;justify-content:space-between;font-size:.41rem;color:var(--dim);margin-bottom:3px">
+              <span>${a.qtd} cota${a.qtd!==1?'s':''} × R$ ${(a.rendimento||0).toFixed(2)}</span>
+              <span style="color:var(--dim2)">${pct}% do mês</span>
+            </div>
+            <div style="background:var(--bg2);border-radius:3px;height:5px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:${cor};border-radius:3px"></div>
+            </div>
+            <div style="font-size:.39rem;color:var(--dim2);margin-top:3px">
+              DY/mês: <span style="color:${cor}">${dy}%</span>${a.cotacao?' · R$ '+Number(a.cotacao).toFixed(2)+'/cota':''}
+            </div>
+          </div>
+          <!-- Col 3: valor -->
+          <div style="text-align:right;min-width:70px">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#00e5a0;line-height:1">R$ ${renda.toFixed(2)}</div>
+            <div style="font-size:.38rem;color:var(--dim2)">neste mês</div>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ── Rodapé ──────────────────────────────────────────────────────────
+  document.getElementById('recdy-mes-rodape').textContent =
+    total > 0
+      ? `Média diária estimada: R$ ${(total/30).toFixed(2)} · ${pagantes.length} de ${ativos.length} ativos pagam`
+      : `${ativos.length} ativo${ativos.length!==1?'s':''} cadastrado${ativos.length!==1?'s':''}`;
+
+  document.getElementById('recdy-mes-modal').classList.add('active');
+}
+
+function recDyFecharMes() {
+  document.getElementById('recdy-mes-modal').classList.remove('active');
+}
+
+function recDyRender() {
+  const ativos = recDyLoad();
+  const ano    = parseInt(document.getElementById('recdy-ano').value) || new Date().getFullYear();
+  recDyRenderKPIs(ativos, ano);
+  recDyRenderCalendar(ativos, ano);
+  recDyRenderTabela(ativos);
+}
+
+// ── KPIs ──────────────────────────────────────
+function recDyRenderKPIs(ativos, ano) {
+  const totalMes = ativos.reduce((s, a) => {
+    const rend = (a.qtd || 0) * (a.rendimento || 0);
+    const freq = (a.meses || []).length / 12;
+    return s + rend * freq;
+  }, 0);
+  const totalAno = ativos.reduce((s, a) => {
+    return s + (a.qtd || 0) * (a.rendimento || 0) * (a.meses || []).length;
+  }, 0);
+  const totalInv  = ativos.reduce((s, a) => s + (a.qtd || 0) * (a.cotacao || 0), 0);
+  const dyMedio   = totalInv > 0 ? (totalAno / totalInv * 100) : 0;
+  const nAtivos   = ativos.length;
+
+  const mesHoje = new Date().getMonth() + 1;
+  let totalMesAtual = 0, nPagamHoje = 0;
+  ativos.forEach(a => { if ((a.meses||[]).includes(mesHoje)) { totalMesAtual += (a.qtd||0)*(a.rendimento||0); nPagamHoje++; } });
+  const nMensal = ativos.filter(a=>(a.freq||'mensal')==='mensal').length;
+  document.getElementById('recdy-kpis').innerHTML = `
+    <div class="card" style="text-align:center;border-color:var(--green)30">
+      <div style="font-size:.44rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.3rem">ESTE MÊS (${RECDY_MESES[mesHoje-1]})</div>
+      <div class="num" style="font-size:1.6rem;color:var(--green)">R$ ${totalMesAtual.toFixed(2)}</div>
+      <div style="font-size:.42rem;color:var(--dim2)">${nPagamHoje} ativo${nPagamHoje!==1?'s':''} pagam</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:.44rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.3rem">RENDA MÉDIA/MÊS</div>
+      <div class="num" style="font-size:1.6rem;color:var(--hi)">R$ ${totalMes.toFixed(2)}</div>
+      <div style="font-size:.42rem;color:var(--dim2)">estimada</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:.44rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.3rem">RENDA/ANO ${ano}</div>
+      <div class="num" style="font-size:1.6rem;color:#38bdf8">R$ ${totalAno.toFixed(2)}</div>
+      <div style="font-size:.42rem;color:var(--dim2)">R$ ${(totalAno/12).toFixed(2)}/mês</div>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:.44rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.3rem">DY MÉDIO · ATIVOS</div>
+      <div class="num" style="font-size:1.6rem;color:#fbbf24">${dyMedio.toFixed(2)}%</div>
+      <div style="font-size:.42rem;color:var(--dim2)">${nAtivos} ativos · ${nMensal} mensais</div>
+    </div>`;
+}
+
+// ── Calendário 12 meses ───────────────────────
+function recDyRenderCalendar(ativos, ano) {
+  const wrap = document.getElementById('recdy-calendar-grid');
+  let html = '';
+
+  for (let m = 1; m <= 12; m++) {
+    // ativos que pagam neste mês
+    const pagantes = ativos.filter(a => (a.meses || []).includes(m));
+    const total    = pagantes.reduce((s, a) => s + (a.qtd || 0) * (a.rendimento || 0), 0);
+    const isHoje   = (new Date().getMonth() + 1 === m) && (new Date().getFullYear() === ano);
+
+    const chips = pagantes.slice(0, 5).map(a => {
+      const tipo  = a.tipo === 'FII' ? (a.subtipo === 'Papel' ? 'var(--papel)' : 'var(--tijolo)') : 'var(--yellow)';
+      const renda = (a.qtd || 0) * (a.rendimento || 0);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;
+        background:${tipo}15;border:1px solid ${tipo}30;border-radius:4px;
+        padding:2px 5px;margin-bottom:2px">
+        <span style="font-size:.46rem;font-weight:700;color:${tipo}">${a.ticker}</span>
+        <span style="font-size:.44rem;color:var(--dim);font-family:'Bebas Neue',sans-serif;letter-spacing:.04em">R$ ${renda.toFixed(2)}</span>
+      </div>`;
+    }).join('');
+
+    const extra = pagantes.length > 5
+      ? `<div style="font-size:.42rem;color:var(--dim2);text-align:right">+${pagantes.length - 5} mais</div>`
+      : '';
+
+    const emptyMsg = pagantes.length === 0
+      ? `<div style="font-size:.45rem;color:var(--border2);text-align:center;padding:.4rem 0">sem pagamentos</div>`
+      : '';
+
+    const cardBorder = isHoje ? 'var(--green)' : 'var(--border)';
+    const cardShadow  = isHoje ? '0 0 0 1px #00e5a022' : 'none';
+    html += `
+      <div class="card recdy-mes-card" data-mes="${m}" data-ano="${ano}" style="cursor:pointer;border-color:${cardBorder};box-shadow:${cardShadow};transition:border-color .15s,box-shadow .15s">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.45rem">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.05rem;
+            color:${isHoje ? 'var(--green)' : 'var(--hi)'};letter-spacing:.05em">
+            ${RECDY_MESES[m-1]} <span style="font-size:.65rem;color:var(--dim)">${ano}</span>
+          </div>
+          ${total > 0
+            ? `<div class="num" style="font-size:1rem;color:var(--green)">R$ ${total.toFixed(2)}</div>`
+            : `<div style="font-size:.5rem;color:var(--border2)">—</div>`}
+        </div>
+        ${chips}${extra}${emptyMsg}
+      </div>`;
+  }
+
+  wrap.innerHTML = html;
+
+  // Event delegation — evita problema de aspas em onclick inline
+  wrap.querySelectorAll('.recdy-mes-card').forEach(card => {
+    card.addEventListener('click', function() {
+      recDyAbrirMes(parseInt(this.dataset.mes), parseInt(this.dataset.ano));
+    });
+    card.addEventListener('mouseenter', function() {
+      this.style.borderColor = 'var(--hi)';
+      this.style.boxShadow   = '0 0 0 1px var(--hi)';
+    });
+    card.addEventListener('mouseleave', function() {
+      const m = parseInt(this.dataset.mes);
+      const hoje = new Date().getMonth() + 1;
+      this.style.borderColor = (m === hoje) ? 'var(--green)' : 'var(--border)';
+      this.style.boxShadow   = (m === hoje) ? '0 0 0 1px #00e5a022' : 'none';
+    });
+  });
+}
+
+// ── Tabela de ativos ──────────────────────────
+function recDyRenderTabela(ativos) {
+  const tbody = document.getElementById('recdy-tbl-body');
+  if (!ativos.length) {
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;color:var(--dim2);font-size:.55rem;padding:1rem">
+      Nenhum ativo cadastrado. Clique em "+ Adicionar" para começar.
+    </td></tr>`;
+    return;
+  }
+  const _mesAtual = new Date().getMonth() + 1;
+  tbody.innerHTML = ativos.map((a, idx) => {
+    const renda  = (a.qtd || 0) * (a.rendimento || 0);
+    const dy     = a.cotacao > 0 ? (a.rendimento / a.cotacao * 100) : 0;
+    const cor    = a.tipo === 'FII' ? (a.subtipo === 'Papel' ? '#38bdf8' : '#fb923c') : (a.tipo === 'Ação' ? '#fbbf24' : '#a78bfa');
+    const meses  = a.meses || [];
+    const pagaHoje = meses.includes(_mesAtual);
+    const freqLabel = {mensal:'Mensal',trimestral:'Trimestral',semestral:'Semestral',anual:'Anual',personalizado:'Irregular'}[a.freq||'mensal']||'—';
+    const freqCor   = {mensal:'var(--green)',trimestral:'#38bdf8',semestral:'#fbbf24',anual:'#fb923c',personalizado:'#a78bfa'}[a.freq||'mensal']||'var(--dim)';
+    const chips = [1,2,3,4,5,6,7,8,9,10,11,12].map(m => {
+      const ativo = meses.includes(m), isNow = m === _mesAtual;
+      return `<span style="display:inline-block;width:20px;text-align:center;font-size:.36rem;padding:1px 1px;border-radius:3px;margin:1px;
+        background:${ativo?(isNow?cor:cor+'33'):'var(--bg3)'};
+        color:${ativo?(isNow?'#fff':cor):'var(--border2)'};font-weight:${isNow&&ativo?700:400};
+        border:1px solid ${isNow&&ativo?cor:'transparent'}">${RECDY_MESES[m-1]}</span>`;
+    }).join('');
+    return `<tr style="${pagaHoje?'background:'+cor+'08':''}" >
+      <td>
+        <span style="font-weight:700;color:${cor};font-family:'Bebas Neue',sans-serif;font-size:.8rem;letter-spacing:.04em">${a.ticker}</span>
+        ${pagaHoje?`<span style="font-size:.38rem;background:${cor}22;color:${cor};border:1px solid ${cor}44;border-radius:3px;padding:1px 4px;margin-left:3px">PAGA AGORA</span>`:''}
+      </td>
+      <td><span style="font-size:.5rem;color:${cor}">${a.tipo}${a.subtipo?' · '+a.subtipo:''}</span></td>
+      <td><span style="font-size:.48rem;color:${freqCor};background:${freqCor}18;border-radius:3px;padding:1px 5px">${freqLabel}</span><br><span style="font-size:.42rem;color:var(--dim2)">${meses.length}x/ano</span></td>
+      <td style="line-height:1.8">${chips}</td>
+      <td>${a.qtd}</td>
+      <td>R$ ${(a.rendimento||0).toFixed(2)}</td>
+      <td style="color:var(--green)">${dy.toFixed(2)}%</td>
+      <td style="color:var(--green);font-family:'Bebas Neue',sans-serif;font-size:.8rem">R$ ${renda.toFixed(2)}</td>
+      <td>
+        <button class="btn-icon" onclick="recDyEditar(${idx})" title="Editar">✏️</button>
+        <button class="btn-icon" onclick="recDyExcluir(${idx})" title="Excluir">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ── Modal helpers ─────────────────────────────
+function recDyOpenModal(idx = -1) {
+  recDyEditIdx   = idx;
+  recDyMesesSel  = [];
+  const ativos   = recDyLoad();
+  const a        = idx >= 0 ? ativos[idx] : null;
+
+  document.getElementById('recdy-f-ticker').value    = a ? a.ticker    : '';
+  document.getElementById('recdy-f-tipo').value      = a ? a.tipo      : 'FII';
+  document.getElementById('recdy-f-subtipo').value   = a ? (a.subtipo||'Papel') : 'Papel';
+  document.getElementById('recdy-f-qtd').value       = a ? a.qtd       : '';
+  document.getElementById('recdy-f-rendimento').value= a ? a.rendimento : '';
+  document.getElementById('recdy-f-cotacao').value   = a ? a.cotacao   : '';
+  document.getElementById('recdy-f-freq').value      = a ? (a.freq||'mensal') : 'mensal';
+
+  recDyMesesSel = a ? [...(a.meses || [])] : recDyMesesPadrao('mensal');
+  recDyRenderMesesBtns();
+  recDyFreqChange();
+  document.getElementById('recdy-modal').classList.add('on');
+}
+
+function recDyCloseModal() {
+  document.getElementById('recdy-modal').classList.remove('on');
+}
+
+function recDyTipoChange() {
+  const tipo = document.getElementById('recdy-f-tipo').value;
+  const subtWrap = document.getElementById('recdy-f-subtipo').parentElement;
+  subtWrap.style.display = tipo === 'FII' ? 'block' : 'none';
+}
+
+function recDyFreqChange() {
+  const freq = document.getElementById('recdy-f-freq').value;
+  const wrap = document.getElementById('recdy-f-meses-wrap');
+  if (freq !== 'personalizado') {
+    recDyMesesSel = recDyMesesPadrao(freq);
+    recDyRenderMesesBtns();
+    wrap.style.opacity = freq === 'mensal' ? '.5' : '1';
+  } else {
+    wrap.style.opacity = '1';
+  }
+  recDyRenderMesesBtns();
+}
+
+function recDyRenderMesesBtns() {
+  const freq = document.getElementById('recdy-f-freq').value;
+  const readonly = freq !== 'personalizado';
+  document.getElementById('recdy-f-meses-btns').innerHTML = RECDY_MESES.map((nm, i) => {
+    const m   = i + 1;
+    const sel = recDyMesesSel.includes(m);
+    return `<button type="button" onclick="${readonly ? '' : `recDyToggleMes(${m})`}"
+      style="font-size:.52rem;padding:.2rem .45rem;border-radius:4px;cursor:${readonly?'default':'pointer'};
+      border:1px solid ${sel ? 'var(--green)' : 'var(--border2)'};
+      background:${sel ? '#00e5a022' : 'var(--bg3)'};
+      color:${sel ? 'var(--green)' : 'var(--dim)'};
+      font-family:'IBM Plex Mono',monospace;transition:all .15s">${nm}</button>`;
+  }).join('');
+}
+
+function recDyToggleMes(m) {
+  const idx = recDyMesesSel.indexOf(m);
+  if (idx >= 0) recDyMesesSel.splice(idx, 1);
+  else recDyMesesSel.push(m);
+  recDyMesesSel.sort((a,b) => a-b);
+  recDyRenderMesesBtns();
+}
+
+// ── CRUD ──────────────────────────────────────
+function recDySalvar() {
+  const ticker    = document.getElementById('recdy-f-ticker').value.trim().toUpperCase();
+  const tipo      = document.getElementById('recdy-f-tipo').value;
+  const subtipo   = document.getElementById('recdy-f-subtipo').value;
+  const qtd       = parseFloat(document.getElementById('recdy-f-qtd').value) || 0;
+  const rendimento= parseFloat(document.getElementById('recdy-f-rendimento').value) || 0;
+  const cotacao   = parseFloat(document.getElementById('recdy-f-cotacao').value) || 0;
+  const freq      = document.getElementById('recdy-f-freq').value;
+
+  if (!ticker) { alert('Informe o ticker!'); return; }
+  if (qtd <= 0) { alert('Informe a quantidade!'); return; }
+
+  const meses = freq === 'personalizado' ? [...recDyMesesSel] : recDyMesesPadrao(freq);
+
+  const obj = { ticker, tipo, subtipo, qtd, rendimento, cotacao, freq, meses };
+  const ativos = recDyLoad();
+  if (recDyEditIdx >= 0) ativos[recDyEditIdx] = obj;
+  else ativos.push(obj);
+  recDySave(ativos);
+  recDyCloseModal();
+  recDyRender();
+  if (typeof showToast === 'function') showToast('✅ Ativo salvo!');
+}
+
+function recDyEditar(idx) { recDyOpenModal(idx); }
+
+function recDyExcluir(idx) {
+  if (!confirm('Excluir este ativo?')) return;
+  const ativos = recDyLoad();
+  ativos.splice(idx, 1);
+  recDySave(ativos);
+  recDyRender();
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  CALENDÁRIO DY — seed com dados reais de todos os ativos da carteira
+//  Fontes: StatusInvest, Investidor10, RI das empresas (mar/2026)
+// ══════════════════════════════════════════════════════════════════════════
+//
+//  FIIs (5): BTLG11, TRXF11, KNCR11, XPML11, MXRF11
+//    → Todos pagam mensalmente (lei 9.779/99: FII distribui ≥95% do caixa todo mês)
+//
+//  Ações (4 remanescentes após remoção de ENEV3/VALE3/VULC3):
+//    ITUB4  → JCP mensal: paga todos os 12 meses
+//    ITSA4  → Trimestral + complementares: jan,mar,abr,jul,ago,out,dez
+//    PETR4  → Trimestral irregular: fev,mar (3T), mai,jun (4T), ago,set (2T), nov,dez (1T)
+//    AXIA3  → ~Trimestral irregular: jan, mai, ago, dez (histórico 2025)
+//
+//  ETFs (2): BOVA11, IVVB11
+//    → Reinvestem proventos internamente, NÃO fazem distribuição ao cotista
+
+const RECDY_CARTEIRA_SEED = [
+  // ══════════════════════════════════════════════════════════════════════
+  //  FIIs — dados das screenshots de mar/2026
+  //  Todos os FIIs pagam mensalmente (lei 9.779/99)
+  // ══════════════════════════════════════════════════════════════════════
+  {
+    ticker: 'BTLG11', tipo: 'FII', subtipo: 'Tijolo',
+    qtd: 9,  rendimento: 0.80, cotacao: 103.22,
+    freq: 'mensal', meses: [1,2,3,4,5,6,7,8,9,10,11,12]
+  },
+  {
+    ticker: 'TRXF11', tipo: 'FII', subtipo: 'Tijolo',
+    qtd: 8,  rendimento: 0.93, cotacao: 91.85,
+    freq: 'mensal', meses: [1,2,3,4,5,6,7,8,9,10,11,12]
+  },
+  {
+    ticker: 'KNCR11', tipo: 'FII', subtipo: 'Papel',
+    qtd: 10, rendimento: 1.20, cotacao: 104.29,
+    freq: 'mensal', meses: [1,2,3,4,5,6,7,8,9,10,11,12]
+  },
+  {
+    ticker: 'XPML11', tipo: 'FII', subtipo: 'Tijolo',
+    qtd: 4,  rendimento: 0.92, cotacao: 109.54,
+    freq: 'mensal', meses: [1,2,3,4,5,6,7,8,9,10,11,12]
+  },
+  {
+    ticker: 'MXRF11', tipo: 'FII', subtipo: 'Papel',
+    qtd: 21, rendimento: 0.10, cotacao: 9.74,
+    freq: 'mensal', meses: [1,2,3,4,5,6,7,8,9,10,11,12]
+  },
+  // ══════════════════════════════════════════════════════════════════════
+  //  Ações — dados das screenshots de mar/2026
+  // ══════════════════════════════════════════════════════════════════════
+  {
+    // JCP mensal constante — todos os meses
+    ticker: 'ITUB4', tipo: 'Ação', subtipo: '',
+    qtd: 18, rendimento: 0.42, cotacao: 43.80,
+    freq: 'mensal', meses: [1,2,3,4,5,6,7,8,9,10,11,12]
+  },
+  {
+    // Trimestral + complementares: jan, mar, abr, jul, ago, out, dez
+    ticker: 'ITSA4', tipo: 'Ação', subtipo: '',
+    qtd: 15, rendimento: 0.16, cotacao: 13.61,
+    freq: 'personalizado', meses: [1,3,4,7,8,10,12]
+  },
+  {
+    // Axia Energia — histórico 2025: jan, mai, ago, dez (~trimestral)
+    ticker: 'AXIA3', tipo: 'Ação', subtipo: '',
+    qtd: 16, rendimento: 1.42, cotacao: 60.70,
+    freq: 'personalizado', meses: [1,5,8,12]
+  },
+  {
+    // Caixa Seguridade — 3x/ano (intercalar por trimestre): mai, ago, jan
+    ticker: 'CXSE3', tipo: 'Ação', subtipo: '',
+    qtd: 40, rendimento: 0.33, cotacao: 17.89,
+    freq: 'personalizado', meses: [1,5,8]
+  },
+  {
+    // Petrobras — trimestral: fev+mar (3T), mai+jun (4T), ago+set (2T), nov+dez (1T)
+    ticker: 'PETR4', tipo: 'Ação', subtipo: '',
+    qtd: 16, rendimento: 0.47, cotacao: 42.93,
+    freq: 'personalizado', meses: [2,3,5,6,8,9,11,12]
+  },
+  {
+    // BB Seguridade — semestral: mar (resultado 2S) e ago (resultado 1S)
+    ticker: 'BBSE3', tipo: 'Ação', subtipo: '',
+    qtd: 19, rendimento: 2.32, cotacao: 34.51,
+    freq: 'personalizado', meses: [3,8]
+  },
+  {
+    // Sanepar — semestral: jun (1S) e dez (2S) — política estatutária
+    ticker: 'SAPR11', tipo: 'Ação', subtipo: '',
+    qtd: 23, rendimento: 1.55, cotacao: 41.78,
+    freq: 'personalizado', meses: [6,12]
+  },
+];
+
+// ── Sincroniza RecDY forçado (botão) ─────────────────────────────────────
+function recDyResetFromCarteira() {
+  if (!confirm('Sobrescrever lista com dados atuais da carteira?\n\nCustomizações serão perdidas.')) return;
+  recDySave([]);
+  recDyAutoPopulate();
+  recDyRender();
+  if (typeof toast === 'function') toast('Calendário sincronizado!');
+}
+
+// ── Auto-popula RecDY mesclando seed com qtds reais da carteira ──────────
+function recDyAutoPopulate() {
+  const existentes = recDyLoad();
+  // Verifica se seed já foi aplicado comparando tickers
+  const seedTickers = RECDY_CARTEIRA_SEED.map(s => s.ticker).sort().join(',');
+  const existTickers = existentes.map(a => a.ticker).sort().join(',');
+  if (existentes.length > 0 && existTickers === seedTickers) return;
+
+  const seed = RECDY_CARTEIRA_SEED.map(s => {
+    const obj = { ticker: s.ticker, tipo: s.tipo, subtipo: s.subtipo,
+                  qtd: s.qtd, rendimento: s.rendimento, cotacao: s.cotacao,
+                  freq: s.freq, meses: s.meses };
+    // Mescla qtd/preco reais da carteira FII se disponíveis
+    if (s.tipo === 'FII' && typeof carteira !== 'undefined') {
+      const fii = carteira.find(a => a.ticker === s.ticker);
+      if (fii) { obj.qtd = fii.cotas; obj.rendimento = fii.dy || s.rendimento; obj.cotacao = fii.preco || s.cotacao; }
+    }
+    // Mescla qtd/preco reais da carteira de Ações se disponíveis
+    if (s.tipo === 'Ação' && typeof carteiraAcoes !== 'undefined') {
+      const acao = carteiraAcoes.find(a => a.ticker === s.ticker);
+      if (acao) { obj.qtd = acao.qtd; obj.cotacao = acao.pAtual || s.cotacao; }
+    }
+    return obj;
+  });
+
+  recDySave(seed);
+}
+
+// ── Auto-init quando a aba é aberta ──────────────
+const _recDyOrigGoPage = typeof goPage === 'function' ? goPage : null;
+document.addEventListener('DOMContentLoaded', function() {
+  recDyAutoPopulate();
+  const _orig = window.goPage;
+  if (typeof _orig === 'function') {
+    window.goPage = function(p) {
+      _orig(p);
+      if (p === 'recdy') recDyRender();
+    };
+  }
+});
+
 </script>
+</body>
 </html>
