@@ -9304,6 +9304,243 @@ const CA_BANCOS = {
     descricao: 'Maior banco privado do Brasil e da América Latina. Operação em 18+ países. Líder em rentabilidade, eficiência e qualidade de crédito entre os grandes bancos brasileiros.',
     periodo: '2025 completo (1T+2T+3T+4T realizados — fonte: Análise Gerencial da Operação Itaú Unibanco)',
   },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // BTG PACTUAL — BPAC11
+  // Fonte: Release de Resultados 4T25 (fev/2026) + XP Research 1T25
+  // ─────────────────────────────────────────────────────────────────────────
+  BPAC11: {
+    nome: 'BTG Pactual', ticker: 'BPAC11', cor: '#f59e0b',
+    segmento: 'bancario', tipo: 'Privado Nacional',
+
+    trimestres: {
+      lucro:    { '1T25': 3.367, '2T25': 3.926, '3T25': 4.542, '4T25': 4.590 },
+      roae:     { '1T25': 23.2,  '2T25': 25.8,  '3T25': 27.6,  '4T25': 27.6  },
+      npl90:    { '1T25': 0.5,   '2T25': 0.5,   '3T25': 0.4,   '4T25': 0.4   },
+      cet1:     { '1T25': 11.5,  '2T25': 11.4,  '3T25': 11.3,  '4T25': 11.2  },
+      carteira: { '1T25': 230.6, '2T25': 245.0, '3T25': 258.0, '4T25': 262.2 },
+    },
+
+    lucroAnual2025:    16.425,  // R$ bi — soma 4 trimestres
+    lucroAnual2024:    12.200,  // R$ bi
+    roae:              26.9,    // % — ROE médio anual 2025
+    roaeTrims:         [23.2, 25.8, 27.6, 27.6],
+    roa:               null,
+    nim:               null,
+
+    npl90:             0.4,     // % — dez/25 — carteira corporate praticamente sem inadimplência
+    custoCreditoAnual: 1.1,     // % — custo crédito estimado 2025 (carteira corporate investment grade)
+
+    eficiencia:        39.6,    // % — 4T25: despesas R$ 3,6 bi / receita R$ 9,1 bi
+    cet1:              11.2,    // % — estimado dez/25 (tendência de queda leve no ano)
+    basileia:          15.4,    // % — 1T25 (Basileia global)
+
+    carteiraCrescYoY:  17.6,   // % — corporate lending 4T25 vs 4T24
+    margemClientes:    null,
+    margemClientesYoY: null,
+    comissoes:         null,
+    comissoesYoY:      null,
+    captacao:          2500,    // R$ bi — AuM+WuM dez/25 (R$ 2,5 tri)
+
+    pl:                12.4,
+    pvp:               2.4,
+    dy:                1.8,
+    clientesAtivos:    null,
+
+    guidance2026: {
+      roae: '>25%',
+    },
+
+    alertas: [
+      { tipo:'good', msg:'ROAE 2025: 26,9% (+3,8 p.p. vs 2024) — líder de rentabilidade entre todos os bancos listados' },
+      { tipo:'good', msg:'Lucro 2025: R$ 16,7 bi (+35% a/a) — 12º trimestre consecutivo de crescimento' },
+      { tipo:'good', msg:'NPL+90: ~0,4% — carteira corporate dominada por Estágio 1 (96,5% em 1T25)' },
+      { tipo:'good', msg:'Receita 4T25: R$ 9,1 bi (+35,3% a/a) — todas as frentes em máxima histórica' },
+      { tipo:'good', msg:'AuM+WuM: R$ 2,5 tri — crescimento acelerado nas franquias de clientes' },
+      { tipo:'warn', msg:'CET1: ~11,2% — nível mais baixo do grupo; capital pressionado por crescimento acelerado' },
+      { tipo:'warn', msg:'NPL e custo de crédito não comparáveis com bancos de varejo — modelo de banco de investimento' },
+    ],
+    descricao: 'Maior banco de investimento do Brasil. Foco em corporate lending, S&T, asset management e wealth management. Modelo de negócio diversificado com 12 trimestres consecutivos de crescimento.',
+    periodo: '2025 completo (1T+2T+3T+4T realizados — fonte: Release de Resultados 4T25 BTG Pactual)',
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // BANRISUL — BRSR6
+  // Fonte: Release 4T25 (fev/2026) + InvesTalk BB-BI + Genial Analisa
+  // ─────────────────────────────────────────────────────────────────────────
+  BRSR6: {
+    nome: 'Banrisul', ticker: 'BRSR6', cor: '#818cf8',
+    segmento: 'bancario', tipo: 'Público Estadual',
+
+    trimestres: {
+      lucro:    { '1T25': 0.242, '2T25': 0.378, '3T25': 0.329, '4T25': 0.657 },
+      roae:     { '1T25': 9.3,   '2T25': 14.3,  '3T25': 12.2,  '4T25': 23.8  },
+      npl90:    { '1T25': 1.9,   '2T25': 1.8,   '3T25': 2.1,   '4T25': 4.18  },
+      cet1:     { '1T25': 13.2,  '2T25': 13.5,  '3T25': 13.1,  '4T25': 12.8  },
+      carteira: { '1T25': 61.2,  '2T25': 64.0,  '3T25': 63.0,  '4T25': 65.0  },
+    },
+
+    lucroAnual2025:    1.606,   // R$ bi — soma 4 trimestres
+    lucroAnual2024:    0.990,   // R$ bi
+    roae:              14.9,    // % — ROAE anual médio 2025 (4T muito distorcido por itens atípicos)
+    roaeTrims:         [9.3, 14.3, 12.2, 23.8],
+    roa:               null,
+    nim:               null,
+
+    npl90:             4.18,    // % — dez/25 (salto atípico: reclassificação judicial + provisão extraordinária 4T25)
+    custoCreditoAnual: 1.8,     // % — centro do guidance 2025 (1,2%–2,2%)
+
+    eficiencia:        57.9,    // % — 4T25 (melhorou vs patamar de 70%+ dos trimestres anteriores)
+    cet1:              12.8,    // % — estimado dez/25
+    basileia:          16.0,    // % — estimado dez/25
+
+    carteiraCrescYoY:  4.8,     // % — R$ 65 bi dez/25 vs dez/24
+    margemClientes:    null,
+    margemClientesYoY: null,
+    comissoes:         null,
+    comissoesYoY:      null,
+    captacao:          null,
+
+    pl:                4.8,
+    pvp:               0.6,
+    dy:                8.4,
+    clientesAtivos:    null,
+
+    guidance2026: {
+      carteira:    '+6–10%',
+      margFin:     '+6–10%',
+      custoCred:   '1,2–2,2%',
+      despAdm:     '+5–9%',
+    },
+
+    alertas: [
+      { tipo:'warn', msg:'NPL+90 4T25: 4,18% — salto atípico por decisão judicial e reclassificação; era ~1,8% no 3T25' },
+      { tipo:'warn', msg:'Eficiência estrutural elevada: 70%+ na maior parte do ano; 4T25 distorcido por itens pontuais' },
+      { tipo:'warn', msg:'ROAE: oscilação intensa ao longo de 2025 (9,3% a 23,8%) — baixa previsibilidade' },
+      { tipo:'good', msg:'Carteira de crédito: R$ 65 bi (+4,8% a/a) — crescimento sólido' },
+      { tipo:'good', msg:'DY atrativo: ~8,4% — um dos maiores do setor bancário' },
+      { tipo:'warn', msg:'Custo de capital acima do ROE estrutural: banco ainda não é criador de valor de forma consistente' },
+    ],
+    descricao: 'Banco público estadual gaúcho controlado pelo Governo do RS. Foco em consignado, crédito comercial e PMEs no Sul do Brasil. Alta volatilidade de resultado por itens não recorrentes.',
+    periodo: '2025 completo (1T+2T+3T+4T realizados — fonte: Release 4T25 Banrisul + BB-BI)',
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // BANCO ABC BRASIL — ABCB4
+  // Fonte: Release 4T25 (fev/2026) + Money Times + Investidor10
+  // ─────────────────────────────────────────────────────────────────────────
+  ABCB4: {
+    nome: 'Banco ABC Brasil', ticker: 'ABCB4', cor: '#f472b6',
+    segmento: 'bancario', tipo: 'Privado (controlado por Arab Banking Corp)',
+
+    trimestres: {
+      lucro:    { '1T25': 0.232, '2T25': 0.245, '3T25': 0.257, '4T25': 0.276 },
+      roae:     { '1T25': 14.8,  '2T25': 15.0,  '3T25': 15.5,  '4T25': 16.3  },
+      npl90:    { '1T25': 0.7,   '2T25': 0.6,   '3T25': 0.6,   '4T25': 0.5   },
+      cet1:     { '1T25': 13.2,  '2T25': 13.4,  '3T25': 13.5,  '4T25': 13.6  },
+      carteira: { '1T25': 52.8,  '2T25': 53.1,  '3T25': 53.5,  '4T25': 54.7  },
+    },
+
+    lucroAnual2025:    1.010,   // R$ bi — soma 4 trimestres
+    lucroAnual2024:    0.979,   // R$ bi (+3,2%)
+    roae:              15.2,    // % — ROAE anual 2025
+    roaeTrims:         [14.8, 15.0, 15.5, 16.3],
+    roa:               null,
+    nim:               4.3,     // % — NIM anual 2025
+
+    npl90:             0.5,     // % — dez/25 — melhor entre os bancos do setor
+    custoCreditoAnual: 0.8,     // % — estimado (carteira corporate investment grade, custo muito baixo)
+
+    eficiencia:        38.5,    // % — dentro do guidance 2025 (37,5–39,5%); referência de eficiência no setor
+    cet1:              13.6,    // % — estimado dez/25
+    basileia:          16.3,    // % — dez/25
+
+    carteiraCrescYoY:  3.0,     // % — R$ 54,7 bi dez/25 vs dez/24
+    margemClientes:    0.713,   // R$ bi — margem financeira 4T25
+    margemClientesYoY: 14.0,    // % — crescimento 4T25 vs 4T24
+    comissoes:         0.126,   // R$ bi — receita de serviços 4T25
+    comissoesYoY:      -5.0,
+    captacao:          null,
+
+    pl:                6.4,
+    pvp:               1.0,
+    dy:                7.8,
+    clientesAtivos:    null,
+
+    guidance2026: {
+      carteira:   '+6–10% (Middle: +12–18%)',
+      despesas:   '+4–8%',
+      eficiencia: '37,5–39,5%',
+    },
+
+    alertas: [
+      { tipo:'good', msg:'NPL+90: 0,5% (dez/25) — inadimplência ultrabaixa; melhor do grupo bancário' },
+      { tipo:'good', msg:'Eficiência: ~38,5% — referência de excelência operacional no setor' },
+      { tipo:'good', msg:'Lucro 2025: R$ 1,0 bi — 4 trimestres consecutivos de crescimento' },
+      { tipo:'good', msg:'Basileia: 16,3% — índice de capital robusto, folga confortável' },
+      { tipo:'warn', msg:'Crescimento da carteira moderado: +3% a/a — seletividade elevada em crédito' },
+      { tipo:'warn', msg:'Concentrado em empresas médias e grandes: menor diversificação de receita' },
+    ],
+    descricao: 'Banco de médio porte focado em empresas de médio e grande porte (corporate/middle market). Controlado pelo Arab Banking Corp (Bahrain). Excelência em qualidade de crédito e eficiência operacional.',
+    periodo: '2025 completo (1T+2T+3T+4T realizados — fonte: Release 4T25 Banco ABC Brasil)',
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // BANCO BMG — BMGB4
+  // Fonte: Release 4T25 (fev/2026) + Investidor10 + Genial Analisa
+  // ─────────────────────────────────────────────────────────────────────────
+  BMGB4: {
+    nome: 'Banco BMG', ticker: 'BMGB4', cor: '#34d399',
+    segmento: 'bancario', tipo: 'Privado Nacional',
+
+    trimestres: {
+      lucro:    { '1T25': 0.115, '2T25': 0.141, '3T25': 0.133, '4T25': 0.172 },
+      roae:     { '1T25': 12.1,  '2T25': 13.2,  '3T25': 15.6,  '4T25': 19.0  },
+      npl90:    { '1T25': 4.1,   '2T25': 3.9,   '3T25': 3.9,   '4T25': 3.5   },
+      cet1:     { '1T25': 8.7,   '2T25': 9.2,   '3T25': 9.8,   '4T25': 10.2  },
+      carteira: { '1T25': 26.8,  '2T25': 24.7,  '3T25': 23.5,  '4T25': 23.2  },
+    },
+
+    lucroAnual2025:    0.561,   // R$ bi — soma 4 trimestres (+27,2% a/a)
+    lucroAnual2024:    0.441,   // R$ bi
+    roae:              14.4,    // % — ROAE anual médio 2025 (+3,7 p.p. vs 2024)
+    roaeTrims:         [12.1, 13.2, 15.6, 19.0],
+    roa:               null,
+    nim:               null,
+
+    npl90:             3.5,     // % — dez/25 (melhora de -0,9 p.p. a/a)
+    custoCreditoAnual: 4.2,     // % — estimado 2025 (consignado tem custo de crédito moderado)
+
+    eficiencia:        42.0,    // % — 4T25E (tendência de queda: 47,9% no 1T25 → ~42% no 4T25)
+    cet1:              10.2,    // % — estimado dez/25 (após aumento de capital mar/2026 de R$ 214 mi)
+    basileia:          13.2,    // % — dez/25
+
+    carteiraCrescYoY:  -13.4,  // % — carteira caiu por cessão estratégica (consignado EUA + FGTS)
+    margemClientes:    0.815,   // R$ bi — margem financeira 4T25
+    margemClientesYoY: 0.0,     // % — estável vs 4T24
+    comissoes:         null,
+    comissoesYoY:      null,
+    captacao:          null,
+
+    pl:                5.2,
+    pvp:               0.6,
+    dy:                12.4,
+    clientesAtivos:    null,
+
+    guidance2026: null,
+
+    alertas: [
+      { tipo:'good', msg:'Turnaround expressivo: ROAE saiu de ~5% (2022) para 19% no 4T25 — virada histórica' },
+      { tipo:'good', msg:'NPL+90: 3,5% em dez/25 — queda de 0,9 p.p. a/a; tendência de melhora consistente' },
+      { tipo:'good', msg:'DY ~12,4% — um dos maiores dividend yields do setor bancário' },
+      { tipo:'good', msg:'Eficiência em melhora acelerada: 47,9% (1T25) → ~42% (4T25)' },
+      { tipo:'warn', msg:'CET1: ~10,2% — nível apertado; aumento de capital de R$ 214 mi previsto em mar/2026' },
+      { tipo:'warn', msg:'Carteira contraiu -13,4% a/a por cessões estratégicas (consignado EUA + FGTS)' },
+      { tipo:'warn', msg:'Dependência de consignado (73% da carteira) — regulação INSS afetou originação em 2025' },
+    ],
+    descricao: 'Banco especializado em crédito consignado (INSS, privado e FGTS). Foco em turnaround operacional desde 2023. Em processo de migração para banco digital de relacionamento.',
+    periodo: '2025 completo (1T+2T+3T+4T realizados — fonte: Release 4T25 Banco BMG)',
+  },
 };
 
 // ── OUTROS SEGMENTOS (placeholder com dados referenciais) ──
@@ -9578,33 +9815,52 @@ const CA_ENERGIA = {
     notas:['EBITDA Caixa: exclui VNR, IFRS e operações corporativas.'],
   },
   EGIE3: {
-    ticker:'EGIE3', nome:'Engie Brasil', nomeCompleto:'Engie Brasil',
+    ticker:'EGIE3', nome:'Engie Brasil', nomeCompleto:'Engie Brasil Energia S.A.',
     segmento:'Ger. + Transm. + Gás', cor:'#fb923c', cotacao:33.45,
-    mktCap:38.4, lpa:2.48, vpa:10.77,
-    receita2025:12.86, ebitda2025:7.24, lucro2025:2.85, divLiq2025:25.5,
-    margemEbitda:56.3, margemLiq:22.2, roe:22.3,
-    alavancagem:3.3, dy:4.1, coberturaJuros:3.5, capexReceita:46.6,
-    pl:'~13,5x', pvp:'~3,10x', evEbitda:'~8,8x',
+    mktCap:38.4, lpa:2.48, vpa:13.90,
+    receita2025:12.86, ebitda2025:7.64, lucro2025:2.845, divLiq2025:25.514,
+    margemEbitda:59.4, margemLiq:22.1, margemBruta:null, margemEbit:48.7,
+    roe:20.4, roic:13.8, roa:null,
+    alavancagem:3.34, dl_ebit:null, dy:4.2, payout:55, coberturaJuros:3.2, capexReceita:46.0,
+    pl:'~13,5x', pvp:'~2,40x', evEbitda:'~8,8x', psr:null,
+    cagr_receitas_5a:null, cagr_lucros_5a:null, liquidez_corrente:null,
     trimestres:{
-      receita:{T1:3.01,  T2:3.09,  T3:3.34,  T4:3.42},
-      ebitda: {T1:2.04,  T2:1.45,  T3:1.89,  T4:1.86},
-      lucro:  {T1:0.826, T2:0.567, T3:0.731, T4:0.727},
-      margemE:{T1:67.8,  T2:46.9,  T3:56.6,  T4:54.4},
-      divLiq: {T1:22.1,  T2:23.6,  T3:24.8,  T4:25.5},
+      receita:{T1:2.891, T2:3.238, T3:3.313, T4:3.418},
+      ebitda: {T1:1.670, T2:2.197, T3:1.910, T4:1.863},
+      lucro:  {T1:0.640, T2:0.747, T3:0.731, T4:0.727},
+      margemE:{T1:57.8,  T2:67.8,  T3:57.7,  T4:54.5},
+      divLiq: {T1:22.1,  T2:23.6,  T3:24.8,  T4:25.514},
+      roe:    {T1:null,  T2:null,  T3:null,  T4:20.4},
+      roic:   {T1:null,  T2:null,  T3:null,  T4:13.8},
+    },
+    historico:{
+      roe:     {2021:null, 2022:null, 2023:null, 2024:27.4, atual:20.4},
+      roic:    {2021:null, 2022:null, 2023:null, 2024:17.2, atual:13.8},
+      margemEbitda:{2021:null, 2022:null, 2023:null, 2024:65.7, atual:59.4},
+      margemLiq:   {2021:null, 2022:null, 2023:null, 2024:30.0, atual:22.1},
+      alavancagem: {2021:null, 2022:null, 2023:null, 2024:2.73, atual:3.34},
+      dy:          {2021:7.5,  2022:8.1,  2023:6.9,  2024:6.4,  atual:4.2},
     },
     varReceita4T:'+4,5%',  varReceita2025:'+14,6%',
-    varEbitda4T:'−5,6%',   varEbitda2025:'+2,9%',
-    varLucro4T:'−33,3%',   varLucro2025:'−15,6%',
-    periodo:'2025 completo (1T–4T) · Cotação: R$33,45 (27/fev/2026)',
-    descricao:'ROE acima de 22% justifica P/VP premium histórico. Alta margem EBITDA de 56,3%. Lucro pressionado por resultado financeiro e maior depreciação.',
+    varEbitda4T:'−3,7%',   varEbitda2025:'+3,7%',
+    varLucro4T:'−31,4%',   varLucro2025:'−15,6%',
+    periodo:'2025 completo (1T–4T) · Release 25/fev/2026 · Cotação: R$33,45 (27/fev/2026)',
+    descricao:'Maior geradora privada do Brasil — 12.384 MW operados. ROE de 20,4% e ROIC de 13,8% sustentados por ativos de qualidade. Lucro pressionado em −15,6% pelo ciclo de capex intensivo e resultado financeiro negativo. EBITDA ajustado cresceu +3,7%.',
     alertas:[
-      {tipo:'good', msg:'ROE de 22,3% — melhor do grupo. Justifica P/VP premium de 3,1x.'},
-      {tipo:'good', msg:'Margem EBITDA de 56,3% — uma das mais altas entre geradoras.'},
-      {tipo:'good', msg:'Melhor cobertura de juros do grupo: 3,5x.'},
-      {tipo:'warn', msg:'Lucro caiu −15,6% no ano por resultado financeiro e maior depreciação.'},
-      {tipo:'warn', msg:'CapEx/Receita de 46,6% — ciclo intenso de investimentos.'},
+      {tipo:'good', msg:'ROE de 20,4% e ROIC de 13,8% — retornos premium mesmo em ano de ciclo de investimentos.'},
+      {tipo:'good', msg:'EBITDA ajustado cresceu +3,7% (R$7,64 bi) com margem de 59,4%.'},
+      {tipo:'good', msg:'Receita +14,6% — Serra do Assuruá (846 MW), Asa Branca e aquisição de 612 MW de hidrelétricas.'},
+      {tipo:'warn', msg:'Lucro ajustado caiu −15,6% pelo resultado financeiro mais negativo (dívida cresceu +26,8%).'},
+      {tipo:'warn', msg:'Dívida líquida: R$25,5 bi (DL/EBITDA: 3,34x) — ciclo de capex intensivo 2024-2026.'},
+      {tipo:'good', msg:'Payout de 55% mantido: R$1,377 bi distribuídos em 2025 (R$1,205/ação).'},
+      {tipo:'good', msg:'Assú Sol (753 MWac solar) e Asa Branca em operação — novo ciclo de geração de caixa em 2026.'},
     ],
-    notas:['Inclui gerações, transmissão e gás natural.'],
+    notas:[
+      'Dados consolidados 2025 — Release oficial 4T25 divulgado em 25/fev/2026.',
+      'Inclui geração renovável (133 usinas), transmissão (Asa Branca + Graúna) e participação na TAG (gás natural).',
+      'ROIC ajustado: 13,8% (2025) vs 17,2% (2024). ROE ajustado: 20,4% (2025) vs 27,4% (2024).',
+      'Bonificação de ações 1:2,5 concluída em dez/2025 — cotação e LPA ajustados.',
+    ],
   },
   EQTL3: {
     ticker:'EQTL3', nome:'Equatorial', nomeCompleto:'Equatorial Energia',
@@ -9758,12 +10014,43 @@ const CA_ENERGIA = {
   TAEE11: {
     ticker:'TAEE11', nome:'Taesa', nomeCompleto:'Taesa',
     segmento:'Transmissão', cor:'#818cf8', cotacao:37.20,
-    mktCap:12.8, lpa:1.92, vpa:23.25,
+    mktCap:12.8, lpa:5.00, vpa:22.19,
     receita2025:null, ebitda2025:null, lucro2025:null, divLiq2025:12.8,
     receita9M:1.861, ebitda9M:1.546, lucro9M:0.81,
-    margemEbitda:83.0, margemLiq:43.5, roe:8.0,
-    alavancagem:4.1, dy:10.2, coberturaJuros:1.5, capexReceita:57.0,
-    pl:'~19,4x', pvp:'~1,60x', evEbitda:'~17,5x',
+    margemEbitda:65.55, margemLiq:38.18, margemBruta:57.74, margemEbit:64.69, roe:22.53,
+    roic:15.61, roa:7.90,
+    alavancagem:3.13, dy:7.55, payout:64.58, coberturaJuros:1.5, capexReceita:57.0,
+    pl:'~8,60x', pvp:'~1,94x', evEbitda:'~8,12x', psr:3.28,
+    // Histórico indicadores (Investidor10)
+    historico:{
+      pl:     {atual:8.60, y2024:6.69, y2023:8.25, y2022:8.24, y2021:5.66},
+      psr:    {atual:3.28, y2024:3.04, y2023:3.93, y2022:4.56, y2021:3.61},
+      pvp:    {atual:1.94, y2024:1.63, y2023:1.98, y2022:1.82, y2021:1.87},
+      dy:     {atual:7.55, y2024:10.75,y2023:7.59, y2022:14.00,y2021:12.38},
+      payout: {atual:64.58,y2024:58.26,y2023:62.63,y2022:115.40,y2021:70.09},
+      margLiq:{atual:38.18,y2024:45.52,y2023:47.68,y2022:55.39,y2021:63.76},
+      margBruta:{atual:57.74,y2024:66.51,y2023:63.10,y2022:80.95,y2021:81.31},
+      margEbit:{atual:64.69,y2024:77.02,y2023:69.45,y2022:93.30,y2021:98.94},
+      margEbitda:{atual:65.55,y2024:77.66,y2023:69.91,y2022:93.99,y2021:99.57},
+      evEbitda:{atual:8.12, y2024:7.06, y2023:9.21, y2022:7.77, y2021:5.43},
+      evEbit: {atual:8.23, y2024:7.12, y2023:9.27, y2022:7.82, y2021:5.47},
+      pEbitda:{atual:5.01, y2024:3.92, y2023:5.63, y2022:4.86, y2021:3.62},
+      pEbit:  {atual:5.07, y2024:3.95, y2023:5.66, y2022:4.89, y2021:3.65},
+      pAtivo: {atual:0.68, y2024:0.55, y2023:0.68, y2022:0.69, y2021:0.79},
+      vpa:    {atual:22.19,y2024:20.14,y2023:19.39,y2022:19.07,y2021:19.40},
+      lpa:    {atual:5.00, y2024:4.92, y2023:4.65, y2022:4.21, y2021:6.43},
+      roe:    {atual:22.53,y2024:24.40,y2023:24.00,y2022:22.06,y2021:33.12},
+      roic:   {atual:15.61,y2024:16.11,y2023:13.87,y2022:14.85,y2021:22.73},
+      roa:    {atual:7.90, y2024:8.29, y2023:7.03, y2022:8.37, y2021:13.93},
+      dlEbitda:{atual:3.13,y2024:3.13, y2023:3.57, y2022:2.88, y2021:1.80},
+      dlEbit: {atual:3.17,y2024:3.16, y2023:3.60, y2022:2.90, y2021:1.81},
+      divBrPat:{atual:1.35,y2024:1.41, y2023:1.45, y2022:1.24, y2021:0.99},
+      patAtivos:{atual:0.35,y2024:0.34,y2023:0.34, y2022:0.38, y2021:0.42},
+      pasAtivos:{atual:0.65,y2024:0.66,y2023:0.66, y2022:0.62, y2021:0.58},
+      liqCorr: {atual:1.67,y2024:1.23, y2023:2.00, y2022:3.02, y2021:1.51},
+      cagrRec5:{atual:5.38,y2024:15.69,y2023:15.51,y2022:19.43,y2021:20.07},
+      cagrLuc5:{atual:-4.89,y2024:11.06,y2023:5.01,y2022:17.46,y2021:20.76},
+    },
     trimestres:{
       receita:{T1:0.598, T2:0.612, T3:0.651, T4:null},
       ebitda: {T1:0.509, T2:0.488, T3:0.549, T4:null},
@@ -9774,16 +10061,16 @@ const CA_ENERGIA = {
     varReceita3T:'+9,8%',  varReceita9M:'+6,5%',
     varEbitda3T:'+12,6%',  varEbitda9M:'+8,4%',
     varLucro3T:'+5,0%',    varLucro9M:'+2,4%',
-    periodo:'9M25 (4T25 em 18/mar/2026) · Cotação: R$37,20 (27/fev/2026)',
-    descricao:'Transmissora pura com margem EBITDA de 83% — maior do grupo. RAP corrigida por IPCA+5,3% e IGP-M+7%. Alavancagem de 4,1x preocupa. DY de ~10,2%.',
+    periodo:'Dados consolidados 2025 (Investidor10) · Cotação: R$37,20 (mar/2026)',
+    descricao:'P/L de 8,6x com DY de 7,55%. Margem EBITDA de 65,6% e ROE de 22,5%. Alavancagem moderada de 3,13x DL/EBITDA. CAGR Lucros 5 anos negativo (−4,89%) — atenção.',
     alertas:[
-      {tipo:'good', msg:'Maior margem EBITDA do grupo: 83% — previsibilidade de transmissora pura.'},
-      {tipo:'bad',  msg:'Alavancagem elevada: 4,1x EBITDA — acima do limite confortável de 4,0x.'},
-      {tipo:'bad',  msg:'Pior cobertura de juros do grupo: 1,5x — risco financeiro elevado.'},
-      {tipo:'good', msg:'IGP-M favorece receita RAP em 2026 (reajuste de +7,0% anual).'},
-      {tipo:'warn', msg:'EV/EBITDA elevado de ~17,5x pelo EBITDA deprimido e endividamento alto.'},
+      {tipo:'good', msg:'ROE de 22,5% — retorno sólido sobre patrimônio para transmissora regulada.'},
+      {tipo:'good', msg:'P/L de 8,6x e EV/EBITDA de 8,1x — valuation mais atrativo que anos anteriores.'},
+      {tipo:'warn', msg:'Margem EBITDA caiu de 99,6% (2021) para 65,6% (atual) — deterioração consistente.'},
+      {tipo:'bad',  msg:'CAGR Lucros 5 anos: −4,89% — queda de lucratividade no longo prazo.'},
+      {tipo:'warn', msg:'DY caiu de 14% (2022) para 7,55% (atual) — menor atratividade de renda.'},
     ],
-    notas:['*****4T25 em 18/mar/2026. LPA e VPA estimados com base em 9M25.','RAP = Receita Anual Permitida, corrigida por índices de inflação.'],
+    notas:['Fonte: Investidor10 (mar/2026). Dados do consolidado anual 2025.','RAP = Receita Anual Permitida, corrigida por índices de inflação (IPCA/IGP-M).'],
   },
   AURE3: {
     ticker:'AURE3', nome:'Auren Energia', nomeCompleto:'Auren Energia',
@@ -10043,6 +10330,7 @@ function caEnBuildRentabilidade(list) {
     {nome:'Margem EBITDA', key:'margemEbitda', unit:'%', melhor:'maior', ref:35, desc:'EBITDA ÷ Receita Líquida — eficiência operacional antes de juros e impostos'},
     {nome:'Margem Líquida', key:'margemLiq', unit:'%', melhor:'maior', ref:10, desc:'Lucro Líquido ÷ Receita Líquida — rentabilidade final'},
     {nome:'ROE', key:'roe', unit:'%', melhor:'maior', ref:15, desc:'Lucro Líquido ÷ PL Médio — retorno gerado sobre o capital dos acionistas'},
+    {nome:'ROIC', key:'roic', unit:'%', melhor:'maior', ref:12, desc:'NOPAT ÷ Capital Investido — retorno gerado sobre todo o capital (ações + dívida). Melhor para empresas alavancadas'},
   ];
 
   const rows = inds.map(ind=>{
@@ -10066,16 +10354,17 @@ function caEnBuildRentabilidade(list) {
   }).join('');
 
   const destaques = [
-    {label:'🏆 Maior Margem EBITDA', val:'TAEE11 · 83%', desc:'Transmissora pura com previsibilidade regulatória'},
-    {label:'🏆 Maior Margem Líquida', val:'TAEE11 · 43,5%', desc:'Alta margem por base de ativos estável'},
-    {label:'🏆 Melhor ROE', val:'EGIE3 · 22,3%', desc:'Engie: ROE premium que justifica P/VP de 3,1x'},
+    {label:'🏆 Maior Margem EBITDA', val:'TAEE11 · 65,6%', desc:'Transmissora pura com previsibilidade regulatória'},
+    {label:'🏆 Maior Margem Líquida', val:'TAEE11 · 38,2%', desc:'Alta margem por base de ativos estável'},
+    {label:'🏆 Melhor ROE', val:'EGIE3 · 20,4%', desc:'Engie: ROE de 20,4% e ROIC de 13,8% — retornos premium mesmo em ciclo de capex intensivo'},
+    {label:'🏆 Melhor ROIC', val:'EGIE3 · 13,8%', desc:'ROIC ajustado oficial 2025 — acima do custo de capital estimado do setor (~10%)'},
     {label:'⚠️ ROE mais baixo', val:'AXIA3 · 4,0%*', desc:'Lucro ajustado deprimido em 2025 (base transitória)'},
   ];
 
   return `
   ${caEnChipsHtml(list)}
   <div class="card" style="margin-bottom:.7rem;overflow-x:auto">
-    <div class="card-label">💰 RENTABILIDADE — Margem EBITDA · Margem Líquida · ROE</div>
+    <div class="card-label">💰 RENTABILIDADE — Margem EBITDA · Margem Líquida · ROE · ROIC</div>
     <table class="ca-compare-table">
       <thead><tr>
         <th class="metric-col">INDICADOR</th>
@@ -10191,7 +10480,7 @@ function caEnBuildEficiencia(list) {
   <div class="card">
     <div class="card-label" style="margin-bottom:.5rem">📌 NOTA SOBRE EFICIÊNCIA POR SEGMENTO</div>
     <div style="font-size:.58rem;color:var(--text);line-height:1.7">
-      <strong style="color:var(--hi)">Transmissoras (TAEE11, ISAE3):</strong> Margens EBITDA naturalmente acima de 80% — receita regulada (RAP) com custo operacional baixo. Não são comparáveis diretamente com distribuidoras.<br>
+      <strong style="color:var(--hi)">Transmissoras (TAEE11, ISAE3):</strong> Margens EBITDA historicamente acima de 80%, hoje em ~65,6% (TAEE11) — receita regulada (RAP) com custo operacional baixo. Não são comparáveis diretamente com distribuidoras.<br>
       <strong style="color:var(--hi)">Geradoras (EGIE3, AURE3, AXIA3):</strong> Margens entre 45–65%. Alta dependência de hidrologia (GSF) e curtailment para renováveis.<br>
       <strong style="color:var(--hi)">Distribuidoras (NEOE3, EQTL3, ENGI11, CPFE3, CMIG4, CPLE3):</strong> Margens entre 17–35%. Negócio regulado com revisões tarifárias periódicas.
     </div>
@@ -10232,7 +10521,7 @@ function caEnBuildValuation(list) {
   ${caEnChipsHtml(list)}
   <div class="ca-alert ca-alert-warn" style="margin-bottom:.7rem;font-size:.56rem">
     📌 P/L de AXIA3 calculado sobre lucro AJUSTADO (exclui ativo fiscal diferido de R$12,36bi — não-caixa). P/VP da AXIA3 inclui esse ativo. AURE3 reporta prejuízo (P/L negativo).
-    EQTL3, ENGI11, CPFE3, CMIG4, TAEE11 com LPA estimado (4T25 pendente).
+    EQTL3, ENGI11, CPFE3, CMIG4 com LPA estimado (4T25 pendente). TAEE11 com dados consolidados 2025.
   </div>
   <div class="card" style="margin-bottom:.7rem;overflow-x:auto">
     <div class="card-label">🏷️ VALUATION — P/L · P/VP · EV/EBITDA · Cotações (27/fev/2026)</div>
@@ -10323,26 +10612,26 @@ function caEnBuildVeredicto(list) {
   const scores = {
     AXIA3:  { total:6.2, valuation:5, rentab:4, credito:8, dividendos:7, eficiencia:7 },
     NEOE3:  { total:7.8, valuation:9, rentab:7, credito:6, dividendos:5, eficiencia:7 },
-    EGIE3:  { total:7.5, valuation:6, rentab:9, credito:6, dividendos:4, eficiencia:9 },
+    EGIE3:  { total:7.2, valuation:5, rentab:8, credito:5, dividendos:4, eficiencia:9 },
     EQTL3:  { total:7.0, valuation:5, rentab:6, credito:6, dividendos:6, eficiencia:7 },
     CPLE3:  { total:7.6, valuation:9, rentab:6, credito:7, dividendos:8, eficiencia:6 },
     ENGI11: { total:6.8, valuation:6, rentab:7, credito:6, dividendos:7, eficiencia:7 },
     CPFE3:  { total:7.9, valuation:8, rentab:7, credito:9, dividendos:7, eficiencia:7 },
     CMIG4:  { total:7.2, valuation:9, rentab:6, credito:8, dividendos:8, eficiencia:5 },
-    TAEE11: { total:5.8, valuation:4, rentab:7, credito:3, dividendos:9, eficiencia:9 },
+    TAEE11: { total:5.5, valuation:6, rentab:7, credito:5, dividendos:6, eficiencia:7 },
     AURE3:  { total:4.5, valuation:6, rentab:2, credito:2, dividendos:1, eficiencia:6 },
   };
 
   const verdicts = {
     AXIA3:  'Maior empresa de energia do Brasil em transição. Lucro ajustado deprimido em 2025 por revisão tarifária adversa. Tese de longo prazo depende da execução da eficiência operacional. Ativo fiscal diferido de R$12,36bi não é caixa. Alavancagem confortável (2,4x) é ponto positivo.',
     NEOE3:  'Melhor relação risco-retorno do grupo para 2025. P/L de 7,9x raro para distribuidora de qualidade. Melhor resultado anual da história. OPA da Iberdrola adiciona catalisador. Principal risco: alavancagem de 3,41x em ambiente de juros altos.',
-    EGIE3:  'Qualidade premium com preço embutido. ROE de 22,3% é o melhor do grupo e justifica P/VP de 3,1x. Margem EBITDA robusta. Dividendos consistentes. Lucro pressionado em 2025 mas por fatores transitórios. Alocação para perfis moderados-arrojados.',
+    EGIE3:  'Qualidade premium. EBITDA cresceu +3,7% para R$7,64 bi (margem 59,4%). ROE 20,4% e ROIC 13,8% — pressionados pelo ciclo de capex mas ainda no topo do setor. Lucro ajustado caiu −15,6% por resultado financeiro negativo (dívida +26,8%). Com Serra do Assuruá 100% operacional e Assú Sol entregue, 2026 inicia ciclo de maturação dos ativos. Payout de 55% mantido.',
     EQTL3:  'Maior distribuidora privada com crescimento robusto (+18,4%). 4T25 pendente — aguardar resultado completo antes de decisão. Custo financeiro comprimindo margens é o principal risco. EV/EBITDA de 7,1x atrativo para o porte.',
     CPLE3:  'Valuation atrativo com catalisadores de curto prazo. P/L de 7,2x e migração ao Novo Mercado são positivos. DY de 13,9% inclui evento não recorrente — recorrente ~5,5%. Empresa em melhoria de gestão pós-privatização com EBITDA crescendo.',
     ENGI11: 'Operação sólida no Norte/Nordeste com crescimento de EBITDA. Custo da dívida (CDI+103%) é o principal gargalo. 4T25 pendente. DY de 7,5% atrativo. Perfil adequado para investidores de renda dispostos a tolerar maior custo de capital.',
     CPFE3:  'Melhor perfil risco-retorno entre distribuidoras. Menor alavancagem do grupo (2,19x), ROE acima de 15% e P/L atrativo de 7,6x. Distribuição 72% da receita. 4T25 pendente. Principal negativo: margem EBITDA em queda gradual.',
     CMIG4:  'Valuation mais barato do grupo (P/L 6,8x, P/VP 0,95x). Menor alavancagem absoluta (1,6x). DY elevado (~12,5%). Principal risco estrutural: controle estatal do Governo de Minas. EBITDA e lucro em queda no 3T25 — aguardar 4T25 (19/mar).',
-    TAEE11: 'Transmissora pura com margem EBITDA de 83% e DY de 10,2%. Risco principal: alavancagem de 4,1x e cobertura de juros de apenas 1,5x — o pior do grupo. IGP-M de +7% favorece RAP em 2026. Perfil de renda com risco financeiro elevado.',
+    TAEE11: 'P/L de 8,6x e EV/EBITDA de 8,1x — valuation mais atrativo historicamente. ROE de 22,5% e margem EBITDA de 65,6%. DY caiu para 7,55% (vs 14% em 2022). CAGR Lucros 5 anos negativo (−4,89%) — atenção ao declínio de lucratividade.',
     AURE3:  'Estágio de turnaround pós-fusão AES Brasil. Prejuízo, alavancagem de 4,9x e pior cobertura de juros do grupo (1,2x). P/VP de 0,75x pode ser atrativo como especulação se desalavancagem ocorrer. Sem dividendos até 2027. Perfil: arrojado/especulativo.',
   };
 
@@ -11505,6 +11794,26 @@ function renderHBTicker() {
   }).join('');
 }
 
+// Proventos mensais estimados por ação (R$/ação) baseado em histórico/calendário 2026
+const HB_PROVENTOS_ACOES = {
+  ITUB4:  { '01':0.015,'02':0.015,'03':0.015,'04':0.015,'05':0.015,'06':0.015,
+             '07':0.015,'08':0.015,'09':0.015,'10':0.015,'11':0.015,'12':0.015 },
+  ITSA4:  { '03':0.018,'06':0.018,'09':0.018,'12':0.018 },
+  BBSE3:  { '03':2.59, '09':2.59 },
+  CXSE3:  { '05':0.33 },
+  PETR4:  { '01':0.47,'06':1.00,'12':1.00 },
+  AXIA3:  { '12':5.67 },
+  SAPR11: { '03':0.55,'09':0.55 },
+};
+
+function hbDyAcoesMes(mm) {
+  return carteiraAcoes.reduce((s, a) => {
+    const tabela = HB_PROVENTOS_ACOES[a.ticker.toUpperCase()];
+    if (!tabela || !tabela[mm]) return s;
+    return s + tabela[mm] * a.qtd;
+  }, 0);
+}
+
 function renderHBResumo() {
   const ativos = buildHBAllTickers();
   const el = document.getElementById('hb-resumo');
@@ -11519,7 +11828,10 @@ function renderHBResumo() {
   const fiisTotal = carteira.reduce((s, a) => s + a.cotas * a.preco, 0);
   const acoesTotal = carteiraAcoes.reduce((s, a) => s + a.qtd * a.pAtual, 0);
   const etfsTotal = carteiraEtfs.reduce((s, a) => s + a.qtd * a.pAtual, 0);
-  const dyMes = carteira.reduce((s, a) => s + a.cotas * (a.dy || 0), 0);
+  const dyFiis = carteira.reduce((s, a) => s + a.cotas * (a.dy || 0), 0);
+  const mesAtual = String(new Date().getMonth() + 1).padStart(2, '0');
+  const dyAcoesMes = hbDyAcoesMes(mesAtual);
+  const dyMes = dyFiis + dyAcoesMes;
 
   el.innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.6rem;margin-bottom:.7rem">
@@ -11543,10 +11855,12 @@ function renderHBResumo() {
         </div>
       </div>
       <div class="card" style="text-align:center;padding:.9rem">
-        <div style="font-size:.46rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.3rem">RENDA MENSAL (FIIs)</div>
+        <div style="font-size:.46rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.3rem">RENDA MENSAL TOTAL</div>
         <div class="num" style="font-size:1.6rem;color:#fbbf24;line-height:1">R$ ${dyMes.toFixed(2)}</div>
+        <div style="font-size:.42rem;color:var(--dim2);margin-top:.2rem">FIIs R$ ${dyFiis.toFixed(2)}${dyAcoesMes>0?' · Ações R$ '+dyAcoesMes.toFixed(2):''}</div>
       </div>
-    </div>`;
+    </div>
+`;
 }
 
 async function hbAtualizarPrecos(auto) {
@@ -14118,7 +14432,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div style="background:#00e5a008;border:1px solid #00e5a020;border-radius:8px;padding:.75rem 1rem;margin-bottom:.7rem">
         <div style="font-size:.55rem;color:var(--green);font-weight:700;letter-spacing:.07em;margin-bottom:.4rem">💡 EXEMPLO REAL — TAEE11, BBAS3 e PETR4</div>
         <div style="font-size:.63rem;color:var(--text);line-height:1.8">
-          A <strong style="color:var(--hi)">TAEE11 (Taesa)</strong>, transmissora de energia, é famosa por pagar DY entre 10% e 14% ao ano, com dividendos previsíveis oriundos de contratos regulatórios de longo prazo. O <strong style="color:var(--hi)">BBAS3 (Banco do Brasil)</strong> distribuiu dividendos extraordinários em 2022-2023, atingindo DY acima de 12%. Já a <strong style="color:var(--hi)">PETR4 (Petrobras)</strong> chegou a distribuir DY próximo a 50% em 2022, por conta dos lucros recordes com o petróleo caro — mas esse nível não é sustentável, servindo de alerta para não confundir eventos extraordinários com capacidade real de pagamento.
+          A <strong style="color:var(--hi)">TAEE11 (Taesa)</strong>, transmissora de energia, historicamente pagava DY entre 10% e 14% ao ano. Em 2025, o DY caiu para 7,55% — ainda com dividendos previsíveis oriundos de contratos regulatórios de longo prazo, mas abaixo do patamar histórico. O <strong style="color:var(--hi)">BBAS3 (Banco do Brasil)</strong> distribuiu dividendos extraordinários em 2022-2023, atingindo DY acima de 12%. Já a <strong style="color:var(--hi)">PETR4 (Petrobras)</strong> chegou a distribuir DY próximo a 50% em 2022, por conta dos lucros recordes com o petróleo caro — mas esse nível não é sustentável, servindo de alerta para não confundir eventos extraordinários com capacidade real de pagamento.
         </div>
       </div>
     </div>
@@ -24625,9 +24939,10 @@ const SETORIAL_SETORES = [
     id: 'energia', nome: '⚡ Energia Elétrica', cor: '#fbbf24',
     desc: 'Geração, transmissão e distribuição de energia elétrica',
     empresas: [
-      { ticker:'EGIE3',  nome:'Engie Brasil',    dy:7.8,  pl:12.4, pvp:3.1,  roe:24.5, marg:31.2, dlEb:'1.8',
-        hist:{ 2015:{rec:2280,luc:620,pl:2840,fcl:780}, 2016:{rec:2380,luc:680,pl:3020,fcl:840}, 2017:{rec:2480,luc:740,pl:3120,fcl:900}, 2018:{rec:2580,luc:800,pl:3280,fcl:980}, 2019:{rec:2720,luc:850,pl:3420,fcl:1040}, 2020:{rec:2890,luc:876,pl:3578,fcl:1100}, 2021:{rec:3210,luc:942,pl:3890,fcl:1240}, 2022:{rec:3780,luc:1050,pl:4200,fcl:1380}, 2023:{rec:4120,luc:1180,pl:4610,fcl:1510}, 2024:{rec:4430,luc:1290,pl:5020,fcl:1650} }},
-      { ticker:'TAEE11', nome:'Taesa',            dy:10.5, pl:8.2,  pvp:1.8,  roe:22.1, marg:45.3, dlEb:'2.1',
+      { ticker:'EGIE3',  nome:'Engie Brasil',    dy:4.2,  pl:13.5, pvp:2.4,  roe:20.4, marg:59.4, dlEb:'3.34',
+        roic:13.8,
+        hist:{ 2015:{rec:2280,luc:620,pl:2840,fcl:780}, 2016:{rec:2380,luc:680,pl:3020,fcl:840}, 2017:{rec:2480,luc:740,pl:3120,fcl:900}, 2018:{rec:2580,luc:800,pl:3280,fcl:980}, 2019:{rec:2720,luc:850,pl:3420,fcl:1040}, 2020:{rec:2890,luc:876,pl:3578,fcl:1100}, 2021:{rec:3210,luc:942,pl:3890,fcl:1240}, 2022:{rec:3780,luc:1050,pl:4200,fcl:1380}, 2023:{rec:4120,luc:1180,pl:4610,fcl:1510}, 2024:{rec:11219,luc:3372,pl:13900,fcl:2885}, 2025:{rec:12860,luc:2845,pl:15950,fcl:3111} }},
+      { ticker:'TAEE11', nome:'Taesa',            dy:7.55, pl:8.60, pvp:1.94, roe:22.53, marg:38.18, dlEb:'3.13',
         hist:{ 2015:{rec:900,luc:380,pl:2100,fcl:480}, 2016:{rec:980,luc:420,pl:2280,fcl:520}, 2017:{rec:1060,luc:460,pl:2420,fcl:570}, 2018:{rec:1180,luc:520,pl:2560,fcl:640}, 2019:{rec:1280,luc:560,pl:2700,fcl:700}, 2020:{rec:1420,luc:620,pl:2810,fcl:780},  2021:{rec:1580,luc:680,pl:3080,fcl:850},  2022:{rec:1710,luc:740,pl:3340,fcl:910},  2023:{rec:1890,luc:810,pl:3670,fcl:970},  2024:{rec:2050,luc:870,pl:3980,fcl:1040} }},
       { ticker:'CPLE6',  nome:'Copel',            dy:5.2,  pl:6.1,  pvp:0.9,  roe:14.8, marg:18.4, dlEb:'2.9',
         hist:{ 2015:{rec:9840,luc:980,pl:9200,fcl:1200}, 2016:{rec:10800,luc:1120,pl:10200,fcl:1380}, 2017:{rec:11800,luc:1280,pl:11200,fcl:1540}, 2018:{rec:12800,luc:1480,pl:12100,fcl:1720}, 2019:{rec:13600,luc:1680,pl:12800,fcl:1920}, 2020:{rec:14200,luc:1980,pl:13400,fcl:2100}, 2021:{rec:17800,luc:2340,pl:15100,fcl:2450}, 2022:{rec:22100,luc:2780,pl:17200,fcl:2890}, 2023:{rec:24500,luc:3010,pl:19400,fcl:3120}, 2024:{rec:26800,luc:3210,pl:21700,fcl:3380} }},
@@ -25089,9 +25404,10 @@ let stOrdemCol  = null;
 let stOrdemAsc  = true;
 
 // ── SCORE COMPARATIVO ─────────────────────────────────────────────────────────
-// Definição dos indicadores disponíveis para scoring
+
+// ── Indicadores genéricos (todos os setores exceto bancos)
 const ST_SCORE_INDICADORES = [
-  { id:'dy',       label:'DY',            desc:'Dividend Yield',              hib:true,  fmt:v=>v==null?null:v.toFixed(1)+'%' },
+  { id:'dy',       label:'DY',            desc:'Dividend Yield',               hib:true,  fmt:v=>v==null?null:v.toFixed(1)+'%' },
   { id:'roe',      label:'ROE',           desc:'Retorno s/ Patrimônio (10a)',   hib:true,  fmt:v=>v==null?null:v.toFixed(1)+'%' },
   { id:'marg',     label:'Margem',        desc:'Margem Líquida (10a)',          hib:true,  fmt:v=>v==null?null:v.toFixed(1)+'%' },
   { id:'pl',       label:'P/L',           desc:'Preço / Lucro',                hib:false, fmt:v=>v==null?null:v.toFixed(1)+'x' },
@@ -25102,13 +25418,55 @@ const ST_SCORE_INDICADORES = [
   { id:'fcl',      label:'FCL 2024',      desc:'Fluxo de Caixa Livre 2024',    hib:true,  fmt:v=>v==null?null:stFmtM(v) },
 ];
 
-// Estado do score: pesos de 0 a 3 por indicador (0 = ignorado)
+// ── Indicadores específicos para Bancos & Financeiras (fonte: CA_BANCOS)
+const ST_SCORE_INDICADORES_BANCOS = [
+  { id:'b_roae',      label:'ROAE',           desc:'Retorno s/ PL Médio 2025 (CA_BANCOS)',      hib:true,  fmt:v=>v==null?null:v.toFixed(1)+'%' },
+  { id:'b_npl90',     label:'NPL+90d',        desc:'Inadimplência >90 dias — menor é melhor',   hib:false, fmt:v=>v==null?null:v.toFixed(1)+'%' },
+  { id:'b_custoCred', label:'Custo Cred.',    desc:'Custo do Crédito anualizado 2025',          hib:false, fmt:v=>v==null?null:v.toFixed(1)+'%' },
+  { id:'b_efic',      label:'Eficiência',     desc:'Índice Eficiência (Cost-to-Income) — menor é melhor', hib:false, fmt:v=>v==null?null:v.toFixed(1)+'%' },
+  { id:'b_cet1',      label:'CET1',           desc:'Capital Principal Basel III — maior é melhor',         hib:true,  fmt:v=>v==null?null:v.toFixed(1)+'%' },
+  { id:'pvp',         label:'P/VP',           desc:'Preço / Valor Patrimonial',                 hib:false, fmt:v=>v==null?null:v.toFixed(2)+'x' },
+  { id:'dy',          label:'DY',             desc:'Dividend Yield',                            hib:true,  fmt:v=>v==null?null:v.toFixed(1)+'%' },
+  { id:'b_lucro10a',  label:'Lucro 10a',      desc:'Crescimento Lucro Líquido 2015→2024 (hist)',hib:true,  fmt:v=>v==null?null:(v>=0?'+':'')+v.toFixed(1)+'%' },
+];
+
+// ── Retorna o conjunto de indicadores ativo conforme o setor
+function stGetIndicadores() {
+  return setorialAtivo === 'bancos' ? ST_SCORE_INDICADORES_BANCOS : ST_SCORE_INDICADORES;
+}
+
+// ── Estado do score: pesos de 0 a 3 por indicador (0 = ignorado)
 let stScorePesos = { dy:1, roe:1, marg:1, pl:1, pvp:0, dl:0, crescRec:0, crescLuc:0, fcl:0 };
+// Pesos padrão para bancos
+let stScorePesosBancos = { b_roae:2, b_npl90:2, b_custoCred:1, b_efic:1, b_cet1:1, pvp:1, dy:1, b_lucro10a:1 };
 let stScoreAtivo = false;
 
-// Extrai valor bruto de um indicador para uma empresa
+// ── Retorna o objeto de pesos correto para o setor ativo
+function stGetPesos() {
+  return setorialAtivo === 'bancos' ? stScorePesosBancos : stScorePesos;
+}
+function stSetPeso(id, val) {
+  if (setorialAtivo === 'bancos') stScorePesosBancos[id] = val;
+  else stScorePesos[id] = val;
+}
+
+// ── Extrai valor bruto de um indicador para uma empresa
 function stScoreValor(e, id) {
   const s = stCalcHist(e);
+  // Indicadores bancários — fonte: CA_BANCOS
+  if (id.startsWith('b_')) {
+    const bk = (typeof CA_BANCOS !== 'undefined') ? CA_BANCOS[e.ticker] : null;
+    switch(id) {
+      case 'b_roae':      return bk?.roae      ?? null;
+      case 'b_npl90':     return bk?.npl90     ?? null;
+      case 'b_custoCred': return bk?.custoCreditoAnual ?? null;
+      case 'b_efic':      return bk?.eficiencia ?? null;
+      case 'b_cet1':      return bk?.cet1      ?? null;
+      case 'b_lucro10a':  return s.crescLuc;
+      default: return null;
+    }
+  }
+  // Indicadores genéricos
   switch(id) {
     case 'dy':       return e.dy;
     case 'roe':      return s.roeMedia;
@@ -25125,10 +25483,10 @@ function stScoreValor(e, id) {
 
 // Calcula score 0-100 para uma empresa com base nos pesos ativos
 function stCalcularScore(empresa, todasEmpresas) {
-  const indicAtivos = ST_SCORE_INDICADORES.filter(i => (stScorePesos[i.id] || 0) > 0);
+  const pesos = stGetPesos();
+  const indicAtivos = stGetIndicadores().filter(i => (pesos[i.id] || 0) > 0);
   if (indicAtivos.length === 0) return null;
 
-  // Pré-computa min/max de cada indicador no grupo (normalização)
   const ranges = {};
   for (const ind of indicAtivos) {
     const vals = todasEmpresas.map(e => stScoreValor(e, ind.id)).filter(v => v != null && isFinite(v));
@@ -25137,15 +25495,12 @@ function stCalcularScore(empresa, todasEmpresas) {
 
   let scoreTotal = 0, pesoTotal = 0;
   for (const ind of indicAtivos) {
-    const peso = stScorePesos[ind.id] || 0;
+    const peso = pesos[ind.id] || 0;
     const val  = stScoreValor(empresa, ind.id);
     const { min, max } = ranges[ind.id];
     if (val == null || !isFinite(val) || max === min) continue;
-
-    // Normaliza 0-1, inverte se menor é melhor
     let norm = (val - min) / (max - min);
     if (!ind.hib) norm = 1 - norm;
-
     scoreTotal += norm * peso;
     pesoTotal  += peso;
   }
@@ -25172,7 +25527,8 @@ function stToggleScore() {
 
 // Altera peso de um indicador (0→1→2→3→0)
 function stCiclarPeso(id) {
-  stScorePesos[id] = ((stScorePesos[id] || 0) + 1) % 4;
+  const pesos = stGetPesos();
+  stSetPeso(id, ((pesos[id] || 0) + 1) % 4);
   if (stScoreAtivo) { stOrdemCol = '__score__'; stOrdemAsc = false; }
   stRenderScorePanel();
   stRenderSetor();
@@ -25185,17 +25541,27 @@ function stRenderScorePanel() {
   const setor = SETORIAL_SETORES.find(s => s.id === setorialAtivo);
   if (!setor) return;
 
-  const temPeso = Object.values(stScorePesos).some(p => p > 0);
-  const pesoLabel = ['OFF', '●', '●●', '●●●'];
-  const pesoCor   = ['var(--dim2)', '#fbbf24', '#fb923c', '#00e5a0'];
+  const pesos       = stGetPesos();
+  const indicadores = stGetIndicadores();
+  const temPeso     = Object.values(pesos).some(p => p > 0);
+  const pesoLabel   = ['OFF', '●', '●●', '●●●'];
+  const pesoCor     = ['var(--dim2)', '#fbbf24', '#fb923c', '#00e5a0'];
 
-  const chips = ST_SCORE_INDICADORES.map(ind => {
-    const p    = stScorePesos[ind.id] || 0;
+  const notaBancos = setorialAtivo === 'bancos'
+    ? `<div style="font-size:.4rem;color:var(--papel);margin-bottom:.35rem">
+        ⓘ Indicadores ROAE, NPL+90d, Custo Cred., Eficiência e CET1 são extraídos de <b>CA_BANCOS</b>
+        e cobrem: SANB11, BBAS3, BRSR3, BBDC4, ITUB4, BPAC11, BRSR6, ABCB4, BMGB4.
+        ITSA4 e CIEL3 não possuem estes indicadores — usam apenas DY, P/VP e Lucro 10a.
+       </div>`
+    : '';
+
+  const chips = indicadores.map(ind => {
+    const p    = pesos[ind.id] || 0;
     const cor  = pesoCor[p];
     const ativo = p > 0;
     return `<button
       onclick="stCiclarPeso('${ind.id}')"
-      title="${ind.desc} — clique para ciclcar o peso (OFF → × → ×× → ×××)"
+      title="${ind.desc} — clique para ciclar o peso (OFF → × → ×× → ×××)"
       style="display:inline-flex;align-items:center;gap:.3rem;padding:.28rem .6rem;
              border-radius:6px;border:1px solid ${ativo ? cor+'80' : 'var(--border)'};
              background:${ativo ? cor+'18' : 'var(--bg3)'};color:${ativo ? cor : 'var(--dim2)'};
@@ -25205,7 +25571,6 @@ function stRenderScorePanel() {
     </button>`;
   }).join('');
 
-  // Preview do ranking atual (top 3)
   let rankingPreview = '';
   if (stScoreAtivo && temPeso) {
     const emps = stEmpresasVisiveis(setor);
@@ -25241,6 +25606,7 @@ function stRenderScorePanel() {
         ${stScoreAtivo ? '✓ Score Ativo — Ordenando' : 'Ativar Score'}
       </button>
     </div>
+    ${notaBancos}
     <div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.4rem">${chips}</div>
     <div style="font-size:.4rem;color:var(--dim2)">
       Clique num indicador para definir o peso: <b style="color:var(--dim2)">OFF</b> = ignorado &nbsp;·&nbsp;
@@ -25281,6 +25647,12 @@ function stGetValorOrdem(e, col, todas) {
     case 'luc':       return s.lucFim ?? -Infinity;
     case 'crescRec':  return s.crescRec ?? -Infinity;
     case 'crescLuc':  return s.crescLuc ?? -Infinity;
+    // ── Indicadores bancários
+    case 'roae':      return (typeof CA_BANCOS !== 'undefined' && CA_BANCOS[e.ticker]?.roae) ?? -Infinity;
+    case 'npl90':     return (typeof CA_BANCOS !== 'undefined' && CA_BANCOS[e.ticker]?.npl90) ?? Infinity;
+    case 'custoCred': return (typeof CA_BANCOS !== 'undefined' && CA_BANCOS[e.ticker]?.custoCreditoAnual) ?? Infinity;
+    case 'eficiencia':return (typeof CA_BANCOS !== 'undefined' && CA_BANCOS[e.ticker]?.eficiencia) ?? Infinity;
+    case 'cet1':      return (typeof CA_BANCOS !== 'undefined' && CA_BANCOS[e.ticker]?.cet1) ?? -Infinity;
     default: return 0;
   }
 }
@@ -25430,6 +25802,33 @@ function stRenderSetor() {
   stRenderHistorico(setor, emps);
 }
 
+// ── INDICADORES BANCÁRIOS — extrai os 7 do CA_BANCOS para uso no setorial ─────
+const ST_BENCH_BANCOS = {
+  roae:              18.0,   // % — benchmark ROAE
+  npl90:              3.5,   // % — benchmark inadimplência (menor = melhor)
+  custoCreditoAnual:  3.5,   // % — benchmark custo crédito (menor = melhor)
+  eficiencia:        40.0,   // % — benchmark eficiência (menor = melhor)
+  cet1:              11.0,   // % — benchmark CET1 (maior = melhor)
+  pvp:                1.5,   // x  — P/VP (contexto: bancos podem ter P/VP < 1)
+  dy:                 5.0,   // % — DY (maior = melhor)
+};
+
+function stBankInd(ticker) {
+  const b = (typeof CA_BANCOS !== 'undefined') ? CA_BANCOS[ticker] : null;
+  if (!b) return null;
+  return {
+    roae:              b.roae              ?? null,
+    npl90:             b.npl90             ?? null,
+    custoCreditoAnual: b.custoCreditoAnual ?? null,
+    eficiencia:        b.eficiencia        ?? null,
+    cet1:              b.cet1              ?? null,
+    pvp:               b.pvp               ?? null,
+    dy:                b.dy                ?? null,
+    tipo:              b.tipo              ?? null,
+    periodo:           b.periodo           ?? null,
+  };
+}
+
 function stRenderCards(setor, bench, emps) {
   const sorted = stSortEmpresas(emps || setor.empresas);
   document.getElementById('setorial-cards').innerHTML = sorted.map((e, idx) => {
@@ -25483,35 +25882,62 @@ function stRenderCards(setor, bench, emps) {
         </div>
       </div>
       <hr style="margin:.3rem 0;border-color:var(--border)">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem .5rem">
-        ${kCell('P/L',       e.pl,           bench.pl,       'x', false, v=>v==null?'—':v.toFixed(1)+'x')}
-        ${kCell('P/VP',      e.pvp,          bench.pvp,      'x', false, v=>v==null?'—':v.toFixed(2)+'x')}
-        ${kCell('DY',        e.dy,           bench.dy,       '%')}
-        ${kCell('ROE',       s.roeMedia,     bench.roe,      '%')}
-        ${kCell('MARGEM',    s.margMedia,    bench.marg,     '%')}
-        ${kCell('DL/EBITDA', parseFloat(e.dlEb)||null, bench.dl, 'x', false, v=>v==null?'—':v.toFixed(1)+'x')}
-      </div>
-      <hr style="margin:.35rem 0;border-color:var(--border)">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">
-        ${kCell('CRESC. REC. 10a', s.crescRec, bench.crescRec, '%')}
-        ${kCell('CRESC. LUC. 10a', s.crescLuc, bench.crescLuc, '%')}
-      </div>
+      ${(() => {
+        if (setor.id === 'bancos') {
+          const bk = stBankInd(e.ticker);
+          const bBk = ST_BENCH_BANCOS;
+          if (!bk) return `<div style="font-size:.44rem;color:var(--dim2);padding:.3rem">Dados detalhados indisponíveis para ${e.ticker}</div>`;
+          return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem .5rem">
+            ${kCell('ROAE',        bk.roae,              bBk.roae,              '%')}
+            ${kCell('NPL+90d',     bk.npl90,             bBk.npl90,             '%', false)}
+            ${kCell('CUSTO CRÉD.', bk.custoCreditoAnual, bBk.custoCreditoAnual, '%', false)}
+            ${kCell('EFICIÊNCIA',  bk.eficiencia,        bBk.eficiencia,        '%', false)}
+            ${kCell('CET1',        bk.cet1,              bBk.cet1,              '%')}
+            ${kCell('P/VP',        bk.pvp,               null, 'x', false, v=>v==null?'—':v.toFixed(2)+'x')}
+            ${kCell('DY',          bk.dy,                bBk.dy,                '%')}
+          </div>
+          ${bk.tipo ? `<div style="margin-top:.35rem;font-size:.4rem;color:var(--dim2)">🏦 ${bk.tipo}${bk.periodo ? ' · ' + bk.periodo : ''}</div>` : ''}`;
+        }
+        return `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem .5rem">
+          ${kCell('P/L',       e.pl,           bench.pl,       'x', false, v=>v==null?'—':v.toFixed(1)+'x')}
+          ${kCell('P/VP',      e.pvp,          bench.pvp,      'x', false, v=>v==null?'—':v.toFixed(2)+'x')}
+          ${kCell('DY',        e.dy,           bench.dy,       '%')}
+          ${kCell('ROE',       s.roeMedia,     bench.roe,      '%')}
+          ${kCell('MARGEM',    s.margMedia,    bench.marg,     '%')}
+          ${kCell('DL/EBITDA', parseFloat(e.dlEb)||null, bench.dl, 'x', false, v=>v==null?'—':v.toFixed(1)+'x')}
+        </div>
+        <hr style="margin:.35rem 0;border-color:var(--border)">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.3rem">
+          ${kCell('CRESC. REC. 10a', s.crescRec, bench.crescRec, '%')}
+          ${kCell('CRESC. LUC. 10a', s.crescLuc, bench.crescLuc, '%')}
+        </div>`;
+      })()}
     </div>`;
   }).join('');
 }
 
 function stRenderTabela(setor, bench, emps) {
   const sorted = stSortEmpresas(emps || setor.empresas);
+  const isBancos = setor.id === 'bancos';
+  const bBk = ST_BENCH_BANCOS;
+
+  const th = (label, col, title='') =>
+    `<th title="${title}" onclick="stOrdenar('${col}')" style="cursor:pointer;user-select:none;white-space:nowrap">${label}${stThArrow(col)}</th>`;
+
+  // ── Helper: célula colorida com benchmark inline
+  const tdBk = (val, bench_v, unit='%', hib=true, fmtFn=null) => {
+    const fmt = fmtFn || (v => v==null?'—':v.toFixed(1)+unit);
+    if (val==null) return `<td style="color:var(--dim2)">—</td>`;
+    const ok  = bench_v!=null ? (hib ? val>=bench_v : val<=bench_v) : null;
+    const cor = ok==null?'var(--hi)':ok?'var(--green)':'var(--red)';
+    const bStr = bench_v!=null ? `<br><span style="font-size:.38rem;color:var(--dim2)">B:${fmt(bench_v)}</span>` : '';
+    return `<td style="color:${cor}">${fmt(val)}${bStr}</td>`;
+  };
+
   const rows = sorted.map((e, idx) => {
     const cache = setorialCache[e.ticker] || {};
     const s = stCalcHist(e);
     const score = stScoreAtivo ? stCalcularScore(e, sorted) : null;
-    const plNum = e.pl;
-    const plCor = plNum==null?'var(--dim)':plNum<=(bench.pl??12)?'var(--green)':plNum<=(bench.pl??12)*1.5?'var(--yellow)':'var(--red)';
-    const roeCor = (s.roeMedia??0)>=(bench.roe??15)?'var(--green)':(s.roeMedia??0)>=(bench.roe??15)*0.6?'var(--yellow)':'var(--red)';
-    const dlNum = parseFloat(e.dlEb);
-    const dlCor = isNaN(dlNum)?'var(--dim)':dlNum<=(bench.dl??2)?'var(--green)':dlNum<=(bench.dl??2)*1.5?'var(--yellow)':'var(--red)';
-    const dyCor = (e.dy??0)>=(bench.dy??4)?'var(--green)':(e.dy??0)>=(bench.dy??4)*0.5?'var(--yellow)':'var(--dim)';
     const rankBadge = (stOrdemCol && stOrdemCol !== '__score__') ? `<span style="font-size:.38rem;background:${setor.cor}22;color:${setor.cor};border-radius:3px;padding:0 4px;margin-right:4px">#${idx+1}</span>` : '';
     const scoreCell = score != null
       ? '<td style="text-align:center">'
@@ -25519,6 +25945,34 @@ function stRenderTabela(setor, bench, emps) {
         + '<div style="height:3px;background:var(--bg3);border-radius:2px;margin:.15rem auto;width:36px;overflow:hidden"><div style="height:100%;width:' + score + '%;background:' + stScoreCor(score) + ';border-radius:2px"></div></div>'
         + '</td>'
       : '';
+
+    if (isBancos) {
+      // ── MODO BANCÁRIO: 7 indicadores específicos
+      const bk = stBankInd(e.ticker);
+      if (!bk) return `<tr><td colspan="12" style="color:var(--dim2);font-size:.48rem">${e.ticker} — sem dados em CA_BANCOS</td></tr>`;
+      return `<tr style="${stScoreAtivo?'border-left:2px solid '+stScoreCor(score)+'40':''}">
+        ${scoreCell}
+        <td>${rankBadge}<b style="color:var(--hi);font-size:.57rem">${e.nome}</b><br><span style="font-size:.38rem;color:var(--dim2)">${bk.tipo||''}</span></td>
+        <td><b style="font-family:'Bebas Neue',sans-serif;color:${setor.cor}">${e.ticker}</b></td>
+        <td><b>${cache.preco!=null?'R$ '+cache.preco.toFixed(2).replace('.',','):'—'}</b></td>
+        <td style="color:${stCor(cache.varHoje??null)}">${stPct(cache.varHoje??null)}</td>
+        ${tdBk(bk.roae,             bBk.roae,              '%', true)}
+        ${tdBk(bk.npl90,            bBk.npl90,             '%', false)}
+        ${tdBk(bk.custoCreditoAnual,bBk.custoCreditoAnual, '%', false)}
+        ${tdBk(bk.eficiencia,       bBk.eficiencia,        '%', false)}
+        ${tdBk(bk.cet1,             bBk.cet1,              '%', true)}
+        ${tdBk(bk.pvp,              null, 'x', false, v=>v==null?'—':v.toFixed(2)+'x')}
+        ${tdBk(bk.dy,               bBk.dy, '%', true)}
+      </tr>`;
+    }
+
+    // ── MODO GENÉRICO
+    const plNum = e.pl;
+    const plCor = plNum==null?'var(--dim)':plNum<=(bench.pl??12)?'var(--green)':plNum<=(bench.pl??12)*1.5?'var(--yellow)':'var(--red)';
+    const roeCor = (s.roeMedia??0)>=(bench.roe??15)?'var(--green)':(s.roeMedia??0)>=(bench.roe??15)*0.6?'var(--yellow)':'var(--red)';
+    const dlNum = parseFloat(e.dlEb);
+    const dlCor = isNaN(dlNum)?'var(--dim)':dlNum<=(bench.dl??2)?'var(--green)':dlNum<=(bench.dl??2)*1.5?'var(--yellow)':'var(--red)';
+    const dyCor = (e.dy??0)>=(bench.dy??4)?'var(--green)':(e.dy??0)>=(bench.dy??4)*0.5?'var(--yellow)':'var(--dim)';
     return `<tr style="${stScoreAtivo?'border-left:2px solid '+stScoreCor(score)+'40':''}">
       ${scoreCell}
       <td>${rankBadge}<b style="color:var(--hi);font-size:.57rem">${e.nome}</b></td>
@@ -25538,8 +25992,47 @@ function stRenderTabela(setor, bench, emps) {
     </tr>`;
   }).join('');
 
-  const th = (label, col, title='') =>
-    `<th title="${title}" onclick="stOrdenar('${col}')" style="cursor:pointer;user-select:none;white-space:nowrap">${label}${stThArrow(col)}</th>`;
+  // ── Botões de ordenação adaptados por setor
+  const sortCols = isBancos
+    ? [['roae','ROAE'],['npl90','NPL+90d'],['custoCred','Custo Créd.'],['eficiencia','Eficiência'],['cet1','CET1'],['pvp','P/VP'],['dy','DY']]
+    : [['pl','P/L'],['pvp','P/VP'],['dy','DY'],['roe','ROE'],['marg','Margem'],['crescRec','Cresc. Rec.'],['crescLuc','Cresc. Luc.']];
+
+  // ── Cabeçalhos da tabela
+  const thead = isBancos ? `
+    ${stScoreAtivo ? `<th onclick="stOrdenar('__score__')" style="cursor:pointer;user-select:none;color:#818cf8;white-space:nowrap">SCORE${stThArrow('__score__')}</th>` : ''}
+    ${th('EMPRESA','nome')}
+    ${th('TICKER','ticker')}
+    ${th('PREÇO','preco')}
+    ${th('VAR.','var','Variação do dia')}
+    ${th('ROAE','roae','Retorno s/ PL Médio — bench: >18%')}
+    ${th('NPL+90d','npl90','Inadimplência >90 dias — bench: <3,5%')}
+    ${th('CUSTO CRÉD.','custoCred','Custo do Crédito — bench: <3,5%')}
+    ${th('EFICIÊNCIA','eficiencia','Cost-to-Income — bench: <40%')}
+    ${th('CET1','cet1','Capital Principal Basel III — bench: >11%')}
+    ${th('P/VP','pvp','Preço / Valor Patrimonial')}
+    ${th('DY','dy','Dividend Yield — bench: >5%')}
+  ` : `
+    ${stScoreAtivo ? `<th onclick="stOrdenar('__score__')" style="cursor:pointer;user-select:none;color:#818cf8;white-space:nowrap">SCORE${stThArrow('__score__')}</th>` : ''}
+    ${th('EMPRESA','nome')}
+    ${th('TICKER','ticker')}
+    ${th('PREÇO','preco')}
+    ${th('VAR.','var','Variação do dia')}
+    ${th('P/L','pl','Preço/Lucro — menor = mais barato')}
+    ${th('P/VP','pvp','Preço/Valor Patrimonial')}
+    ${th('DY','dy','Dividend Yield — maior = mais generoso')}
+    ${th('ROE 10a','roe','Retorno sobre Patrimônio (média 10 anos)')}
+    ${th('MARG. 10a','marg','Margem Líquida (média 10 anos)')}
+    ${th('DL/EBITDA','dl','Alavancagem — menor = mais seguro')}
+    <th>RECEITA 2024</th>
+    <th>LUCRO 2024</th>
+    ${th('CRESC. REC.','crescRec','Crescimento receita 2015→2024')}
+    ${th('CRESC. LUC.','crescLuc','Crescimento lucro 2020→2024')}
+  `;
+
+  const minWidth = isBancos ? '820px' : '1050px';
+  const nota = isBancos
+    ? '🟢 Acima do benchmark &nbsp;🔴 Abaixo do benchmark &nbsp;<b style="color:var(--dim)">B:</b> = referência setorial &nbsp;· Fonte: CA_BANCOS · Dados 2025'
+    : '🟢 Acima do benchmark &nbsp;🔴 Abaixo do benchmark &nbsp;<b style="color:var(--dim)">B:</b> = valor de referência do setor · Dados históricos: DFP auditadas 2020–2024';
 
   document.getElementById('setorial-tabela-wrap').innerHTML = `
   <div class="card">
@@ -25547,38 +26040,20 @@ function stRenderTabela(setor, bench, emps) {
       <div class="card-label" style="margin-bottom:0">📊 COMPARATIVO — ${setor.nome}</div>
       <div style="display:flex;gap:.4rem;flex-wrap:wrap;align-items:center">
         <span style="font-size:.48rem;color:var(--dim)">Ordenar por:</span>
-        ${['pl','pvp','dy','roe','marg','crescRec','crescLuc'].map(c=>{
-          const labels={pl:'P/L',pvp:'P/VP',dy:'DY',roe:'ROE',marg:'Margem',crescRec:'Cresc. Rec.',crescLuc:'Cresc. Luc.'};
-          return `<button onclick="stOrdenar('${c}')" style="font-size:.46rem;padding:.2rem .5rem;border-radius:4px;border:1px solid ${stOrdemCol===c?'var(--papel)':'var(--border)'};background:${stOrdemCol===c?'var(--papel)22':'var(--bg3)'};color:${stOrdemCol===c?'var(--papel)':'var(--dim)'};cursor:pointer">${labels[c]}${stOrdemCol===c?(stOrdemAsc?' ▲':' ▼'):''}</button>`;
-        }).join('')}
+        ${sortCols.map(([c,label])=>
+          `<button onclick="stOrdenar('${c}')" style="font-size:.46rem;padding:.2rem .5rem;border-radius:4px;border:1px solid ${stOrdemCol===c?'var(--papel)':'var(--border)'};background:${stOrdemCol===c?'var(--papel)22':'var(--bg3)'};color:${stOrdemCol===c?'var(--papel)':'var(--dim)'};cursor:pointer">${label}${stOrdemCol===c?(stOrdemAsc?' ▲':' ▼'):''}</button>`
+        ).join('')}
         <button onclick="stOrdemCol=null;stOrdemAsc=true;stRenderSetor()" style="font-size:.46rem;padding:.2rem .5rem;border-radius:4px;border:1px solid var(--border);background:var(--bg3);color:var(--dim);cursor:pointer">✕ Reset</button>
       </div>
     </div>
     <div style="overflow-x:auto">
-      <table class="tbl" style="min-width:1050px">
-        <thead><tr>
-          ${stScoreAtivo ? `<th onclick="stOrdenar('__score__')" style="cursor:pointer;user-select:none;color:#818cf8;white-space:nowrap">SCORE${stThArrow('__score__')}</th>` : ''}
-          ${th('EMPRESA','nome')}
-          ${th('TICKER','ticker')}
-          ${th('PREÇO','preco')}
-          ${th('VAR.','var','Variação do dia')}
-          ${th('P/L','pl','Preço/Lucro — menor = mais barato')}
-          ${th('P/VP','pvp','Preço/Valor Patrimonial')}
-          ${th('DY','dy','Dividend Yield — maior = mais generoso')}
-          ${th('ROE 10a','roe','Retorno sobre Patrimônio (média 10 anos)')}
-          ${th('MARG. 10a','marg','Margem Líquida (média 10 anos)')}
-          ${th('DL/EBITDA','dl','Alavancagem — menor = mais seguro')}
-          <th>RECEITA 2024</th>
-          <th>LUCRO 2024</th>
-          ${th('CRESC. REC.','crescRec','Crescimento receita 2015→2024')}
-          ${th('CRESC. LUC.','crescLuc','Crescimento lucro 2020→2024')}
-        </tr></thead>
+      <table class="tbl" style="min-width:${minWidth}">
+        <thead><tr>${thead}</tr></thead>
         <tbody>${rows}</tbody>
       </table>
     </div>
     <div style="display:flex;gap:1rem;flex-wrap:wrap;font-size:.45rem;color:var(--dim2);margin-top:.5rem;align-items:center">
-      <span>🟢 Acima do benchmark &nbsp;🔴 Abaixo do benchmark &nbsp;<b style="color:var(--dim)">B:</b> = valor de referência do setor</span>
-      <span>· Dados históricos: DFP auditadas 2020–2024 (R$ milhões) · Clique nos cabeçalhos para ordenar</span>
+      <span>${nota}</span>
     </div>
   </div>`;
 }
@@ -25910,11 +26385,78 @@ function tlkRenderTabela() {
 }
 
 
+// ══════════════════════════════════════════════════════════════════════
+//  SINCRONIZAÇÃO: Análise Setorial → CA_ENERGIA e restante do HTML
+//  A aba "Análise Setorial" é a fonte canônica de dados fundamentalistas.
+//  Esta função propaga os valores de SETORIAL_SETORES para CA_ENERGIA,
+//  garantindo que scores, destaques e comparativos estejam sempre alinhados.
+// ══════════════════════════════════════════════════════════════════════
+function sincronizarSetorialParaCA() {
+  // Mapeia todos os tickers do SETORIAL para um lookup rápido
+  const setorialMap = {};
+  SETORIAL_SETORES.forEach(setor => {
+    setor.empresas.forEach(emp => {
+      setorialMap[emp.ticker] = emp;
+    });
+  });
+
+  // Propaga os campos disponíveis no SETORIAL para CA_ENERGIA
+  Object.keys(CA_ENERGIA).forEach(ticker => {
+    const st = setorialMap[ticker];
+    const ca = CA_ENERGIA[ticker];
+    if (!st || !ca) return;
+
+    // Sincroniza campos financeiros: o SETORIAL tem prioridade para dy, pl, pvp, roe, marg (EBITDA), dlEb
+    if (st.dy   != null)  ca.dy           = st.dy;
+    if (st.roe  != null)  ca.roe          = st.roe;
+    if (st.marg != null)  ca.margemEbitda = st.marg;
+    if (st.dlEb != null && st.dlEb !== '—') ca.alavancagem = parseFloat(st.dlEb);
+    // ROIC: propagado se disponível no SETORIAL
+    if (st.roic != null)  ca.roic         = st.roic;
+    // Histórico financeiro: atualiza receita/lucro do último ano disponível
+    if (st.hist) {
+      const anos = Object.keys(st.hist).map(Number).sort((a,b)=>b-a);
+      if (anos.length > 0) {
+        const ultimo = st.hist[anos[0]];
+        if (ultimo?.rec && ca.receita2025 == null) ca.receita2025 = ultimo.rec / 1000;
+        if (ultimo?.luc && ca.lucro2025  == null) ca.lucro2025  = ultimo.luc / 1000;
+      }
+    }
+  });
+
+  // Atualiza destaque "Melhor ROE" dinamicamente
+  try {
+    const energiaEmpresas = SETORIAL_SETORES.find(s => s.id === 'energia')?.empresas || [];
+    const melhorROE = energiaEmpresas
+      .filter(e => e.roe != null)
+      .sort((a,b) => b.roe - a.roe)[0];
+    if (melhorROE) {
+      // Atualiza o card de destaque no HTML se estiver visível
+      document.querySelectorAll('.ca-destaque-roe').forEach(el => {
+        el.textContent = `${melhorROE.ticker} · ${melhorROE.roe.toFixed(1)}%`;
+      });
+    }
+    // Atualiza ROIC no destaque se disponível
+    const melhorROIC = energiaEmpresas
+      .filter(e => e.roic != null)
+      .sort((a,b) => b.roic - a.roic)[0];
+    if (melhorROIC) {
+      document.querySelectorAll('.ca-destaque-roic').forEach(el => {
+        el.textContent = `${melhorROIC.ticker} · ${melhorROIC.roic.toFixed(1)}%`;
+      });
+    }
+  } catch(e) { /* silencioso */ }
+
+  console.log('[Sync] Análise Setorial → CA_ENERGIA: dados propagados para', Object.keys(CA_ENERGIA).filter(t => setorialMap[t]).length, 'empresas');
+}
+
 function setorialInit() {
   stRenderTabs();
   stRenderAtivoSelector();
   stRenderScorePanel();
   stRenderSetor();
+  // ─── SINCRONIZAÇÃO: Análise Setorial → CA_ENERGIA e restante do HTML ───
+  sincronizarSetorialParaCA();
   // Auto-fetch se cache vazio ou desatualizado (>5 min)
   const todosTickers = SETORIAL_SETORES.flatMap(s => s.empresas.map(e => e.ticker));
   const maisAntigo = todosTickers.reduce((min, t) => Math.min(min, setorialCache[t]?.ts || 0), Infinity);
