@@ -699,7 +699,7 @@
   };
 
   // Chaves que devem ser sincronizadas com Firebase
-  const FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos"];
+  const FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos","ia-analises"];
 
   let _fbApp, _fbDb, _fbStorage, _fbReady = false, _fbWriting = false;
 
@@ -722,6 +722,25 @@
   } catch(e) {
     console.warn("Firebase init error (app funciona normalmente sem sync):", e);
     _fbReady = false;
+  }
+
+  // Expõe _fbStorage e _fbReady globalmente via getter/setter
+  // (as variáveis são locais ao <script>, funções externas usam window._fbStorage)
+  try {
+    Object.defineProperty(window, '_fbStorage', {
+      get: function() { return _fbStorage; },
+      set: function(v) { _fbStorage = v; },
+      configurable: true, enumerable: false
+    });
+    Object.defineProperty(window, '_fbReady', {
+      get: function() { return _fbReady; },
+      set: function(v) { _fbReady = v; },
+      configurable: true, enumerable: false
+    });
+  } catch(defErr) {
+    // Fallback caso defineProperty falhe (improvável)
+    window._fbStorage = _fbStorage;
+    window._fbReady   = _fbReady;
   }
 
   // ── Helpers Firebase ───────────────────────────────────────────────────
@@ -839,7 +858,30 @@
       if (k === "fav-ativos") {
         if (typeof favRender === "function") favRender();
       }
-    } catch(e) {}
+      if (k === "pdf-meta") {
+        // Metadados dos PDFs chegaram da nuvem — atualiza pdfBiblioteca
+        const meta = stGet("pdf-meta");
+        if (Array.isArray(meta) && meta.length > 0) {
+          // Mescla: preserva base64 local caso já exista, usa storageUrl da nuvem
+          const local = JSON.parse(localStorage.getItem("pdf-biblioteca") || "[]");
+          const localMap = {};
+          local.forEach(p => { if (p.id) localMap[p.id] = p; });
+          pdfBiblioteca = meta.map(m => {
+            const loc = localMap[m.id] || {};
+            return { ...m, base64: loc.base64 || null };
+          });
+          try { localStorage.setItem("pdf-biblioteca", JSON.stringify(pdfBiblioteca.map(p => p.storageUrl ? { ...p, base64: null } : p))); } catch(e2) {}
+          if (typeof pdfRender === "function") pdfRender();
+        }
+      }
+      if (k === "ia-analises") {
+        const dados = stGet("ia-analises");
+        if (Array.isArray(dados) && dados.length > 0) {
+          iaAnalises = dados;
+          if (typeof iaRender === "function") iaRender();
+        }
+      }
+    }
   }
 
   // ── Mostra indicador de sync na UI ─────────────────────────────────────
@@ -861,6 +903,23 @@
       badge.innerHTML = '<span style="color:#f87171">●</span><span style="color:#64748b">sync offline</span>';
     }
   }
+
+  // ── Expõe todas as funções Firebase no escopo global ──────────────────
+  window.fbShowSyncBadge = fbShowSyncBadge;
+  window.fbWrite         = function(k,v)   { return fbWrite(k,v); };
+  window.fbDelete        = function(k)     { return fbDelete(k); };
+  window.fbPath          = function(k)     { return fbPath(k); };
+  window.fbLoadAll       = function(cb)    { return fbLoadAll(cb); };
+  window.fbStartListeners= function()      { return fbStartListeners(); };
+
+  // Expõe _fbApp, _fbStorage e _fbReady via getter para que sempre reflitam o valor atual
+  try {
+    Object.defineProperty(window, '_fbApp', {
+      get: function() { return _fbApp; },
+      set: function(v) { _fbApp = v; },
+      configurable: true, enumerable: false
+    });
+  } catch(e) { window._fbApp = _fbApp; }
   </script>
 </head>
 <body class="theme-dark">
@@ -887,7 +946,7 @@
       _initDone = true;
       if (loader.parentNode) document.body.removeChild(loader);
       fbStartListeners();
-      fbShowSyncBadge(_fbReady);
+      _safeFbSyncBadge(_fbReady);
       window._fbInitDone = true;
     }
     const _fbTimeout = setTimeout(function() {
@@ -921,6 +980,7 @@
     <div class="nav-tab on" data-page="carteira"    onclick="goPage('carteira')"><span class="nav-tab-icon">🏢</span> Carteira FIIs</div>
     <div class="nav-tab"   data-page="carteiraacoes" onclick="goPage('carteiraacoes')"><span class="nav-tab-icon">📈</span> Carteira Ações</div>
     <div class="nav-tab"   data-page="carteiraetfs"  onclick="goPage('carteiraetfs')"><span class="nav-tab-icon">🌍</span> Carteira ETFs</div>
+    <div class="nav-tab"   data-page="carteirarf"    onclick="goPage('carteirarf')"><span class="nav-tab-icon">💰</span> Carteira RF</div>
     <div class="nav-tab"   data-page="homebroker"   onclick="goPage('homebroker')"><span class="nav-tab-icon">📡</span> Home Broker</div>
     <div class="nav-tab"   data-page="favoritos"     onclick="goPage('favoritos')"><span class="nav-tab-icon">⭐</span> Favoritos</div>
     <div class="nav-tab"   data-page="watchlist"    onclick="goPage('watchlist')"><span class="nav-tab-icon">👁️</span> Watchlist</div>
@@ -952,6 +1012,7 @@
     <div class="nav-divider"></div>
     <div class="nav-section-label">Educação</div>
     <div class="nav-tab"   data-page="aprendizagem" onclick="goPage('aprendizagem')"><span class="nav-tab-icon">📚</span> Aprendizagem</div>
+    <div class="nav-tab"   data-page="analisesia"    onclick="goPage('analisesia')"><span class="nav-tab-icon">🤖</span> Análises IA</div>
     <div class="nav-tab"   data-page="diversificacao" onclick="goPage('diversificacao')"><span class="nav-tab-icon">🧠</span> IA Advisor</div>
 
     <div class="nav-divider"></div>
@@ -1175,11 +1236,14 @@
       <table class="tbl" id="tbl-carteiraacoes" style="min-width:700px">
         <thead>
           <tr>
-            <th>TICKER</th><th>QUANT.</th><th>PREÇO MÉDIO (R$)</th><th>PREÇO ATUAL (R$)</th>
-            <th>VARIAÇÃO</th><th>RENTAB.</th><th>SALDO (R$)</th><th title="Margem de Segurança: distância entre preço atual e preço justo (Graham)">MS%</th><th></th>
+            <th>TICKER</th><th>QTD.</th><th>P. MÉDIO (R$)</th><th>P. ANTERIOR (R$)</th><th>P. ATUAL (R$)</th>
+            <th>VAR. DIA (%)</th><th>VAR. DIA (R$)</th><th>SALDO ANTES (R$)</th>
+            <th>SALDO APÓS (R$)</th><th>RENTAB. TOTAL (%)</th>
+            <th title="Margem de Segurança: distância entre preço atual e preço justo (Graham)">MS%</th><th></th>
           </tr>
         </thead>
         <tbody id="tbody-carteiraacoes"></tbody>
+        <tfoot id="tfoot-carteiraacoes"></tfoot>
       </table>
       </div>
     </div>
@@ -1482,7 +1546,7 @@
   </div>
 
   <!-- ── TABS ─────────────────────────────────────────────────── -->
-  <div style="display:flex;gap:.3rem;margin-bottom:1rem;border-bottom:1px solid var(--border2);padding-bottom:.4rem">
+  <div style="display:flex;gap:.3rem;margin-bottom:1rem;border-bottom:1px solid var(--border2);padding-bottom:.4rem;flex-wrap:wrap">
     <button id="rd-tab-diario" onclick="rdSwitchTab('diario')"
       style="background:#00e5a018;color:var(--green);border:1px solid #00e5a040;border-radius:7px;
              font-family:'IBM Plex Mono',monospace;font-size:.62rem;font-weight:700;padding:.38rem .85rem;
@@ -1494,6 +1558,12 @@
              font-family:'IBM Plex Mono',monospace;font-size:.62rem;font-weight:600;padding:.38rem .85rem;
              cursor:pointer;letter-spacing:.04em;transition:all .15s">
       📆 Consolidado Mensal
+    </button>
+    <button id="rd-tab-setor" onclick="rdSwitchTab('setor')"
+      style="background:transparent;color:var(--dim);border:1px solid transparent;border-radius:7px;
+             font-family:'IBM Plex Mono',monospace;font-size:.62rem;font-weight:600;padding:.38rem .85rem;
+             cursor:pointer;letter-spacing:.04em;transition:all .15s">
+      🏭 Desempenho por Setor
     </button>
   </div>
 
@@ -1631,9 +1701,115 @@
     </div>
 
   </div>
+
+  <!-- ══════════ PAINEL: DESEMPENHO POR SETOR ══════════ -->
+  <div id="rd-painel-setor" style="display:none">
+
+    <!-- Filtros: período + classe -->
+    <div class="card" style="margin-bottom:.7rem">
+      <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap">
+        <div class="card-label" style="margin-bottom:0">🏭 período de análise</div>
+        <select id="rd-setor-periodo" onchange="rdSetorRender()"
+          style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);
+                 font-family:'IBM Plex Mono',monospace;font-size:.68rem;padding:.3rem .6rem;outline:none;cursor:pointer;min-width:190px">
+          <option value="ultimo">Último dia registrado</option>
+          <option value="7">Últimos 7 dias</option>
+          <option value="15">Últimos 15 dias</option>
+          <option value="30">Últimos 30 dias</option>
+          <option value="mes">Mês atual</option>
+          <option value="todos">Todo o histórico</option>
+        </select>
+
+        <!-- Filtro de classe de ativo -->
+        <select id="rd-setor-classe" onchange="rdSetorRender()"
+          style="background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);
+                 font-family:'IBM Plex Mono',monospace;font-size:.68rem;padding:.3rem .6rem;outline:none;cursor:pointer;min-width:150px">
+          <option value="todos">Todas as classes</option>
+          <option value="Ação">📈 Ações</option>
+          <option value="FII">🏢 FIIs</option>
+          <option value="ETF">🌍 ETFs</option>
+          <option value="Renda Fixa">💰 Renda Fixa</option>
+        </select>
+
+        <span id="rd-setor-info" style="font-size:.52rem;color:var(--dim)"></span>
+      </div>
+    </div>
+
+    <!-- KPIs do período -->
+    <div id="rd-setor-kpis" style="display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:.7rem"></div>
+
+    <!-- Barras variação por setor -->
+    <div class="card" style="margin-bottom:.7rem">
+      <div class="card-label" style="margin-bottom:.6rem">📊 variação acumulada por setor (R$)</div>
+      <div id="rd-setor-barras" style="display:flex;flex-direction:column;gap:.45rem"></div>
+    </div>
+
+    <!-- Composição + Rentabilidade -->
+    <div class="g2" style="align-items:start;margin-bottom:.7rem">
+      <div class="card">
+        <div class="card-label" style="margin-bottom:.6rem">🥧 composição da carteira por setor</div>
+        <div id="rd-setor-composicao" style="display:flex;flex-direction:column;gap:.38rem"></div>
+      </div>
+      <div class="card">
+        <div class="card-label" style="margin-bottom:.6rem">💹 rentabilidade total por setor</div>
+        <div id="rd-setor-rentab" style="display:flex;flex-direction:column;gap:.38rem"></div>
+      </div>
+    </div>
+
+    <!-- Tabela consolidada -->
+    <div class="card" style="margin-bottom:.7rem">
+      <div class="card-label" style="margin-bottom:.6rem">📋 tabela consolidada por setor</div>
+      <div style="overflow-x:auto">
+        <table class="tbl" id="rd-setor-tbl" style="min-width:760px"></table>
+      </div>
+    </div>
+
+    <!-- Cards por setor -->
+    <div id="rd-setor-cards"></div>
+
+    <!-- Vazio -->
+    <div id="rd-setor-vazio" style="display:none;padding:2rem;text-align:center;color:var(--dim);font-size:.65rem">
+      Nenhum registro encontrado. Capture dias com o botão 📸 acima.
+    </div>
+
+  </div>
 </div>
 
-<!-- ══════════════ PAGE: TOTAIS ══════════════ -->
+<!-- ══════════════ PAGE: CARTEIRA RF ══════════════ -->
+<div class="page" id="page-carteirarf">
+  <div class="sec-head">
+    <div class="sec-title">💰 CARTEIRA RENDA FIXA</div>
+    <div class="frow" style="gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-green" onclick="addRF()">+ Título</button>
+      <button class="btn btn-blue"  onclick="salvarRF()">💾 Salvar carteira</button>
+    </div>
+  </div>
+
+  <div class="g2" style="align-items:start">
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem">
+        <div class="card-label" style="margin-bottom:0">títulos</div>
+      </div>
+      <div style="overflow-x:auto">
+      <table class="tbl" id="tbl-carteirarf" style="min-width:860px">
+        <thead>
+          <tr>
+            <th>TÍTULO</th><th>TIPO</th><th>VALOR INVEST. (R$)</th>
+            <th>VALOR ATUAL (R$)</th><th>TAXA / ÍNDICE</th>
+            <th>VENCIMENTO</th><th>RENTAB. (%)</th><th>RESULTADO (R$)</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="tbody-carteirarf"></tbody>
+        <tfoot id="tfoot-carteirarf"></tfoot>
+      </table>
+      </div>
+    </div>
+    <div class="fcol">
+      <div class="card" id="resumo-rf"></div>
+    </div>
+  </div>
+</div>
+
 <div class="page" id="page-totais">
   <div class="sec-head">
     <div class="sec-title">VISÃO GERAL — PORTFÓLIO TOTAL</div>
@@ -3217,25 +3393,32 @@ function stGet(k) {
   try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : null; }
   catch(e) { return null; }
 }
+
+// ── Wrappers seguros para funções Firebase (definidas no <head>) ───────────
+function _safeFbReady()         { try { return window._fbReady || false; } catch(e) { return false; } }
+function _safeFbWriting(v)      { try { if(v!==undefined) window._fbWriting=v; return window._fbWriting||false; } catch(e) { return false; } }
+function _safeFbWrite(k,val)    { try { if(typeof window.fbWrite==='function') window.fbWrite(k,val); } catch(e) {} }
+function _safeFbDelete(k)       { try { if(typeof window.fbDelete==='function') window.fbDelete(k); } catch(e) {} }
+function _safeFbSyncBadge(ok)   { try { if(typeof window.fbShowSyncBadge==='function') window.fbShowSyncBadge(ok); } catch(e) {} }
+
 function stSet(k, v) {
   try {
     localStorage.setItem(k, JSON.stringify(v));
-    // Espelha no Firebase se for chave sincronizada
-    if (FB_SYNC_KEYS.includes(k) && _fbReady) {
-      _fbWriting = true;
-      fbWrite(k, v);
-      fbShowSyncBadge(true);
-      setTimeout(() => { _fbWriting = false; }, 500);
+    if (FB_SYNC_KEYS.includes(k) && _safeFbReady()) {
+      _safeFbWriting(true);
+      _safeFbWrite(k, v);
+      _safeFbSyncBadge(true);
+      setTimeout(() => { _safeFbWriting(false); }, 500);
     }
   } catch(e) {
     console.error("stSet erro ao salvar chave", k, e);
-    fbShowSyncBadge(false);
+    _safeFbSyncBadge(false);
   }
 }
 function stDel(k) {
   try {
     localStorage.removeItem(k);
-    if (FB_SYNC_KEYS.includes(k)) fbDelete(k);
+    if (FB_SYNC_KEYS.includes(k)) _safeFbDelete(k);
   } catch(e) {}
 }
 
@@ -3595,6 +3778,7 @@ function goPage(id) {
   if (id==="carteira")      renderCarteira();
   if (id==="carteiraacoes") renderCarteiraAcoes();
   if (id==="carteiraetfs")  renderCarteiraEtfs();
+  if (id==="carteirarf")    renderCarteiraRF();
   if (id==="totais")        renderTotais();
   if (id==="cenarios")      renderCenarios();
   if (id==="aporte")        renderAportePage();
@@ -3628,6 +3812,8 @@ function goPage(id) {
   if (id==="calculadorair")    renderIRPage();
   if (id==="historicocompras") { try { hcRenderTabela(); } catch(e) {} }
   if (id==="historicovendas")  { try { hvRenderTabela(); } catch(e) {} }
+  if (id==="analisesia")       { try { iaRender(); } catch(e) {} }
+  if (id==="aprendizagem")     { try { pdfSincronizarDaNuvem(); } catch(e) {} }
 }
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -3635,6 +3821,7 @@ function goPage(id) {
 // ══════════════════════════════════════════════════════════════════════════
 function salvarCarteira() {
   stSet("fii-carteira", carteira);
+  if (typeof recDySyncFromCarteira === 'function') recDySyncFromCarteira();
   toast("Carteira salva e sincronizada!");
 }
 
@@ -4366,8 +4553,8 @@ function confirmarAplicar() {
     if (novasAcoes.length) carteiraAcoes = novasAcoes;
     stSet("fii-carteira", carteira);
     stSet("fii-acoes", carteiraAcoes);
-    fbWrite("fii-carteira", carteira);
-    fbWrite("fii-acoes", carteiraAcoes);
+    _safeFbWrite("fii-carteira", carteira);
+    _safeFbWrite("fii-acoes", carteiraAcoes);
   } else {
     // DELTA mode: ADD to existing portfolio
     Object.entries(editorAportes).forEach(([id, q]) => {
@@ -4389,6 +4576,7 @@ function confirmarAplicar() {
   renderCenarios();
   renderCarteira();
   if (typeof renderCarteiraAcoes === 'function') renderCarteiraAcoes();
+  if (typeof recDySyncFromCarteira === 'function') recDySyncFromCarteira();
   toast("Cenário aplicado à carteira!");
 }
 
@@ -4901,6 +5089,7 @@ function aplicarAporteManual() {
   aporteManual = {}; aporteNovosManual = [];
   salvarCarteira(); renderCarteira(); renderManualTabela(); renderManualResultado();
   atualizarBannerDY(0);
+  recDySyncFromCarteira();
   toast("Aporte manual aplicado à carteira!");
 }
 
@@ -7257,6 +7446,7 @@ let carteiraAcoes = stGet("fii-acoes") || ACOES_ORIGINAL.map(a=>({...a, id:uid()
 
 function salvarAcoes() {
   stSet("fii-acoes", carteiraAcoes);
+  if (typeof recDySyncFromCarteira === 'function') recDySyncFromCarteira();
   toast("Carteira Ações salva!");
 }
 
@@ -7281,12 +7471,30 @@ function renderTabelaAcoes() {
   const total = calcTotalAcoes();
   const tbody = document.getElementById("tbody-carteiraacoes");
   if(!tbody) return;
-  tbody.innerHTML = carteiraAcoes.map(a => {
-    const saldo   = calcSaldoAcao(a);
-    const rentab  = calcRentabAcao(a);
-    const pctCart = total > 0 ? (saldo/total*100).toFixed(2) : "0.00";
-    const rentCor = rentab >= 0 ? "var(--green)" : "var(--red)";
-    const comprar = a.pIdeal > 0 && parseFloat(pctCart) < a.pIdeal;
+
+  // Totais acumulados para o rodapé
+  let totVarDiaRS    = 0;
+  let totSaldoAntes  = 0;
+  let totSaldoApos   = 0;
+  let totInvestido   = 0;
+
+  const linhas = carteiraAcoes.map(a => {
+    const saldoApos   = calcSaldoAcao(a);
+    const rentab      = calcRentabAcao(a);
+    const rentCor     = rentab >= 0 ? "var(--green)" : "var(--red)";
+
+    // P. Anterior: pMedio como referência de ontem (ou pAtual se não houver pMedio)
+    const pAnterior   = a.pAnterior != null ? a.pAnterior : (a.pMedio || a.pAtual);
+    const varDiaPct   = pAnterior > 0 ? ((a.pAtual - pAnterior) / pAnterior * 100) : 0;
+    const varDiaRS    = (a.pAtual - pAnterior) * a.qtd;
+    const saldoAntes  = pAnterior * a.qtd;
+    const varDiaCor   = varDiaPct >= 0 ? "var(--green)" : "var(--red)";
+
+    totVarDiaRS   += varDiaRS;
+    totSaldoAntes += saldoAntes;
+    totSaldoApos  += saldoApos;
+    totInvestido  += a.qtd * a.pMedio;
+
     return `
     <tr>
       <td>
@@ -7300,13 +7508,20 @@ function renderTabelaAcoes() {
       </td>
       <td><input type="number" value="${a.qtd}" style="width:55px"
             onchange="updAcao('${a.id}','qtd',+this.value)" min="0" step="1"/></td>
-      <td><input type="number" value="${a.pMedio}" style="width:72px"
-            onchange="updAcao('${a.id}','pMedio',+this.value)" min="0" step="0.01"/></td>
+      <td><input type="number" value="${(a.pMedio||0).toFixed(2)}" style="width:72px;border-color:#818cf850"
+            onchange="updAcao('${a.id}','pMedio',+this.value)" min="0" step="0.01"
+            title="Preço médio de compra — usado para calcular rentabilidade total"/></td>
+      <td>
+        <input type="number" value="${pAnterior.toFixed(2)}" style="width:72px"
+          onchange="updAcaoAnterior('${a.id}',+this.value)" min="0" step="0.01"/>
+      </td>
       <td><input type="number" value="${a.pAtual}" style="width:72px;${a._live?'border-color:#00e5a050':''}"
             onchange="updAcao('${a.id}','pAtual',+this.value)" min="0" step="0.01"/></td>
-      <td><span style="font-weight:700;color:${rentCor}">${rentab>=0?'+':''}${rentab.toFixed(2)}%</span></td>
-      <td><span style="color:${rentCor}">${rentab>=0?'+':''}${rentab.toFixed(2)}%</span></td>
-      <td><span class="num" style="color:var(--hi)">R$ ${saldo.toFixed(2)}</span></td>
+      <td><span style="font-weight:700;color:${varDiaCor}">${varDiaPct>=0?'+':''}${varDiaPct.toFixed(2)}%</span></td>
+      <td><span style="color:${varDiaCor}">${varDiaRS>=0?'+R$':'-R$'}${Math.abs(varDiaRS).toFixed(2)}</span></td>
+      <td><span class="num" style="color:var(--dim)">R$ ${saldoAntes.toFixed(2)}</span></td>
+      <td style="background:#2a3a1820;border-radius:4px"><span class="num" style="color:var(--hi);font-weight:700">R$ ${saldoApos.toFixed(2)}</span></td>
+      <td style="background:#2a3a1820;border-radius:4px"><span style="font-weight:700;color:${rentCor}">${rentab>=0?'+':''}${rentab.toFixed(2)}%</span></td>
       ${msCelula(calcMsAcao(a))}
       <td>
         <div style="display:flex;gap:.3rem;align-items:center">
@@ -7317,6 +7532,26 @@ function renderTabelaAcoes() {
       </td>
     </tr>`;
   }).join("");
+
+  tbody.innerHTML = linhas;
+
+  // ── Rodapé com totais consolidados ──────────────────────────────────────
+  const tfoot = document.getElementById("tfoot-carteiraacoes");
+  if (tfoot) {
+    const totVarDiaCor   = totVarDiaRS   >= 0 ? "var(--green)" : "var(--red)";
+    const totRentabPct   = totInvestido  > 0  ? ((totSaldoApos - totInvestido) / totInvestido * 100) : 0;
+    const totRentabCor   = totRentabPct  >= 0 ? "var(--green)" : "var(--red)";
+    tfoot.innerHTML = `
+      <tr style="border-top:2px solid var(--border2)">
+        <td colspan="4" style="font-size:.58rem;font-weight:700;color:var(--dim);letter-spacing:.06em;padding-top:.5rem">TOTAL</td>
+        <td></td>
+        <td><span style="font-weight:700;color:${totVarDiaCor}">${totVarDiaRS>=0?'+R$':'-R$'}${Math.abs(totVarDiaRS).toFixed(2)}</span></td>
+        <td><span class="num" style="color:var(--dim)">R$ ${totSaldoAntes.toFixed(2)}</span></td>
+        <td style="background:#2a3a1820;border-radius:4px"><span class="num" style="font-weight:700;color:var(--hi)">R$ ${totSaldoApos.toFixed(2)}</span></td>
+        <td style="background:#2a3a1820;border-radius:4px"><span style="font-weight:700;color:${totRentabCor}">${totRentabPct>=0?'+':''}${totRentabPct.toFixed(2)}%</span></td>
+        <td colspan="2"></td>
+      </tr>`;
+  }
 }
 
 function renderResumoAcoes() {
@@ -7364,6 +7599,13 @@ function updAcao(id, campo, val) {
   salvarAcoes();
   renderTabelaAcoes();
   renderResumoAcoes();
+}
+
+function updAcaoAnterior(id, val) {
+  const a = carteiraAcoes.find(x=>x.id===id); if(!a) return;
+  a.pAnterior = val;
+  salvarAcoes();
+  renderTabelaAcoes();
 }
 
 function remAcao(id) {
@@ -7427,6 +7669,9 @@ async function atualizarPrecosAcoesBrapi() {
     carteiraAcoes.forEach(a=>{
       const r=mapa[a.ticker.toUpperCase()];
       if(r&&r.regularMarketPrice){
+        // Guarda preço anterior (fechamento anterior) para cálculo de variação do dia
+        if (r.regularMarketPreviousClose) a.pAnterior = r.regularMarketPreviousClose;
+        else if (!a.pAnterior)            a.pAnterior = a.pAtual;
         a.pAtual    = r.regularMarketPrice;
         a._varPct   = r.regularMarketChangePercent ?? null;
         a._varAbs   = r.regularMarketChange ?? null;
@@ -7667,14 +7912,215 @@ function restaurarEtfs() {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
-//  PAGE: TOTAIS — visão geral do portfólio
+//  CARTEIRA RENDA FIXA
 // ══════════════════════════════════════════════════════════════════════════
+
+const RF_TIPOS = ["Tesouro Selic","Tesouro IPCA+","Tesouro Prefixado","CDB","LCI","LCA","CRI","CRA","Debenture","Poupança","Outro"];
+
+const RF_ORIGINAL = [];
+
+let carteiraRF = stGet("fii-rf") || RF_ORIGINAL.map(a=>({...a, id:uid()}));
+
+function salvarRF() {
+  stSet("fii-rf", carteiraRF);
+  toast("Carteira RF salva!");
+}
+
+function calcSaldoRF(a) { return +(a.valorAtual || a.valorInvestido || 0); }
+function calcRentabRF(a) {
+  const inv = a.valorInvestido || 0;
+  if (!inv) return 0;
+  return +((((a.valorAtual||inv) - inv) / inv) * 100).toFixed(2);
+}
+function calcResultadoRF(a) {
+  return +((a.valorAtual||a.valorInvestido||0) - (a.valorInvestido||0)).toFixed(2);
+}
+function calcTotalRF() {
+  return +carteiraRF.reduce((s,a)=>s+calcSaldoRF(a),0).toFixed(2);
+}
+function calcTotalInvestidoRF() {
+  return +carteiraRF.reduce((s,a)=>s+(a.valorInvestido||0),0).toFixed(2);
+}
+
+function renderCarteiraRF() {
+  renderTabelaRF();
+  renderResumoRF();
+}
+
+function renderTabelaRF() {
+  const tbody = document.getElementById("tbody-carteirarf");
+  const tfoot = document.getElementById("tfoot-carteirarf");
+  if (!tbody) return;
+
+  const total = calcTotalRF();
+
+  tbody.innerHTML = carteiraRF.map(a => {
+    const rentab   = calcRentabRF(a);
+    const resultado= calcResultadoRF(a);
+    const saldo    = calcSaldoRF(a);
+    const rentCor  = rentab >= 0 ? "var(--green)" : "var(--red)";
+    const resCor   = resultado >= 0 ? "var(--green)" : "var(--red)";
+    const pctCart  = total > 0 ? (saldo/total*100).toFixed(1) : "0.0";
+
+    // tipo select options
+    const tiposOpts = RF_TIPOS.map(t =>
+      `<option value="${t}" ${a.tipo===t?"selected":""}>${t}</option>`
+    ).join("");
+
+    return `<tr>
+      <td>
+        <input type="text" value="${esc(a.titulo||"")}" placeholder="Ex: CDB Itaú 120% CDI"
+          style="width:160px;font-weight:600"
+          onchange="updRF('${a.id}','titulo',this.value)" />
+      </td>
+      <td>
+        <select onchange="updRF('${a.id}','tipo',this.value)"
+          style="background:var(--bg3);border:1px solid var(--border2);border-radius:5px;
+                 color:var(--hi);font-family:'IBM Plex Mono',monospace;font-size:.6rem;
+                 padding:.2rem .4rem;outline:none;cursor:pointer;min-width:120px">
+          ${tiposOpts}
+        </select>
+      </td>
+      <td>
+        <input type="number" value="${a.valorInvestido||0}" min="0" step="0.01" style="width:90px"
+          onchange="updRF('${a.id}','valorInvestido',+this.value)" />
+      </td>
+      <td>
+        <input type="number" value="${a.valorAtual||a.valorInvestido||0}" min="0" step="0.01"
+          style="width:90px;border-color:#00e5a040"
+          onchange="updRF('${a.id}','valorAtual',+this.value)" />
+      </td>
+      <td>
+        <input type="text" value="${esc(a.taxa||"")}" placeholder="Ex: 12% a.a." style="width:90px"
+          onchange="updRF('${a.id}','taxa',this.value)" />
+      </td>
+      <td>
+        <input type="date" value="${a.vencimento||""}"
+          style="background:var(--bg3);border:1px solid var(--border2);border-radius:5px;
+                 color:var(--hi);font-family:'IBM Plex Mono',monospace;font-size:.6rem;
+                 padding:.2rem .4rem;outline:none;cursor:pointer"
+          onchange="updRF('${a.id}','vencimento',this.value)" />
+      </td>
+      <td><span style="font-weight:700;color:${rentCor}">${rentab>=0?'+':''}${rentab.toFixed(2)}%</span></td>
+      <td><span style="color:${resCor};font-weight:600">${resultado>=0?'+':''}R$ ${Math.abs(resultado).toFixed(2)}</span></td>
+      <td>
+        <button class="btn-icon" title="Excluir" onclick="remRF('${a.id}')">✕</button>
+      </td>
+    </tr>`;
+  }).join("");
+
+  // tfoot totais
+  const totalInv = calcTotalInvestidoRF();
+  const rentGeral = totalInv > 0 ? ((total-totalInv)/totalInv*100).toFixed(2) : "0.00";
+  const resGeral  = (total - totalInv).toFixed(2);
+  const rCor = parseFloat(rentGeral) >= 0 ? "var(--green)" : "var(--red)";
+  tfoot.innerHTML = carteiraRF.length ? `
+    <tr style="border-top:2px solid var(--border2)">
+      <td colspan="2" style="font-size:.55rem;color:var(--dim);font-weight:700">TOTAL (${carteiraRF.length} títulos)</td>
+      <td class="num" style="color:var(--dim)">R$ ${totalInv.toFixed(2)}</td>
+      <td class="num" style="color:var(--hi);font-weight:700">R$ ${total.toFixed(2)}</td>
+      <td></td><td></td>
+      <td class="num" style="color:${rCor};font-weight:700">${parseFloat(rentGeral)>=0?'+':''}${rentGeral}%</td>
+      <td class="num" style="color:${rCor};font-weight:700">${parseFloat(resGeral)>=0?'+':''}R$ ${Math.abs(parseFloat(resGeral)).toFixed(2)}</td>
+      <td></td>
+    </tr>` : "";
+}
+
+function renderResumoRF() {
+  const el = document.getElementById("resumo-rf");
+  if (!el) return;
+  const total    = calcTotalRF();
+  const totalInv = calcTotalInvestidoRF();
+  const rentab   = totalInv > 0 ? ((total-totalInv)/totalInv*100).toFixed(2) : "0.00";
+  const resultado= (total - totalInv).toFixed(2);
+  const rentCor  = parseFloat(rentab) >= 0 ? "var(--green)" : "var(--red)";
+
+  // distribuição por tipo
+  const porTipo = {};
+  carteiraRF.forEach(a => {
+    const t = a.tipo || "Outro";
+    porTipo[t] = (porTipo[t]||0) + calcSaldoRF(a);
+  });
+  const tiposOrds = Object.entries(porTipo).sort((a,b)=>b[1]-a[1]);
+  const cores = ["#fbbf24","#00e5a0","#38bdf8","#f87171","#a78bfa","#fb923c","#34d399","#f472b6","#60a5fa","#facc15"];
+
+  el.innerHTML = `
+    <div class="card-label">📊 resumo renda fixa</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:.65rem">
+      <div>
+        <div style="font-size:.48rem;color:var(--dim)">VALOR TOTAL ATUAL</div>
+        <div class="num" style="font-size:1.8rem;color:var(--hi);line-height:1">R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:.48rem;color:var(--dim)">RENTABILIDADE</div>
+        <div class="num" style="font-size:1.2rem;color:${rentCor}">${parseFloat(rentab)>=0?'+':''}${rentab}%</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.7rem">
+      <div style="background:var(--bg3);border-radius:8px;padding:.5rem .7rem;border:1px solid var(--border)">
+        <div style="font-size:.44rem;color:var(--dim);margin-bottom:.1rem">TOTAL INVESTIDO</div>
+        <div class="num" style="font-size:.9rem;color:var(--dim)">R$ ${totalInv.toFixed(2)}</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:8px;padding:.5rem .7rem;border:1px solid ${parseFloat(resultado)>=0?'#00e5a030':'#f8717130'}">
+        <div style="font-size:.44rem;color:var(--dim);margin-bottom:.1rem">RESULTADO (R$)</div>
+        <div class="num" style="font-size:.9rem;color:${rentCor}">${parseFloat(resultado)>=0?'+':''}R$ ${Math.abs(parseFloat(resultado)).toFixed(2)}</div>
+      </div>
+    </div>
+    ${tiposOrds.length ? `
+    <div style="font-size:.5rem;color:var(--dim);margin-bottom:.4rem;letter-spacing:.06em">DISTRIBUIÇÃO POR TIPO</div>
+    ${tiposOrds.map(([tipo,val],i) => {
+      const cor = cores[i%cores.length];
+      const pct = total > 0 ? (val/total*100) : 0;
+      return `<div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.28rem">
+        <div style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0"></div>
+        <span style="flex:1;font-size:.58rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tipo}</span>
+        <div class="bar-track" style="width:60px;height:5px">
+          <div class="bar-fill" style="width:${pct.toFixed(1)}%;background:${cor}80"></div>
+        </div>
+        <span style="font-size:.58rem;color:${cor};font-weight:700;width:36px;text-align:right">${pct.toFixed(1)}%</span>
+      </div>`;
+    }).join("")}` : `<div style="color:var(--dim);font-size:.6rem">Nenhum título cadastrado.</div>`}
+    <hr style="margin:.7rem 0;border-color:var(--border2)"/>
+    <div style="font-size:.54rem;color:var(--dim)">${carteiraRF.length} título${carteiraRF.length!==1?'s':''} cadastrado${carteiraRF.length!==1?'s':''}</div>`;
+}
+
+function updRF(id, campo, val) {
+  const a = carteiraRF.find(x=>x.id===id); if (!a) return;
+  a[campo] = val;
+  salvarRF();
+  renderTabelaRF();
+  renderResumoRF();
+}
+
+function remRF(id) {
+  if (!confirm("Remover título?")) return;
+  carteiraRF = carteiraRF.filter(x=>x.id!==id);
+  salvarRF();
+  renderCarteiraRF();
+}
+
+function addRF() {
+  carteiraRF.push({
+    id: uid(),
+    titulo: "",
+    tipo: "CDB",
+    valorInvestido: 0,
+    valorAtual: 0,
+    taxa: "",
+    vencimento: ""
+  });
+  salvarRF();
+  renderCarteiraRF();
+}
+
+
 
 function renderTotais() {
   const totalFIIs  = calcTotalFIIs();
   const totalAcoes = calcTotalAcoes();
   const totalEtfs  = calcTotalEtfs();
-  const total      = totalFIIs + totalAcoes + totalEtfs;
+  const totalRF    = calcTotalRF();
+  const total      = totalFIIs + totalAcoes + totalEtfs + totalRF;
   const dyMes      = carteira.reduce((s,a)=>s+a.cotas*a.dy,0);
   const rentabAcoes = (() => {
     const inv = carteiraAcoes.reduce((s,a)=>s+a.qtd*a.pMedio,0);
@@ -7691,24 +8137,25 @@ function renderTotais() {
     {l:"FIIs (patrimônio)",  v:`R$ ${totalFIIs.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, c:"var(--papel)"},
     {l:"Ações (valor atual)",v:`R$ ${totalAcoes.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,c:"var(--green)"},
     {l:"ETFs (valor atual)", v:`R$ ${totalEtfs.toLocaleString("pt-BR",{minimumFractionDigits:2})}`, c:"#fb923c"},
-    {l:"Renda mensal (FIIs)",v:`R$ ${dyMes.toFixed(2)}`,                                            c:"#fbbf24"},
+    {l:"Renda Fixa",         v:`R$ ${totalRF.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,   c:"#fbbf24"},
   ].map(k=>`
     <div class="card" style="padding:.85rem 1rem;text-align:center">
       <div style="font-size:.48rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.3rem">${k.l}</div>
       <div class="num" style="font-size:1.45rem;color:${k.c};line-height:1">${k.v}</div>
     </div>`).join("");
 
-  // ── Gráfico de classes (doughnut via canvas) — agora com 3 classes
+  // ── Gráfico de classes (doughnut via canvas)
   drawDoughnut("totais-canvas-classes",
-    ["FIIs","Ações","ETFs"],
-    [totalFIIs, totalAcoes, totalEtfs],
-    ["#38bdf8","#00e5a0","#fb923c"],
+    ["FIIs","Ações","ETFs","Renda Fixa"],
+    [totalFIIs, totalAcoes, totalEtfs, totalRF],
+    ["#38bdf8","#00e5a0","#fb923c","#fbbf24"],
     total
   );
   document.getElementById("totais-legend-classes").innerHTML = [
-    {l:"FIIs",  v:totalFIIs,  c:"#38bdf8"},
-    {l:"Ações", v:totalAcoes, c:"#00e5a0"},
-    {l:"ETFs",  v:totalEtfs,  c:"#fb923c"},
+    {l:"FIIs",        v:totalFIIs,  c:"#38bdf8"},
+    {l:"Ações",       v:totalAcoes, c:"#00e5a0"},
+    {l:"ETFs",        v:totalEtfs,  c:"#fb923c"},
+    {l:"Renda Fixa",  v:totalRF,    c:"#fbbf24"},
   ].map(x=>`
     <div style="display:flex;align-items:center;gap:.5rem;justify-content:space-between">
       <div style="display:flex;align-items:center;gap:.35rem">
@@ -7721,11 +8168,12 @@ function renderTotais() {
       </div>
     </div>`).join("");
 
-  // ── Gráfico por ativo individual (top 10) — inclui ETFs
+  // ── Gráfico por ativo individual (top 10)
   const todosAtivos = [
     ...carteira.map(a=>({ticker:a.ticker,saldo:+(a.cotas*a.preco).toFixed(2),classe:"FII",rentab:0})),
     ...carteiraAcoes.map(a=>({ticker:a.ticker,saldo:calcSaldoAcao(a),classe:"Ação",rentab:calcRentabAcao(a)})),
     ...carteiraEtfs.map(a=>({ticker:a.ticker,saldo:calcSaldoEtf(a),classe:"ETF",rentab:calcRentabEtf(a)})),
+    ...carteiraRF.map(a=>({ticker:a.titulo||"RF",saldo:calcSaldoRF(a),classe:"RF",rentab:calcRentabRF(a)})),
   ].sort((a,b)=>b.saldo-a.saldo).slice(0,10);
 
   const CORES10 = ["#38bdf8","#00e5a0","#fb923c","#818cf8","#fbbf24","#f87171","#c084fc","#34d399","#60a5fa","#a3e635"];
@@ -7745,23 +8193,24 @@ function renderTotais() {
       <span class="num" style="font-size:.75rem;color:${CORES10[i]}">R$ ${x.saldo.toFixed(2)}</span>
     </div>`).join("");
 
-  // ── Tabela consolidada — inclui ETFs
+  // ── Tabela consolidada
   const allAtivos = [
     ...carteira.map(a=>({ticker:a.ticker,classe:"FII",qtd:a.cotas,preco:a.preco,saldo:+(a.cotas*a.preco).toFixed(2),rentab:a._varPct??null})),
     ...carteiraAcoes.map(a=>({ticker:a.ticker,classe:"Ação",qtd:a.qtd,preco:a.pAtual,saldo:calcSaldoAcao(a),rentab:calcRentabAcao(a)})),
     ...carteiraEtfs.map(a=>({ticker:a.ticker,classe:"ETF",qtd:a.qtd,preco:a.pAtual,saldo:calcSaldoEtf(a),rentab:calcRentabEtf(a)})),
+    ...carteiraRF.map(a=>({ticker:a.titulo||"RF",classe:"RF",qtd:1,preco:calcSaldoRF(a),saldo:calcSaldoRF(a),rentab:calcRentabRF(a)})),
   ].sort((a,b)=>b.saldo-a.saldo);
 
   document.getElementById("totais-tbody").innerHTML = allAtivos.map(a=>{
     const pct = total>0?(a.saldo/total*100).toFixed(2):0;
     const rCor = a.rentab===null?"var(--dim)":a.rentab>=0?"var(--green)":"var(--red)";
     const rDisp = a.rentab===null?"—":`${a.rentab>=0?"+":""}${a.rentab.toFixed(2)}%`;
-    const clsCor = a.classe==="FII"?"#38bdf8":a.classe==="ETF"?"#fb923c":"#00e5a0";
+    const clsCor = a.classe==="FII"?"#38bdf8":a.classe==="ETF"?"#fb923c":a.classe==="RF"?"#fbbf24":"#00e5a0";
     return `<tr>
       <td><b style="color:var(--hi)">${esc(a.ticker)}</b></td>
       <td><span style="font-size:.58rem;font-weight:700;color:${clsCor}">${a.classe}</span></td>
-      <td style="text-align:right">${a.qtd}</td>
-      <td style="text-align:right">R$ ${a.preco.toFixed(2)}</td>
+      <td style="text-align:right">${a.classe==="RF"?"—":a.qtd}</td>
+      <td style="text-align:right">${a.classe==="RF"?"—":"R$ "+a.preco.toFixed(2)}</td>
       <td style="text-align:right"><span class="num" style="color:var(--hi)">R$ ${a.saldo.toFixed(2)}</span></td>
       <td style="text-align:right">
         <div style="display:flex;align-items:center;gap:.3rem;justify-content:flex-end">
@@ -8051,7 +8500,7 @@ function aplicarSugestaoAcoes(idx) {
   criarSnapshotAcoes('Antes de aporte Ações: ' + s.nome, 'aporte');
   Object.entries(s.compras).forEach(([id,q])=>{
     const a=carteiraAcoes.find(x=>x.id===id);
-    if(a&&q>0){a.qtd+=q;a._aportedQtd=(a._aportedQtd||0)+q;}
+    if(a&&q>0){ recalcPMedio(a, q, a.pAtual); a.qtd+=q; a._aportedQtd=(a._aportedQtd||0)+q; }
   });
   registrarHistoricoAporte({ tipo:'Ação', modo:s.nome, valor:s.aportado, dyGanho:0, ativos:s.compras });
   salvarAcoes(); renderCarteiraAcoes();
@@ -8137,6 +8586,20 @@ function addAcaoManual() {
   renderManualAcoesTabela(); renderManualAcoesResultado();
 }
 
+// ── Recalcula preço médio ponderado ao aportar novas cotas ────────────────
+// Fórmula: pMedioNovo = (qtdAtual * pMedioAtual + qtdNova * precoCompra) / (qtdAtual + qtdNova)
+function recalcPMedio(acao, qtdNova, precoCompra) {
+  const qtdAtual  = acao.qtd || 0;
+  const pMedioAtual = acao.pMedio || 0;
+  if (qtdNova <= 0) return;
+  if (qtdAtual <= 0 || pMedioAtual <= 0) {
+    // Ainda não tinha posição — preço médio é o preço de compra
+    acao.pMedio = +precoCompra.toFixed(2);
+  } else {
+    acao.pMedio = +((qtdAtual * pMedioAtual + qtdNova * precoCompra) / (qtdAtual + qtdNova)).toFixed(2);
+  }
+}
+
 function aplicarAporteAcoesManual() {
   if(!confirm("Aplicar aporte manual às ações?")) return;
   criarSnapshotAcoes('Antes de aporte manual Ações', 'aporte-manual');
@@ -8144,7 +8607,7 @@ function aplicarAporteAcoesManual() {
   Object.entries(aporteAcoesManual).forEach(([id,q])=>{
     if(!q)return;
     const a=carteiraAcoes.find(x=>x.id===id);
-    if(a){a.qtd+=q;a._aportedQtd=(a._aportedQtd||0)+q; aportado+=q*a.pAtual;}
+    if(a){ recalcPMedio(a, q, a.pAtual); a.qtd+=q; a._aportedQtd=(a._aportedQtd||0)+q; aportado+=q*a.pAtual; }
   });
   aporteNovasAcoesManual.forEach(n=>{
     const q=aporteAcoesManual[n.id]||0;
@@ -8156,6 +8619,7 @@ function aplicarAporteAcoesManual() {
   salvarAcoes(); renderCarteiraAcoes();
   renderManualAcoesTabela(); renderManualAcoesResultado();
   atualizarBannerDY(0);
+  recDySyncFromCarteira();
   toast("Aporte manual aplicado nas ações!");
 }
 
@@ -8480,6 +8944,7 @@ function aplicarAporteEtfsManual() {
   stSet('fii-etfs',carteiraEtfs); renderCarteiraEtfs();
   renderManualEtfsTabela(); renderManualEtfsResultado();
   atualizarBannerDY(0);
+  recDySyncFromCarteira();
   toast('Aporte manual ETFs aplicado!');
 }
 
@@ -8595,7 +9060,7 @@ function aplicarCombAcoes() {
   const s = window._combSAcoes; if(!s)return;
   if(!confirm('Aplicar aporte de Ações do plano combinado?'))return;
   criarSnapshotAcoes('Antes de aporte combinado Ações','aporte-combinado');
-  Object.entries(s.compras).forEach(([id,q])=>{ const a=carteiraAcoes.find(x=>x.id===id); if(a&&q>0){a.qtd+=q;a._aportedQtd=(a._aportedQtd||0)+q;} });
+  Object.entries(s.compras).forEach(([id,q])=>{ const a=carteiraAcoes.find(x=>x.id===id); if(a&&q>0){ recalcPMedio(a, q, a.pAtual); a.qtd+=q; a._aportedQtd=(a._aportedQtd||0)+q; } });
   registrarHistoricoAporte({tipo:'Ação',modo:'Combinado',valor:s.aportado,dyGanho:0,ativos:s.compras});
   salvarAcoes(); renderCarteiraAcoes(); atualizarBannerDY(0);
   toast('Aporte Ações aplicado!');
@@ -13166,7 +13631,7 @@ function criarSnapshotFiis(descricao, origem) {
   snapshotsFiis.unshift(snap);
   if (snapshotsFiis.length > 20) snapshotsFiis = snapshotsFiis.slice(0, 20);
   stSet("snapshot-fiis", snapshotsFiis);
-  fbWrite("snapshot-fiis", snapshotsFiis);
+  _safeFbWrite("snapshot-fiis", snapshotsFiis);
 }
 
 function criarSnapshotAcoes(descricao, origem) {
@@ -13174,7 +13639,7 @@ function criarSnapshotAcoes(descricao, origem) {
   snapshotsAcoes.unshift(snap);
   if (snapshotsAcoes.length > 20) snapshotsAcoes = snapshotsAcoes.slice(0, 20);
   stSet("snapshot-acoes", snapshotsAcoes);
-  fbWrite("snapshot-acoes", snapshotsAcoes);
+  _safeFbWrite("snapshot-acoes", snapshotsAcoes);
 }
 
 function reverterUltimoSnapshotFiis() {
@@ -13186,8 +13651,8 @@ function reverterUltimoSnapshotFiis() {
   snapshotsFiis.shift();
   stSet("snapshot-fiis", snapshotsFiis);
   stSet("fii-carteira", carteira);
-  fbWrite("fii-carteira", carteira);
-  fbWrite("snapshot-fiis", snapshotsFiis);
+  _safeFbWrite("fii-carteira", carteira);
+  _safeFbWrite("snapshot-fiis", snapshotsFiis);
   renderCarteira();
   toast('Carteira FIIs revertida com sucesso');
 }
@@ -13201,8 +13666,8 @@ function reverterUltimoSnapshotAcoes() {
   snapshotsAcoes.shift();
   stSet("snapshot-acoes", snapshotsAcoes);
   stSet("fii-acoes", carteiraAcoes);
-  fbWrite("fii-acoes", carteiraAcoes);
-  fbWrite("snapshot-acoes", snapshotsAcoes);
+  _safeFbWrite("fii-acoes", carteiraAcoes);
+  _safeFbWrite("snapshot-acoes", snapshotsAcoes);
   renderCarteiraAcoes();
   toast('Carteira Ações revertida com sucesso');
 }
@@ -13214,7 +13679,7 @@ function criarSnapshotEtfs(descricao, origem) {
   snapshotsEtfs.unshift(snap);
   if (snapshotsEtfs.length > 20) snapshotsEtfs = snapshotsEtfs.slice(0, 20);
   stSet("snapshot-etfs", snapshotsEtfs);
-  fbWrite("snapshot-etfs", snapshotsEtfs);
+  _safeFbWrite("snapshot-etfs", snapshotsEtfs);
 }
 
 function reverterUltimoSnapshotEtfs() {
@@ -13226,8 +13691,8 @@ function reverterUltimoSnapshotEtfs() {
   snapshotsEtfs.shift();
   stSet("snapshot-etfs", snapshotsEtfs);
   stSet("fii-etfs", carteiraEtfs);
-  fbWrite("fii-etfs", carteiraEtfs);
-  fbWrite("snapshot-etfs", snapshotsEtfs);
+  _safeFbWrite("fii-etfs", carteiraEtfs);
+  _safeFbWrite("snapshot-etfs", snapshotsEtfs);
   renderCarteiraEtfs();
   toast('Carteira ETFs revertida com sucesso');
 }
@@ -13415,7 +13880,7 @@ function favSaveAll(arr) {
   if (!Array.isArray(arr)) arr = [];
   localStorage.setItem(FAV_KEY, JSON.stringify(arr));
   if (typeof fbWrite === 'function') {
-    try { fbWrite(FAV_KEY, arr); } catch(e) {}
+    try { _safeFbWrite(FAV_KEY, arr); } catch(e) {}
   }
 }
 
@@ -14892,6 +15357,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <span id="pdf-count">0</span> arquivo(s) salvo(s)
       </div>
       <button class="btn btn-green" onclick="pdfAbrirModal()">+ Adicionar PDF</button>
+      <button class="btn" onclick="pdfDiagnostico()" style="font-size:.52rem;background:var(--bg3);color:var(--dim);border:1px solid var(--border2)" title="Verifica se Firebase Storage está OK">🔍 Diagnóstico</button>
     </div>
 
     <!-- Filtros / busca -->
@@ -15038,6 +15504,401 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </div><!-- /page-aprendizagem -->
 
+<!-- ══════════════ PAGE: ANÁLISES IA ══════════════ -->
+<div class="page" id="page-analisesia">
+  <div class="sec-head">
+    <div class="sec-title">🤖 ANÁLISES IA</div>
+    <div class="frow" style="gap:.5rem;flex-wrap:wrap">
+      <button class="btn btn-green" onclick="iaAddAnalise()">+ Nova Análise</button>
+      <button class="btn btn-blue"  onclick="iaSalvar()">💾 Salvar</button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card" style="margin-bottom:.8rem;padding:.6rem .8rem">
+    <div class="frow" style="gap:.5rem;flex-wrap:wrap;align-items:center">
+      <input  type="text"   id="ia-filtro-texto"  placeholder="Buscar por ticker ou título..."
+              style="flex:1;min-width:160px" oninput="iaRender()" />
+      <select id="ia-filtro-tipo" onchange="iaRender()" style="min-width:130px">
+        <option value="">Todos os tipos</option>
+        <option value="acao">Ação</option>
+        <option value="fii">FII</option>
+        <option value="etf">ETF</option>
+        <option value="macro">Macro</option>
+        <option value="setor">Setor</option>
+      </select>
+      <select id="ia-filtro-ordem" onchange="iaRender()" style="min-width:130px">
+        <option value="recente">Mais recentes</option>
+        <option value="ticker">Ticker A-Z</option>
+        <option value="upside">Maior upside</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Cards das análises -->
+  <div id="ia-lista">
+    <div style="color:var(--dim);font-size:.65rem;text-align:center;padding:2rem 0">
+      Nenhuma análise salva ainda.<br>
+      Clique em <b style="color:var(--green)">+ Nova Análise</b> para adicionar.
+    </div>
+  </div>
+
+  <!-- Modal: adicionar/editar análise -->
+  <div id="modal-ia" style="display:none;position:fixed;inset:0;z-index:500;background:#00000090;align-items:center;justify-content:center">
+    <div class="card" style="width:min(95vw,640px);max-height:90vh;overflow-y:auto;padding:1.2rem 1.5rem;position:relative">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--hi);letter-spacing:.05em" id="modal-ia-titulo">Nova Análise IA</div>
+        <button class="btn-icon" onclick="iaFecharModal()">✕</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.6rem;margin-bottom:.6rem">
+        <div>
+          <div class="card-label">Ticker <span style="color:var(--red)">*</span></div>
+          <input type="text" id="ia-ticker" placeholder="Ex: PETR4" style="width:100%;text-transform:uppercase" />
+        </div>
+        <div>
+          <div class="card-label">Tipo</div>
+          <select id="ia-tipo" style="width:100%">
+            <option value="acao">Ação</option>
+            <option value="fii">FII</option>
+            <option value="etf">ETF</option>
+            <option value="macro">Macro</option>
+            <option value="setor">Setor</option>
+          </select>
+        </div>
+        <div>
+          <div class="card-label">Preço de referência (R$)</div>
+          <input type="number" id="ia-preco-ref" placeholder="Ex: 44.57" step="0.01" min="0" style="width:100%" />
+        </div>
+        <div>
+          <div class="card-label">Data-base</div>
+          <input type="date" id="ia-data" style="width:100%" />
+        </div>
+      </div>
+
+      <div style="margin-bottom:.6rem">
+        <div class="card-label">Título da análise <span style="color:var(--red)">*</span></div>
+        <input type="text" id="ia-titulo-analise" placeholder="Ex: Projeção de Preço-Alvo 2026/2027 — PETR4" style="width:100%" />
+      </div>
+
+      <div style="margin-bottom:.6rem">
+        <div class="card-label">Resumo executivo</div>
+        <textarea id="ia-resumo" rows="3" placeholder="Principais conclusões da análise..." style="width:100%;resize:vertical;font-family:inherit;font-size:.65rem;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);padding:.4rem .6rem"></textarea>
+      </div>
+
+      <!-- Cenários -->
+      <div class="card-label" style="margin-bottom:.4rem">Cenários de Preço-Alvo (até 5)</div>
+      <div id="ia-cenarios-wrap" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.6rem"></div>
+      <button class="btn" onclick="iaAddCenario()" style="font-size:.52rem;background:var(--bg3);color:var(--dim);border:1px solid var(--border2);margin-bottom:.8rem">+ Adicionar cenário</button>
+
+      <div style="margin-bottom:.6rem">
+        <div class="card-label">Análise técnica (texto livre)</div>
+        <textarea id="ia-tecnica" rows="3" placeholder="Indicadores, suportes, resistências..." style="width:100%;resize:vertical;font-family:inherit;font-size:.65rem;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);padding:.4rem .6rem"></textarea>
+      </div>
+
+      <div style="margin-bottom:.6rem">
+        <div class="card-label">Revisões / riscos</div>
+        <textarea id="ia-revisoes" rows="3" placeholder="Equívocos identificados, riscos principais..." style="width:100%;resize:vertical;font-family:inherit;font-size:.65rem;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;color:var(--hi);padding:.4rem .6rem"></textarea>
+      </div>
+
+      <div style="margin-bottom:.6rem">
+        <div class="card-label">Tags (separadas por vírgula)</div>
+        <input type="text" id="ia-tags" placeholder="Ex: petroleo, dividendos, brent" style="width:100%" />
+      </div>
+
+      <div style="display:flex;gap:.5rem;justify-content:flex-end;margin-top:.8rem">
+        <button class="btn" onclick="iaFecharModal()" style="color:var(--dim)">Cancelar</button>
+        <button class="btn btn-green" id="ia-btn-salvar" onclick="iaSalvarAnalise()">Salvar Análise</button>
+      </div>
+    </div>
+  </div>
+</div><!-- /page-analisesia -->
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════
+//  ANÁLISES IA — dados e funções
+// ══════════════════════════════════════════════════════════════════════════
+
+let iaAnalises = stGet('ia-analises') || [];
+let _iaEditandoId = null;
+let _iaCenarios   = [];
+
+// ── Inicializa com as análises SAPR11 e PETR4 da sessão ──────────────────
+(function iaInit() {
+  if (iaAnalises.length === 0) {
+    const hoje = new Date().toISOString().split('T')[0];
+    iaAnalises = [
+      {
+        id: uid(), ticker: 'SAPR11', tipo: 'fii', precoRef: 39.57, data: '2026-03-13',
+        titulo: 'Projeção de Preço-Alvo 2026/2027 — SAPR11 (Sanepar)',
+        resumo: 'Resultado 2025: Receita R$ 7,1B (+5%), EBITDA R$ 2,9B (margem 41,1%), lucro R$ 2,08B inflado por precatórios. ROE 18%, DL/EBITDA 0,6x. 3RTP homologada em +3,78% — abaixo da inflação. Preço esperado ponderado: R$ 41,70.',
+        cenarios: [
+          { nome:'Otimista',         preco:50.90, prob:12, direcao:'alta' },
+          { nome:'Moderado Positivo',preco:45.90, prob:28, direcao:'alta' },
+          { nome:'Base / Neutro',    preco:42.00, prob:35, direcao:'neutro' },
+          { nome:'Moderado Negativo',preco:35.00, prob:18, direcao:'baixa' },
+          { nome:'Pessimista',       preco:30.50, prob:7,  direcao:'baixa' },
+        ],
+        tecnica: 'BB: abaixo da banda inferior (sobrevenda). MA9: R$ 44,12 — preço abaixo. VWAP: R$ 46,07 — preço abaixo. Stoch RSI K=13,4 (sobrevenda extrema — potencial reversão). MACD negativo. OBV em queda. S1: R$ 38,39 | R1: R$ 42,37.',
+        revisoes: '1) Lucro 2025 não é recorrente — precatórios inflaram. Lucro recorrente ~R$ 1,3–1,5B, P/L real 8–9x. 2) RTP de 3,78% ficou abaixo da inflação — limitador de receita real. 3) Conflito EUA×Irã: impacto indireto via SELIC e custo de capital, não via receita.',
+        tags: ['saneamento','dividendos','selic','regulatorio','agepar'],
+        criadoEm: Date.now(), atualizadoEm: Date.now(),
+      },
+      {
+        id: uid(), ticker: 'PETR4', tipo: 'acao', precoRef: 44.57, data: '2026-03-13',
+        titulo: 'Projeção de Preço-Alvo 2026/2027 — PETR4 (Petrobras)',
+        resumo: 'Resultado 2025: Lucro R$ 110,1B (+200%), EBITDA R$ 244,3B (+10,6%), Produção 3,14 Mboed (+11%), Custo lifting US$ 9/bbl. Brent chegou a US$ 119 com conflito EUA×Irã. DY atual 7,26% — projeção BBI 12,5% em cenário Brent alto. Preço esperado ponderado: R$ 46,40.',
+        cenarios: [
+          { nome:'Conflito Prolongado',  preco:62.00, prob:10, direcao:'alta' },
+          { nome:'Moderado Positivo',    preco:53.00, prob:25, direcao:'alta' },
+          { nome:'Base / Neutro',        preco:47.00, prob:35, direcao:'neutro' },
+          { nome:'Moderado Negativo',    preco:38.00, prob:22, direcao:'baixa' },
+          { nome:'Pessimista',           preco:30.00, prob:8,  direcao:'baixa' },
+        ],
+        tecnica: 'BB: rompeu banda superior (sobrecompra). MA9: R$ 42,78 — preço acima. VWAP: R$ 44,85 — preço acima. Stoch RSI K=97,5 (sobrecompra extrema — risco de correção 5–10%). MACD +2,22 (bullish). OBV em máxima histórica com volume 87% acima da MM20. S1: R$ 42,78 | R1: R$ 45,61.',
+        revisoes: '1) Lucro 2025 parcialmente recorrente — analistas conservadores projetam lucro 2026 de R$ 70–80B (Brent US$ 65). 2) Brent alto NÃO é lucro linear: real aprecia, defasagem de combustíveis comprime downstream, taxa de exportação pode reduzir FCL. 3) Análise técnica ALINHADA com fundamentos — rara confluência. Aguardar correção para R$ 42–44 pode ser melhor entrada.',
+        tags: ['petroleo','brent','geopolitica','dividendos','eua-ira'],
+        criadoEm: Date.now(), atualizadoEm: Date.now(),
+      }
+    ];
+    iaSalvar();
+  }
+})();
+
+function iaSalvar() {
+  stSet('ia-analises', iaAnalises);
+}
+
+// ── Render principal ───────────────────────────────────────────────────────
+function iaRender() {
+  const el = document.getElementById('ia-lista');
+  if (!el) return;
+
+  const filtroTexto = (document.getElementById('ia-filtro-texto')?.value || '').toLowerCase();
+  const filtroTipo  = document.getElementById('ia-filtro-tipo')?.value  || '';
+  const ordem       = document.getElementById('ia-filtro-ordem')?.value || 'recente';
+
+  let lista = [...iaAnalises];
+
+  if (filtroTexto) lista = lista.filter(a =>
+    a.ticker.toLowerCase().includes(filtroTexto) ||
+    a.titulo.toLowerCase().includes(filtroTexto) ||
+    (a.tags||[]).some(t => t.includes(filtroTexto))
+  );
+  if (filtroTipo) lista = lista.filter(a => a.tipo === filtroTipo);
+
+  if (ordem === 'recente')  lista.sort((a,b) => b.criadoEm - a.criadoEm);
+  if (ordem === 'ticker')   lista.sort((a,b) => a.ticker.localeCompare(b.ticker));
+  if (ordem === 'upside') {
+    lista.sort((a,b) => {
+      const uA = a.cenarios?.length ? Math.max(...a.cenarios.map(c => (c.preco - a.precoRef) / a.precoRef * 100)) : 0;
+      const uB = b.cenarios?.length ? Math.max(...b.cenarios.map(c => (c.preco - b.precoRef) / b.precoRef * 100)) : 0;
+      return uB - uA;
+    });
+  }
+
+  if (!lista.length) {
+    el.innerHTML = '<div style="color:var(--dim);font-size:.65rem;text-align:center;padding:2rem 0">Nenhuma análise encontrada.</div>';
+    return;
+  }
+
+  el.innerHTML = lista.map(a => iaCardHTML(a)).join('');
+}
+
+function iaCardHTML(a) {
+  const cenarios = a.cenarios || [];
+  const precoEsperado = cenarios.length
+    ? cenarios.reduce((s,c) => s + c.preco * (c.prob/100), 0)
+    : null;
+  const upsideEsp = precoEsperado != null
+    ? ((precoEsperado - a.precoRef) / a.precoRef * 100)
+    : null;
+  const upsideCor = upsideEsp == null ? 'var(--dim)' : upsideEsp >= 0 ? 'var(--green)' : 'var(--red)';
+
+  const tipoLabel = { acao:'Ação', fii:'FII', etf:'ETF', macro:'Macro', setor:'Setor' }[a.tipo] || a.tipo;
+  const tipoColor = { acao:'#818cf8', fii:'#00e5a0', etf:'#38bdf8', macro:'#fbbf24', setor:'#fb923c' }[a.tipo] || 'var(--dim)';
+
+  const cenaHTML = cenarios.slice(0,5).map(c => {
+    const up = ((c.preco - a.precoRef) / a.precoRef * 100);
+    const cor = c.direcao === 'alta' ? 'var(--green)' : c.direcao === 'baixa' ? 'var(--red)' : 'var(--dim)';
+    const seta = c.direcao === 'alta' ? '▲' : c.direcao === 'baixa' ? '▼' : '■';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.25rem 0;border-bottom:1px solid var(--border)">
+      <span style="font-size:.56rem;color:var(--dim);flex:1">${esc(c.nome)}</span>
+      <span style="font-size:.65rem;font-weight:700;color:${cor};min-width:60px;text-align:right">R$ ${c.preco.toFixed(2)}</span>
+      <span style="font-size:.55rem;color:${cor};min-width:50px;text-align:right">${up>=0?'+':''}${up.toFixed(1)}%</span>
+      <span style="font-size:.55rem;color:var(--dim2);min-width:36px;text-align:right">${c.prob}%</span>
+    </div>`;
+  }).join('');
+
+  const tags = (a.tags||[]).map(t =>
+    `<span style="font-size:.44rem;background:var(--bg3);color:var(--dim);border:1px solid var(--border2);border-radius:4px;padding:1px 6px">${esc(t)}</span>`
+  ).join('');
+
+  const dataStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
+
+  return `<div class="card" style="margin-bottom:.8rem">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.6rem;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:${tipoColor}">${esc(a.ticker)}</span>
+        <span style="font-size:.48rem;background:${tipoColor}20;color:${tipoColor};border:1px solid ${tipoColor}40;border-radius:4px;padding:2px 7px;font-weight:700">${tipoLabel}</span>
+        <div>
+          <div style="font-size:.6rem;font-weight:700;color:var(--hi)">${esc(a.titulo)}</div>
+          <div style="font-size:.5rem;color:var(--dim)">Ref: R$ ${(a.precoRef||0).toFixed(2)} · ${dataStr}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:.3rem;align-items:center;flex-shrink:0">
+        ${precoEsperado != null ? `<div style="text-align:right">
+          <div style="font-size:.44rem;color:var(--dim)">PREÇO ESPERADO</div>
+          <div style="font-size:1rem;font-family:'Bebas Neue',sans-serif;color:${upsideCor}">R$ ${precoEsperado.toFixed(2)}</div>
+          <div style="font-size:.48rem;color:${upsideCor}">${upsideEsp>=0?'+':''}${upsideEsp.toFixed(1)}%</div>
+        </div>` : ''}
+        <button class="btn" onclick="iaEditar('${a.id}')" style="font-size:.52rem;padding:.22rem .5rem;background:var(--bg3);color:var(--dim);border:1px solid var(--border2)">✏️ Editar</button>
+        <button class="btn-icon" onclick="iaRemover('${a.id}')" title="Excluir análise">✕</button>
+      </div>
+    </div>
+
+    ${a.resumo ? `<p style="font-size:.58rem;color:var(--dim);line-height:1.5;margin-bottom:.6rem">${esc(a.resumo)}</p>` : ''}
+
+    ${cenarios.length ? `<div style="margin-bottom:.6rem">
+      <div class="card-label" style="margin-bottom:.3rem">Cenários de Preço-Alvo</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:0">
+        <div style="font-size:.48rem;color:var(--dim2);padding:.2rem 0;border-bottom:1px solid var(--border)">CENÁRIO</div>
+        <div style="font-size:.48rem;color:var(--dim2);padding:.2rem 0;border-bottom:1px solid var(--border);text-align:right">PREÇO-ALVO</div>
+        <div style="font-size:.48rem;color:var(--dim2);padding:.2rem 0;border-bottom:1px solid var(--border);text-align:right">UPSIDE</div>
+        <div style="font-size:.48rem;color:var(--dim2);padding:.2rem 0;border-bottom:1px solid var(--border);text-align:right">PROB.</div>
+      </div>
+      ${cenaHTML}
+    </div>` : ''}
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
+      ${a.tecnica ? `<div style="background:var(--bg3);border-radius:6px;padding:.5rem .6rem">
+        <div class="card-label" style="margin-bottom:.3rem">Análise Técnica</div>
+        <div style="font-size:.56rem;color:var(--dim);line-height:1.5">${esc(a.tecnica)}</div>
+      </div>` : ''}
+      ${a.revisoes ? `<div style="background:var(--bg3);border-radius:6px;padding:.5rem .6rem">
+        <div class="card-label" style="margin-bottom:.3rem">Revisões / Riscos</div>
+        <div style="font-size:.56rem;color:var(--dim);line-height:1.5">${esc(a.revisoes)}</div>
+      </div>` : ''}
+    </div>
+
+    ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:.3rem">${tags}</div>` : ''}
+  </div>`;
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────
+function iaAddAnalise() {
+  _iaEditandoId = null;
+  _iaCenarios   = [];
+  document.getElementById('ia-ticker').value           = '';
+  document.getElementById('ia-tipo').value             = 'acao';
+  document.getElementById('ia-preco-ref').value        = '';
+  document.getElementById('ia-data').value             = new Date().toISOString().split('T')[0];
+  document.getElementById('ia-titulo-analise').value   = '';
+  document.getElementById('ia-resumo').value           = '';
+  document.getElementById('ia-tecnica').value          = '';
+  document.getElementById('ia-revisoes').value         = '';
+  document.getElementById('ia-tags').value             = '';
+  document.getElementById('modal-ia-titulo').textContent = 'Nova Análise IA';
+  document.getElementById('ia-btn-salvar').textContent   = 'Salvar Análise';
+  iaRenderCenarios();
+  document.getElementById('modal-ia').style.display = 'flex';
+}
+
+function iaEditar(id) {
+  const a = iaAnalises.find(x => x.id === id);
+  if (!a) return;
+  _iaEditandoId = id;
+  _iaCenarios   = JSON.parse(JSON.stringify(a.cenarios || []));
+  document.getElementById('ia-ticker').value           = a.ticker || '';
+  document.getElementById('ia-tipo').value             = a.tipo || 'acao';
+  document.getElementById('ia-preco-ref').value        = a.precoRef || '';
+  document.getElementById('ia-data').value             = a.data || '';
+  document.getElementById('ia-titulo-analise').value   = a.titulo || '';
+  document.getElementById('ia-resumo').value           = a.resumo || '';
+  document.getElementById('ia-tecnica').value          = a.tecnica || '';
+  document.getElementById('ia-revisoes').value         = a.revisoes || '';
+  document.getElementById('ia-tags').value             = (a.tags||[]).join(', ');
+  document.getElementById('modal-ia-titulo').textContent = 'Editar Análise';
+  document.getElementById('ia-btn-salvar').textContent   = 'Salvar Alterações';
+  iaRenderCenarios();
+  document.getElementById('modal-ia').style.display = 'flex';
+}
+
+function iaFecharModal() {
+  document.getElementById('modal-ia').style.display = 'none';
+}
+
+function iaAddCenario() {
+  if (_iaCenarios.length >= 5) { toast('Máximo de 5 cenários por análise.', false); return; }
+  _iaCenarios.push({ nome:'', preco:0, prob:20, direcao:'neutro' });
+  iaRenderCenarios();
+}
+
+function iaRenderCenarios() {
+  const wrap = document.getElementById('ia-cenarios-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = _iaCenarios.map((c, i) => `
+    <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1.2fr auto;gap:.4rem;align-items:center;background:var(--bg3);border-radius:6px;padding:.4rem .5rem">
+      <input type="text" value="${esc(c.nome)}" placeholder="Nome do cenário"
+             style="font-size:.6rem" onchange="_iaCenarios[${i}].nome=this.value" />
+      <input type="number" value="${c.preco}" placeholder="R$ Preço" min="0" step="0.01"
+             style="font-size:.6rem" onchange="_iaCenarios[${i}].preco=+this.value" />
+      <input type="number" value="${c.prob}" placeholder="Prob %" min="0" max="100" step="1"
+             style="font-size:.6rem" onchange="_iaCenarios[${i}].prob=+this.value" />
+      <select style="font-size:.6rem" onchange="_iaCenarios[${i}].direcao=this.value">
+        <option value="alta"   ${c.direcao==='alta'   ?'selected':''}>▲ Alta</option>
+        <option value="neutro" ${c.direcao==='neutro' ?'selected':''}>■ Neutro</option>
+        <option value="baixa"  ${c.direcao==='baixa'  ?'selected':''}>▼ Baixa</option>
+      </select>
+      <button class="btn-icon" onclick="_iaCenarios.splice(${i},1);iaRenderCenarios()" title="Remover">✕</button>
+    </div>
+  `).join('');
+}
+
+function iaSalvarAnalise() {
+  const ticker = (document.getElementById('ia-ticker').value || '').trim().toUpperCase();
+  const titulo = (document.getElementById('ia-titulo-analise').value || '').trim();
+  if (!ticker) { toast('Informe o ticker.', false); return; }
+  if (!titulo) { toast('Informe o título da análise.', false); return; }
+
+  const agora = Date.now();
+  const obj = {
+    ticker,
+    tipo:      document.getElementById('ia-tipo').value,
+    precoRef:  parseFloat(document.getElementById('ia-preco-ref').value) || 0,
+    data:      document.getElementById('ia-data').value,
+    titulo,
+    resumo:    document.getElementById('ia-resumo').value.trim(),
+    cenarios:  _iaCenarios.filter(c => c.nome),
+    tecnica:   document.getElementById('ia-tecnica').value.trim(),
+    revisoes:  document.getElementById('ia-revisoes').value.trim(),
+    tags:      document.getElementById('ia-tags').value.split(',').map(t => t.trim().toLowerCase()).filter(Boolean),
+    atualizadoEm: agora,
+  };
+
+  if (_iaEditandoId) {
+    const idx = iaAnalises.findIndex(x => x.id === _iaEditandoId);
+    if (idx >= 0) iaAnalises[idx] = { ...iaAnalises[idx], ...obj };
+    toast('Análise atualizada!');
+  } else {
+    iaAnalises.unshift({ id: uid(), criadoEm: agora, ...obj });
+    toast('Análise salva!');
+  }
+
+  iaSalvar();
+  iaFecharModal();
+  iaRender();
+}
+
+function iaRemover(id) {
+  const a = iaAnalises.find(x => x.id === id);
+  if (!confirm(`Remover análise "${a?.ticker || ''} — ${a?.titulo || ''}"?`)) return;
+  iaAnalises = iaAnalises.filter(x => x.id !== id);
+  iaSalvar();
+  iaRender();
+}
+</script>
+
 <script>
 function aprSubTab(tab) {
   document.getElementById('aprend-acoes').style.display = tab === 'acoes' ? 'block' : 'none';
@@ -15051,7 +15912,7 @@ function aprSubTab(tab) {
     btn.style.borderColor  = on ? 'var(--border2)': 'var(--border)';
     btn.style.color        = on ? 'var(--hi)'     : 'var(--dim)';
   });
-  if (tab === 'pdfs') pdfRender();
+  if (tab === 'pdfs') { pdfRender(); pdfSincronizarDaNuvem(); }
 }
 </script>
 
@@ -15651,7 +16512,7 @@ function calGetCustom() {
 }
 function calSaveCustom(arr) {
   localStorage.setItem(CAL_KEY, JSON.stringify(arr));
-  if(typeof fbWrite==='function') try{fbWrite(CAL_KEY,arr);}catch(e){}
+  if(typeof fbWrite==='function') try{_safeFbWrite(CAL_KEY,arr);}catch(e){}
 }
 
 function calHoje() {
@@ -17749,27 +18610,365 @@ function rdSwitchTab(tab) {
 
   const tDiario = document.getElementById('rd-tab-diario');
   const tMensal = document.getElementById('rd-tab-mensal');
+  const tSetor  = document.getElementById('rd-tab-setor');
   const pDiario = document.getElementById('rd-painel-diario');
   const pMensal = document.getElementById('rd-painel-mensal');
+  const pSetor  = document.getElementById('rd-painel-setor');
   const btnExp  = document.getElementById('btn-rd-export');
 
-  const activeStyle   = 'background:#00e5a018;color:var(--green);border:1px solid #00e5a040;';
-  const inactiveStyle = 'background:transparent;color:var(--dim);border:1px solid transparent;';
+  const ON  = 'background:#00e5a018;color:var(--green);border:1px solid #00e5a040;';
+  const OFF = 'background:transparent;color:var(--dim);border:1px solid transparent;';
+
+  // reset todos
+  if (tDiario) tDiario.style.cssText = tDiario.style.cssText.replace(/background:[^;]+;color:[^;]+;border:[^;]+;/g,'') + OFF;
+  if (tMensal) tMensal.style.cssText = tMensal.style.cssText.replace(/background:[^;]+;color:[^;]+;border:[^;]+;/g,'') + OFF;
+  if (tSetor)  tSetor.style.cssText  = tSetor.style.cssText.replace(/background:[^;]+;color:[^;]+;border:[^;]+;/g,'')  + OFF;
+  if (pDiario) pDiario.style.display = 'none';
+  if (pMensal) pMensal.style.display = 'none';
+  if (pSetor)  pSetor.style.display  = 'none';
 
   if (tab === 'diario') {
-    tDiario.style.cssText += activeStyle;
-    tMensal.style.cssText += inactiveStyle;
-    pDiario.style.display = 'block';
-    pMensal.style.display = 'none';
-    if (btnExp) btnExp.style.display = '';
-  } else {
-    tDiario.style.cssText += inactiveStyle;
-    tMensal.style.cssText += activeStyle;
-    pDiario.style.display = 'none';
-    pMensal.style.display = 'block';
-    if (btnExp) btnExp.style.display = 'none';
+    if (tDiario) tDiario.style.cssText += ON;
+    if (pDiario) pDiario.style.display = 'block';
+    if (btnExp)  btnExp.style.display  = '';
+  } else if (tab === 'mensal') {
+    if (tMensal) tMensal.style.cssText += ON;
+    if (pMensal) pMensal.style.display = 'block';
+    if (btnExp)  btnExp.style.display  = 'none';
     rdPopularMesSelect();
+  } else if (tab === 'setor') {
+    if (tSetor) tSetor.style.cssText += ON;
+    if (pSetor) pSetor.style.display = 'block';
+    if (btnExp) btnExp.style.display = 'none';
+    rdSetorRender();
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  SUB-ABA: DESEMPENHO POR SETOR
+//  Cruza registros RendDiario com carteiras em memória agrupando por setor.
+//  FIIs → f.tipo  |  Ações → a.setor  |  ETFs → "ETF"
+// ══════════════════════════════════════════════════════════════════════════════
+
+const _RD_SETOR_PAL = [
+  '#38bdf8','#00e5a0','#f87171','#fbbf24','#fb923c',
+  '#a78bfa','#6366f1','#34d399','#f472b6','#60a5fa',
+  '#4ade80','#facc15','#e879f9','#22d3ee','#fb7185','#a3e635'
+];
+
+function _rdSetorDeTicker(ticker) {
+  if (typeof carteira !== 'undefined') {
+    const f = carteira.find(x => x.ticker === ticker);
+    if (f) return {
+      setor:    f.tipo || 'FII',
+      classe:   'FII',
+      pMedio:   f.pMedio || f.preco || 0,
+      pAtual:   f.preco  || 0,
+      qty:      f.cotas  || 0
+    };
+  }
+  if (typeof carteiraAcoes !== 'undefined') {
+    const a = carteiraAcoes.find(x => x.ticker === ticker);
+    if (a) return {
+      setor:    a.setor  || 'Outro',
+      classe:   'Ação',
+      pMedio:   a.pMedio || 0,
+      pAtual:   a.pAtual || 0,
+      qty:      a.qtd    || 0
+    };
+  }
+  if (typeof carteiraEtfs !== 'undefined') {
+    const e = carteiraEtfs.find(x => x.ticker === ticker);
+    if (e) return {
+      setor:    e.setor  || 'ETF',
+      classe:   'ETF',
+      pMedio:   e.pMedio || 0,
+      pAtual:   e.pAtual || 0,
+      qty:      e.qtd    || 0
+    };
+  }
+  return null;
+}
+
+function _rdSetorDias() {
+  const all  = rdGetAll();
+  if (!all.length) return [];
+  const opt  = document.getElementById('rd-setor-periodo')?.value || 'ultimo';
+  if (opt === 'ultimo') return [all[all.length - 1]];
+  if (opt === 'todos')  return all;
+  if (opt === 'mes') {
+    const m = new Date().toISOString().slice(0, 7);
+    return all.filter(r => r.date.startsWith(m));
+  }
+  const n = parseInt(opt);
+  const lim = new Date(); lim.setDate(lim.getDate() - n);
+  return all.filter(r => new Date(r.date) >= lim);
+}
+
+function rdSetorRender() {
+  const dias     = _rdSetorDias();
+  const vazioEl  = document.getElementById('rd-setor-vazio');
+  const kpisEl   = document.getElementById('rd-setor-kpis');
+  const barrasEl = document.getElementById('rd-setor-barras');
+  const compEl   = document.getElementById('rd-setor-composicao');
+  const rentabEl = document.getElementById('rd-setor-rentab');
+  const tblEl    = document.getElementById('rd-setor-tbl');
+  const cardsEl  = document.getElementById('rd-setor-cards');
+  const infoEl   = document.getElementById('rd-setor-info');
+  if (!kpisEl) return;
+
+  if (!dias.length) {
+    if (vazioEl) vazioEl.style.display = 'block';
+    [kpisEl,barrasEl,compEl,rentabEl,tblEl,cardsEl].forEach(e => { if(e) e.innerHTML=''; });
+    return;
+  }
+  if (vazioEl) vazioEl.style.display = 'none';
+
+  // ── info do período
+  if (infoEl) {
+    const dts = dias.map(d => d.date).sort();
+    infoEl.textContent = dias.length === 1
+      ? rdFormatDate(dts[0])
+      : `${rdFormatDate(dts[0])} → ${rdFormatDate(dts[dts.length-1])} · ${dias.length} dia${dias.length>1?'s':''}`;
+  }
+
+  // ── agrupa por setor ─────────────────────────────────────────────────────
+  // Para cada ticker:
+  //   investido  = qty × pMedio  (da carteira atual — preço médio real de entrada)
+  //   saldoAtual = qty × pAtual  (da carteira atual — valor de mercado atual)
+  //   varAbs     = soma acumulada de todas as variações diárias do período
+  //   saldoInicio= saldoAntes do PRIMEIRO dia do período (base para var% do período)
+  const setorMap = {};
+  const filtroClasse = document.getElementById('rd-setor-classe')?.value || 'todos';
+
+  // Ordena dias do mais antigo ao mais recente
+  const diasOrdenados = [...dias].sort((a,b) => a.date.localeCompare(b.date));
+
+  diasOrdenados.forEach(dia => {
+    const todos = [
+      ...(dia.fiis  ||[]).map(x=>({...x,_cl:'FII'})),
+      ...(dia.acoes ||[]).map(x=>({...x,_cl:'Ação'})),
+      ...(dia.etfs  ||[]).map(x=>({...x,_cl:'ETF'})),
+    ];
+    todos.forEach(a => {
+      const info   = _rdSetorDeTicker(a.ticker);
+      const setor  = info ? info.setor  : (a._cl==='FII'?'FII':a._cl==='ETF'?'ETF':'Outro');
+      const classe = info ? info.classe : a._cl;
+      if (filtroClasse !== 'todos' && classe !== filtroClasse) return;
+      if (!setorMap[setor]) setorMap[setor] = { setor, classe, varAbs:0, tickers:{} };
+      const s = setorMap[setor];
+
+      // varAbs acumulado de todos os dias
+      s.varAbs += (a.varAbs || 0);
+
+      if (!s.tickers[a.ticker]) {
+        // Primeiro registro do ticker no período: guarda saldoInicio (antes da variação do 1º dia)
+        s.tickers[a.ticker] = { saldoInicio: a.saldoAntes || 0 };
+      }
+      // Sempre atualiza com dados da carteira atual (mais precisos que o snapshot)
+      if (info) {
+        s.tickers[a.ticker].investido   = info.qty * info.pMedio;  // custo real de entrada
+        s.tickers[a.ticker].saldoDepois = info.qty * info.pAtual;  // valor de mercado atual
+      } else {
+        s.tickers[a.ticker].investido   = (a.cotas ?? a.qtd ?? 1) * (a.pMedioBase || 0);
+        s.tickers[a.ticker].saldoDepois = a.saldoDepois || 0;
+      }
+    });
+  });
+
+  // consolida totais por setor
+  const setores = Object.values(setorMap).map(s => {
+    const tks = Object.values(s.tickers);
+    return {
+      ...s,
+      saldoDepois: tks.reduce((a,t)=>a+t.saldoDepois, 0),  // saldo no último dia
+      saldoAntes:  tks.reduce((a,t)=>a+t.saldoInicio, 0),  // saldo no início do período
+      investido:   tks.reduce((a,t)=>a+t.investido,   0),  // qty × preço médio de entrada
+      qtdAtivos:   Object.keys(s.tickers).length,
+      tickerList:  Object.keys(s.tickers).join(', ')
+    };
+  }).sort((a,b) => Math.abs(b.varAbs) - Math.abs(a.varAbs));
+
+  if (!setores.length) {
+    if (vazioEl) vazioEl.style.display = 'block';
+    return;
+  }
+
+  const totSaldo    = setores.reduce((s,x)=>s+x.saldoDepois,0);
+  const totVarAbs   = setores.reduce((s,x)=>s+x.varAbs,0);
+  const totInvest   = setores.reduce((s,x)=>s+x.investido,0);
+  const rentGeral   = totInvest>0 ? (totSaldo-totInvest)/totInvest*100 : 0;
+  const melhor      = [...setores].sort((a,b)=>b.varAbs-a.varAbs)[0];
+  const pior        = [...setores].sort((a,b)=>a.varAbs-b.varAbs)[0];
+
+  // ── KPIs ────────────────────────────────────────────────────────────────
+  const varSign = totVarAbs >= 0 ? '+' : '';
+  const varCor  = totVarAbs >= 0 ? 'var(--green)' : 'var(--red)';
+  kpisEl.innerHTML = [
+    { l:'SALDO ATUAL',       v:`R$ ${rdFmt(totSaldo)}`,                              c:'var(--hi)'     },
+    { l:'VARIAÇÃO PERÍODO',  v:`${varSign}R$ ${rdFmt(Math.abs(totVarAbs))}`,         c:varCor          },
+    { l:'MELHOR SETOR',      v:melhor.setor,                                          c:'var(--green)'  },
+    { l:'PIOR SETOR',        v:pior.setor,                                            c:'var(--red)'    },
+  ].map(k=>`
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:.65rem .8rem">
+      <div style="font-size:.46rem;color:var(--dim);letter-spacing:.08em;margin-bottom:.25rem">${k.l}</div>
+      <div class="num" style="font-size:.92rem;color:${k.c};font-weight:700;line-height:1.15">${k.v}</div>
+    </div>`).join('');
+
+  // ── Barras variação ──────────────────────────────────────────────────────
+  const maxAbs = Math.max(...setores.map(s=>Math.abs(s.varAbs)),1);
+  barrasEl.innerHTML = setores.map(s => {
+    const cor  = s.varAbs>=0?'var(--green)':'var(--red)';
+    const pct  = Math.abs(s.varAbs)/maxAbs*100;
+    const sign = s.varAbs>=0?'+':'';
+    const varP = s.saldoAntes>0?(s.varAbs/s.saldoAntes*100).toFixed(2):'0.00';
+    const cCl  = s.classe==='FII'?'#818cf8':s.classe==='ETF'?'#38bdf8':'#fb923c';
+    return `<div style="display:flex;align-items:center;gap:.5rem">
+      <span style="width:76px;font-size:.6rem;font-weight:700;color:var(--hi);flex-shrink:0;
+                   overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${s.setor}">${s.setor}</span>
+      <span style="width:30px;font-size:.44rem;color:${cCl};flex-shrink:0;text-align:center;
+                   background:${cCl}18;border-radius:3px;padding:.05rem .2rem">${s.classe}</span>
+      <div style="flex:1;background:var(--bg3);border-radius:4px;height:10px;overflow:hidden">
+        <div style="height:100%;width:${pct.toFixed(1)}%;background:${cor}70;border-radius:4px"></div>
+      </div>
+      <span style="width:80px;text-align:right;font-size:.6rem;color:${cor};font-weight:700;flex-shrink:0">${sign}R$ ${rdFmt(Math.abs(s.varAbs))}</span>
+      <span style="width:46px;text-align:right;font-size:.56rem;color:${cor};flex-shrink:0">${sign}${varP}%</span>
+    </div>`;
+  }).join('');
+
+  // ── Composição do portfólio ──────────────────────────────────────────────
+  const bySaldo = [...setores].sort((a,b)=>b.saldoDepois-a.saldoDepois);
+  const maxS    = bySaldo[0]?.saldoDepois||1;
+  compEl.innerHTML = bySaldo.map((s,i) => {
+    const cor  = _RD_SETOR_PAL[i%_RD_SETOR_PAL.length];
+    const pct  = totSaldo>0?s.saldoDepois/totSaldo*100:0;
+    return `<div>
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.18rem">
+        <div style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0"></div>
+        <span style="flex:1;font-size:.6rem;color:var(--hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.setor}</span>
+        <span style="font-size:.6rem;color:${cor};font-weight:700">${pct.toFixed(1)}%</span>
+      </div>
+      <div style="background:var(--bg3);border-radius:4px;height:7px;overflow:hidden;margin-bottom:.12rem">
+        <div style="height:100%;width:${(s.saldoDepois/maxS*100).toFixed(1)}%;background:${cor}70;border-radius:4px"></div>
+      </div>
+      <div style="font-size:.5rem;color:var(--dim);text-align:right">R$ ${rdFmt(s.saldoDepois)} · ${s.qtdAtivos} ativo${s.qtdAtivos>1?'s':''}</div>
+    </div>`;
+  }).join('');
+
+  // ── Rentabilidade por setor ──────────────────────────────────────────────
+  const byRent  = [...setores].sort((a,b)=>{
+    const ra = a.investido>0?(a.saldoDepois-a.investido)/a.investido*100:0;
+    const rb = b.investido>0?(b.saldoDepois-b.investido)/b.investido*100:0;
+    return rb-ra;
+  });
+  const maxR = Math.max(...byRent.map(s=>s.investido>0?Math.abs((s.saldoDepois-s.investido)/s.investido*100):0),1);
+  rentabEl.innerHTML = byRent.map(s => {
+    const rent = s.investido>0?(s.saldoDepois-s.investido)/s.investido*100:null;
+    const cor  = rent===null?'var(--dim)':rent>=0?'var(--green)':'var(--red)';
+    const barW = rent===null?0:Math.abs(rent)/maxR*100;
+    const lbl  = rent===null?'—':`${rent>=0?'+':''}${rent.toFixed(2)}%`;
+    return `<div>
+      <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.18rem">
+        <span style="flex:1;font-size:.6rem;color:var(--hi);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.setor}</span>
+        <span style="font-size:.6rem;color:${cor};font-weight:700">${lbl}</span>
+      </div>
+      <div style="background:var(--bg3);border-radius:4px;height:7px;overflow:hidden">
+        <div style="height:100%;width:${barW.toFixed(1)}%;background:${cor}70;border-radius:4px"></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── Tabela consolidada ───────────────────────────────────────────────────
+  tblEl.innerHTML = `
+    <thead><tr>
+      <th>SETOR</th><th>CLASSE</th><th>ATIVOS</th>
+      <th>SALDO ATUAL</th><th>VARIAÇÃO (R$)</th><th>VAR. (%)</th>
+      <th>INVESTIDO</th><th>RENTAB. TOTAL</th><th>% CARTEIRA</th>
+    </tr></thead>
+    <tbody>${bySaldo.map((s,i)=>{
+      const cor   = s.varAbs>=0?'var(--green)':'var(--red)';
+      const sign  = s.varAbs>=0?'+':'';
+      const varP  = s.saldoAntes>0?(s.varAbs/s.saldoAntes*100).toFixed(2):'0.00';
+      const rent  = s.investido>0?((s.saldoDepois-s.investido)/s.investido*100):null;
+      const rCor  = rent===null?'var(--dim)':rent>=0?'var(--green)':'var(--red)';
+      const rLbl  = rent===null?'—':`${rent>=0?'+':''}${rent.toFixed(2)}%`;
+      const pctC  = totSaldo>0?(s.saldoDepois/totSaldo*100).toFixed(1):'0.0';
+      const dot   = _RD_SETOR_PAL[i%_RD_SETOR_PAL.length];
+      const cCl   = s.classe==='FII'?'#38bdf8':s.classe==='ETF'?'#34d399':'#fb923c';
+      return `<tr>
+        <td><div style="display:flex;align-items:center;gap:.4rem">
+          <div style="width:8px;height:8px;border-radius:50%;background:${dot};flex-shrink:0"></div>
+          <span style="font-weight:700;color:var(--hi)">${s.setor}</span>
+        </div></td>
+        <td><span style="font-size:.54rem;padding:1px 6px;border-radius:3px;background:${cCl}15;color:${cCl}">${s.classe}</span></td>
+        <td class="num">${s.qtdAtivos}</td>
+        <td class="num" style="color:var(--hi);font-weight:600">R$ ${rdFmt(s.saldoDepois)}</td>
+        <td class="num" style="color:${cor}">${sign}R$ ${rdFmt(Math.abs(s.varAbs))}</td>
+        <td class="num" style="color:${cor};font-weight:700">${sign}${varP}%</td>
+        <td class="num" style="color:var(--dim)">R$ ${rdFmt(s.investido)}</td>
+        <td class="num" style="color:${rCor}">${rLbl}</td>
+        <td class="num" style="color:var(--dim)">${pctC}%</td>
+      </tr>`;
+    }).join('')}</tbody>
+    <tfoot><tr style="border-top:2px solid var(--border2)">
+      <td colspan="3" style="font-size:.55rem;color:var(--dim);font-weight:700">TOTAL</td>
+      <td class="num" style="color:var(--hi);font-weight:700">R$ ${rdFmt(totSaldo)}</td>
+      <td class="num" style="color:${totVarAbs>=0?'var(--green)':'var(--red)'};font-weight:700">
+        ${totVarAbs>=0?'+':''}R$ ${rdFmt(Math.abs(totVarAbs))}</td>
+      <td></td>
+      <td class="num" style="color:var(--dim)">R$ ${rdFmt(totInvest)}</td>
+      <td class="num" style="color:${rentGeral>=0?'var(--green)':'var(--red)'};font-weight:700">
+        ${rentGeral>=0?'+':''}${rentGeral.toFixed(2)}%</td>
+      <td class="num" style="color:var(--dim)">100%</td>
+    </tr></tfoot>`;
+
+  // ── Cards por setor ──────────────────────────────────────────────────────
+  cardsEl.innerHTML = bySaldo.map((s,i)=>{
+    const dot   = _RD_SETOR_PAL[i%_RD_SETOR_PAL.length];
+    const cor   = s.varAbs>=0?'var(--green)':'var(--red)';
+    const sign  = s.varAbs>=0?'+':'';
+    const rent  = s.investido>0?((s.saldoDepois-s.investido)/s.investido*100):null;
+    const rCor  = rent===null?'var(--dim)':rent>=0?'var(--green)':'var(--red)';
+    const rLbl  = rent===null?'—':`${rent>=0?'+':''}${rent.toFixed(2)}%`;
+    const pctC  = totSaldo>0?(s.saldoDepois/totSaldo*100).toFixed(1):'0.0';
+    const cCl   = s.classe==='FII'?'#38bdf8':s.classe==='ETF'?'#34d399':'#fb923c';
+    return `<div class="card" style="margin-bottom:.7rem">
+      <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.6rem">
+        <div style="width:12px;height:12px;border-radius:50%;background:${dot};flex-shrink:0"></div>
+        <span style="font-size:1rem;font-weight:700;color:var(--hi);flex:1">${s.setor}</span>
+        <span style="font-size:.54rem;padding:2px 8px;border-radius:4px;background:${cCl}15;color:${cCl}">${s.classe}</span>
+        <span style="font-size:.54rem;color:var(--dim)">${s.qtdAtivos} ativo${s.qtdAtivos>1?'s':''}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:.5rem;margin-bottom:.5rem">
+        <div style="background:var(--bg3);border-radius:8px;padding:.5rem .7rem;border:1px solid var(--border)">
+          <div style="font-size:.44rem;color:var(--dim);margin-bottom:.12rem">SALDO ATUAL</div>
+          <div class="num" style="font-size:1rem;color:var(--hi)">R$ ${rdFmt(s.saldoDepois)}</div>
+        </div>
+        <div style="background:var(--bg3);border-radius:8px;padding:.5rem .7rem;border:1px solid ${s.varAbs>=0?'#00e5a030':'#f8717130'}">
+          <div style="font-size:.44rem;color:var(--dim);margin-bottom:.12rem">VARIAÇÃO PERÍODO</div>
+          <div class="num" style="font-size:1rem;color:${cor}">${sign}R$ ${rdFmt(Math.abs(s.varAbs))}</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.22rem;font-size:.6rem">
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--dim)">% da carteira</span>
+          <span style="color:${dot};font-weight:700">${pctC}%</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--dim)">Rentabilidade total</span>
+          <span style="color:${rCor};font-weight:700">${rLbl}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--dim)">Investido</span>
+          <span style="color:var(--text)">R$ ${rdFmt(s.investido)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <span style="color:var(--dim)">Ativos</span>
+          <span style="color:var(--text);text-align:right;max-width:60%;word-break:break-all">${s.tickerList}</span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ─── Popula o <select> com os meses disponíveis ───────────────────────────
@@ -18624,35 +19823,173 @@ window.addEventListener('resize', () => {
 //  PDFs (base64) são enviados para o Firebase Storage
 //  Metadados (incluindo storageUrl) sincronizados via Firebase Realtime DB
 //  Fallback: localStorage quando Firebase Storage não estiver disponível
+
+// ── Acesso seguro ao Firebase Storage (variável pode estar em escopo diferente)
+function getFbStorage() {
+  // 1. Via window._fbStorage (exposto por defineProperty no head)
+  try { if (window._fbStorage) return window._fbStorage; } catch(e) {}
+  // 2. Recria a partir do app Firebase já inicializado (singleton)
+  try {
+    if (window.firebase && firebase.apps && firebase.apps.length > 0 && firebase.storage) {
+      const s = firebase.storage(firebase.apps[0]);
+      try { window._fbStorage = s; } catch(e2) {}
+      return s;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function getFbReady() {
+  try { if (typeof _fbReady !== 'undefined') return _fbReady; } catch(e) {}
+  return window._fbReady || false;
+}
+}
 // ════════════════════════════════════════════════════════════════════════════
 
-let pdfBiblioteca = JSON.parse(localStorage.getItem('pdf-biblioteca') || '[]');
+// Inicializa pdfBiblioteca: prefere pdf-meta (sincronizado com Firebase) sobre pdf-biblioteca (local)
+let pdfBiblioteca = (function() {
+  try {
+    const meta  = stGet('pdf-meta');
+    const local = JSON.parse(localStorage.getItem('pdf-biblioteca') || '[]');
+    if (Array.isArray(meta) && meta.length > 0) {
+      const localMap = {};
+      local.forEach(p => { if (p.id) localMap[p.id] = p; });
+      return meta.map(m => ({ ...m, base64: (localMap[m.id] || {}).base64 || null }));
+    }
+    return local;
+  } catch(e) { return []; }
+})();
+
+// ── Busca metadados dos PDFs diretamente do Firebase Realtime DB ──────────
+// Chamada ao entrar na aba Aprendizagem para garantir dados atualizados
+async function pdfSincronizarDaNuvem() {
+  try {
+    const db = window.firebase && firebase.apps && firebase.apps.length > 0
+      ? firebase.database(firebase.apps[0])
+      : null;
+    if (!db) return;
+
+    const chave = 'pdf-meta'.replace(/[.$#[\]\/]/g, '_');
+    const snap  = await db.ref('dados/' + chave).once('value');
+    const raw   = snap.val();
+    if (!raw) return;
+
+    // O Firebase salva o array como JSON string (via stSet)
+    const meta = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    if (!Array.isArray(meta) || meta.length === 0) return;
+
+    // Mescla com dados locais (preserva base64 se não tiver storageUrl)
+    const local = JSON.parse(localStorage.getItem('pdf-biblioteca') || '[]');
+    const localMap = {};
+    local.forEach(p => { if (p.id) localMap[p.id] = p; });
+
+    pdfBiblioteca = meta.map(m => ({
+      ...m,
+      base64: m.storageUrl ? null : ((localMap[m.id] || {}).base64 || null)
+    }));
+
+    // Atualiza localStorage com os dados da nuvem
+    try {
+      localStorage.setItem('pdf-meta', JSON.stringify(meta));
+      localStorage.setItem('pdf-biblioteca', JSON.stringify(
+        pdfBiblioteca.map(p => p.storageUrl ? { ...p, base64: null } : p)
+      ));
+    } catch(e) {}
+
+    if (typeof pdfRender === 'function') pdfRender();
+  } catch(e) {
+    console.warn('pdfSincronizarDaNuvem erro:', e);
+  }
+}
 let _pdfEditandoId = null;
 let _pdfBase64Atual = null;
 let _pdfNomeAtual   = null;
 
 // ── Upload para Firebase Storage ──────────────────────────────────────────
-async function pdfUploadStorage(id, base64DataUrl, nomeArquivo) {
-  if (!_fbStorage) return null;
+// ── Diagnóstico de Firebase Storage ───────────────────────────────────────
+async function pdfDiagnostico() {
+  const linhas = [];
+  // 1. Firebase Realtime DB
+  linhas.push(getFbReady() ? '✅ Firebase Realtime DB: conectado' : '❌ Firebase Realtime DB: desconectado');
+  // 2. Firebase Storage
+  if (getFbStorage()) {
+    linhas.push('✅ Firebase Storage SDK: carregado');
+    // Tenta fazer upload de um arquivo mínimo de teste
+    try {
+      const testBlob = new Blob(['ok'], { type: 'text/plain' });
+      const testRef  = getFbStorage().ref('pdfs/_diag_test.txt');
+      await testRef.put(testBlob);
+      await testRef.delete();
+      linhas.push('✅ Firebase Storage: upload e delete OK — PDFs devem funcionar!');
+    } catch(e) {
+      const cod = e.code || '';
+      if (cod === 'storage/unauthorized')
+        linhas.push('❌ Firebase Storage: SEM PERMISSÃO.\n   → Acesse console.firebase.google.com → Storage → Rules\n   → Mude para: allow read, write: if true;');
+      else
+        linhas.push('❌ Firebase Storage: ' + (e.message || cod));
+    }
+  } else {
+    linhas.push('❌ Firebase Storage SDK: NÃO carregou.\n   → Verifique sua conexão com a internet.\n   → O SDK é carregado de gstatic.com — pode estar bloqueado.');
+  }
+  // 3. localStorage
   try {
-    const resp = await fetch(base64DataUrl);
-    const blob = await resp.blob();
-    const ref  = _fbStorage.ref('pdfs/' + id + '_' + (nomeArquivo || id + '.pdf'));
+    const usado = JSON.stringify(localStorage).length;
+    const pct   = ((usado / 5242880) * 100).toFixed(1);
+    linhas.push(`ℹ️ localStorage: ${(usado/1024).toFixed(0)} KB usados de ~5120 KB (${pct}%)`);
+    if (usado > 4000000) linhas.push('⚠️ localStorage quase cheio — remova PDFs antigos sem link na nuvem.');
+  } catch(e) { linhas.push('❌ localStorage: erro ao ler.'); }
+  // 4. Modo de abertura do arquivo
+  if (location.protocol === 'file:')
+    linhas.push('⚠️ App aberto via file:// — Firebase Storage funciona, mas fetch() em base64 pode falhar em alguns navegadores. Já corrigido na versão atual.');
+  else
+    linhas.push('✅ Protocolo: ' + location.protocol + ' — sem restrições de CORS');
+
+  alert('── DIAGNÓSTICO FIREBASE STORAGE ──\n\n' + linhas.join('\n'));
+}
+
+async function pdfUploadStorage(id, base64DataUrl, nomeArquivo) {
+  if (!getFbStorage()) {
+    console.warn('Firebase Storage não inicializado — salvando apenas localmente.');
+    return null;
+  }
+  try {
+    // Converte base64 para Blob sem usar fetch() (evita erro de CORS em file://)
+    const partes   = base64DataUrl.split(',');
+    const mimeType = partes[0].match(/:(.*?);/)[1];
+    const binStr   = atob(partes[1]);
+    const bytes    = new Uint8Array(binStr.length);
+    for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
+    const blob = new Blob([bytes], { type: mimeType });
+
+    const nomeSeguro = (nomeArquivo || id + '.pdf').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const ref = getFbStorage().ref('pdfs/' + id + '_' + nomeSeguro);
     await ref.put(blob, { contentType: 'application/pdf' });
     const url = await ref.getDownloadURL();
     console.log('Firebase Storage upload OK:', url);
     return url;
   } catch(e) {
-    console.error('Erro no upload Firebase Storage:', e.code, e.message, e);
+    // Mensagens de erro específicas para facilitar diagnóstico
+    const cod = e.code || '';
+    let motivo = e.message || 'Erro desconhecido';
+    if (cod === 'storage/unauthorized')
+      motivo = 'Sem permissão no Firebase Storage. Verifique as regras de segurança no console.firebase.google.com → Storage → Rules.';
+    else if (cod === 'storage/canceled')
+      motivo = 'Upload cancelado.';
+    else if (cod === 'storage/quota-exceeded')
+      motivo = 'Cota do Firebase Storage esgotada.';
+    else if (cod === 'storage/retry-limit-exceeded' || motivo.includes('network'))
+      motivo = 'Sem conexão com a internet ou Firebase indisponível.';
+    console.error('Erro no upload Firebase Storage:', cod, motivo, e);
+    toast('⚠️ Nuvem: ' + motivo + ' — PDF salvo localmente.', false);
     return null;
   }
 }
 
 // ── Remover arquivo do Firebase Storage ───────────────────────────────────
 async function pdfRemoverStorage(storageUrl) {
-  if (!_fbStorage || !storageUrl) return;
+  if (!getFbStorage() || !storageUrl) return;
   try {
-    const ref = _fbStorage.refFromURL(storageUrl);
+    const ref = getFbStorage().refFromURL(storageUrl);
     await ref.delete();
   } catch(e) {
     console.warn('Erro ao remover PDF do Firebase Storage:', e);
@@ -18664,12 +20001,20 @@ function pdfSalvarStorage() {
   // Metadados (sem base64) vão para Firebase Realtime DB
   const meta = pdfBiblioteca.map(({ base64, ...rest }) => rest);
   stSet('pdf-meta', meta);
-  // Salva localmente sem base64 se já tiver storageUrl (evita duplicar dado grande)
+  // Salva localmente: sem base64 se já tiver storageUrl (evita dado enorme no localStorage)
   const paraSalvar = pdfBiblioteca.map(p => p.storageUrl ? { ...p, base64: null } : p);
-  try { localStorage.setItem('pdf-biblioteca', JSON.stringify(paraSalvar)); }
-  catch(e) {
+  try {
+    localStorage.setItem('pdf-biblioteca', JSON.stringify(paraSalvar));
+  } catch(e) {
+    // localStorage cheio — tenta salvar só os que têm storageUrl (sem base64)
     console.warn('localStorage cheio ao salvar PDFs:', e);
-    toast('Atenção: armazenamento quase cheio. Alguns PDFs antigos podem ter sido removidos.', false);
+    try {
+      const semBase64 = paraSalvar.map(p => ({ ...p, base64: null }));
+      localStorage.setItem('pdf-biblioteca', JSON.stringify(semBase64));
+      toast('⚠️ Armazenamento local cheio. PDFs sem link na nuvem não poderão ser exibidos offline.', false);
+    } catch(e2) {
+      toast('⚠️ Armazenamento local cheio. Limpe o cache do navegador ou remova PDFs antigos.', false);
+    }
   }
 }
 
@@ -18780,7 +20125,7 @@ async function pdfSalvar() {
       const idx = pdfBiblioteca.findIndex(x => x.id === _pdfEditandoId);
       if (idx >= 0) {
         let storageUrl = pdfBiblioteca[idx].storageUrl || null;
-        if (_pdfBase64Atual && _fbStorage) {
+        if (_pdfBase64Atual && getFbStorage()) {
           toast('Enviando PDF para a nuvem...', true);
           const novaUrl = await pdfUploadStorage(_pdfEditandoId, _pdfBase64Atual, _pdfNomeAtual);
           if (novaUrl) {
@@ -18804,7 +20149,7 @@ async function pdfSalvar() {
     } else {
       const novoId = uid();
       let storageUrl = null;
-      if (_fbStorage && _pdfBase64Atual) {
+      if (getFbStorage() && _pdfBase64Atual) {
         toast('Enviando PDF para a nuvem...', true);
         storageUrl = await pdfUploadStorage(novoId, _pdfBase64Atual, _pdfNomeAtual);
         if (!storageUrl) toast('Nuvem indisponível — PDF salvo localmente.', true);
@@ -21307,7 +22652,7 @@ function hcSaveAll(arr) {
   if (!Array.isArray(arr)) arr = [];
   localStorage.setItem('hist-compras', JSON.stringify(arr));
   if (typeof fbWrite === 'function') {
-    try { fbWrite('hist-compras', arr); } catch(e) {}
+    try { _safeFbWrite('hist-compras', arr); } catch(e) {}
   }
 }
 
@@ -21638,7 +22983,7 @@ function hvSaveAll(arr) {
   const json = JSON.stringify(arr);
   localStorage.setItem('hist-vendas', json);
   if (typeof fbWrite === 'function') {
-    try { fbWrite('hist-vendas', arr); } catch(e) {}
+    try { _safeFbWrite('hist-vendas', arr); } catch(e) {}
   }
 }
 
@@ -27953,11 +29298,18 @@ const RECDY_CARTEIRA_SEED = [
 
 // ── Sincroniza RecDY forçado (botão) ─────────────────────────────────────
 function recDyResetFromCarteira() {
-  if (!confirm('Sobrescrever lista com dados atuais da carteira?\n\nCustomizações serão perdidas.')) return;
-  recDySave([]);
-  recDyAutoPopulate();
+  const opcao = confirm(
+    '🔄 SINCRONIZAR REC. DY COM A CARTEIRA\n\n' +
+    '• OK   → Sincronização inteligente\n' +
+    '         Atualiza qtd, cotação e DY dos ativos existentes.\n' +
+    '         Mantém frequência e meses customizados.\n\n' +
+    '• Cancelar → Operação cancelada.\n\n' +
+    '(Para reset completo, use o botão "Reset total" no menu de configurações.)'
+  );
+  if (!opcao) return;
+  recDySyncFromCarteira();
   recDyRender();
-  if (typeof toast === 'function') toast('Calendário sincronizado!');
+  if (typeof toast === 'function') toast('✅ Rec. DY sincronizado com a carteira!');
 }
 
 // ── Auto-popula RecDY mesclando seed com qtds reais da carteira ──────────
@@ -27988,6 +29340,98 @@ function recDyAutoPopulate() {
   recDySave(seed);
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+//  SYNC REC.DY ← CARTEIRA  (automático após qualquer aporte ou edição)
+//  Atualiza qtd, cotação e DY de cada ativo já cadastrado no Rec.DY
+//  com os valores atuais das carteiras (FII, Ações, ETFs).
+//  Novos ativos adicionados via aporte são inseridos automaticamente.
+//  Ativos removidos da carteira NÃO são apagados do Rec.DY (mantém histórico).
+// ══════════════════════════════════════════════════════════════════════════
+function recDySyncFromCarteira() {
+  const ativos = recDyLoad();
+  let changed = false;
+
+  // ── helper: calcula DY mensal médio de uma ação baseado em rendimento/cotação ──
+  function dyMensalAcao(rendimento, cotacao) {
+    if (!cotacao) return rendimento;
+    return +(rendimento).toFixed(4);
+  }
+
+  // ── 1. Atualiza FIIs existentes ────────────────────────────────────────
+  if (typeof carteira !== 'undefined') {
+    carteira.forEach(fii => {
+      const idx = ativos.findIndex(a => a.ticker === fii.ticker);
+      if (idx >= 0) {
+        const a = ativos[idx];
+        const novaQtd    = fii.cotas   || a.qtd;
+        const novaCot    = fii.preco   || a.cotacao;
+        const novaRend   = fii.dy      || a.rendimento;
+        if (a.qtd !== novaQtd || a.cotacao !== novaCot || a.rendimento !== novaRend) {
+          ativos[idx] = { ...a, qtd: novaQtd, cotacao: novaCot, rendimento: novaRend };
+          changed = true;
+        }
+      } else {
+        // FII novo (adicionado via aporte) — insere com padrão mensal
+        const seedRef = RECDY_CARTEIRA_SEED.find(s => s.ticker === fii.ticker);
+        ativos.push({
+          ticker:     fii.ticker,
+          tipo:       'FII',
+          subtipo:    fii.tipo || 'Tijolo',
+          qtd:        fii.cotas,
+          rendimento: fii.dy      || 0,
+          cotacao:    fii.preco   || 0,
+          freq:       seedRef?.freq  || 'mensal',
+          meses:      seedRef?.meses || [1,2,3,4,5,6,7,8,9,10,11,12]
+        });
+        changed = true;
+      }
+    });
+  }
+
+  // ── 2. Atualiza Ações existentes ───────────────────────────────────────
+  if (typeof carteiraAcoes !== 'undefined') {
+    carteiraAcoes.forEach(acao => {
+      const idx = ativos.findIndex(a => a.ticker === acao.ticker);
+      const novaQtd  = acao.qtd    || 0;
+      const novaCot  = acao.pAtual || acao.pMedio || 0;
+      // Rendimento de ação: usa divMes se disponível, senão mantém existente
+      if (idx >= 0) {
+        const a = ativos[idx];
+        const novaRend = (acao.divMes != null && acao.divMes > 0) ? acao.divMes : a.rendimento;
+        if (a.qtd !== novaQtd || a.cotacao !== novaCot || a.rendimento !== novaRend) {
+          ativos[idx] = { ...a, qtd: novaQtd, cotacao: novaCot, rendimento: novaRend };
+          changed = true;
+        }
+      } else {
+        // Ação nova (adicionada via aporte) — busca referência no seed
+        const seedRef = RECDY_CARTEIRA_SEED.find(s => s.ticker === acao.ticker);
+        ativos.push({
+          ticker:     acao.ticker,
+          tipo:       'Ação',
+          subtipo:    acao.setor || '',
+          qtd:        novaQtd,
+          rendimento: (acao.divMes != null && acao.divMes > 0) ? acao.divMes : (seedRef?.rendimento || 0),
+          cotacao:    novaCot,
+          freq:       seedRef?.freq  || 'trimestral',
+          meses:      seedRef?.meses || [3,6,9,12]
+        });
+        changed = true;
+      }
+    });
+  }
+
+  // ── 3. Salva e re-renderiza se algo mudou ─────────────────────────────
+  if (changed) {
+    recDySave(ativos);
+    // Re-renderiza Rec.DY se a aba estiver visível
+    const recPage = document.getElementById('page-recdy');
+    if (recPage && recPage.classList.contains('on')) recDyRender();
+    // Toast sutil de notificação
+    if (typeof showToast === 'function') showToast('📊 Rec. DY atualizado automaticamente');
+    else if (typeof toast === 'function')  toast('📊 Rec. DY atualizado automaticamente');
+  }
+}
+
 // ── Auto-init quando a aba é aberta ──────────────
 const _recDyOrigGoPage = typeof goPage === 'function' ? goPage : null;
 document.addEventListener('DOMContentLoaded', function() {
@@ -27996,7 +29440,10 @@ document.addEventListener('DOMContentLoaded', function() {
   if (typeof _orig === 'function') {
     window.goPage = function(p) {
       _orig(p);
-      if (p === 'recdy') recDyRender();
+      if (p === 'recdy') {
+        recDySyncFromCarteira(); // sincroniza antes de renderizar
+        recDyRender();
+      }
     };
   }
 });
