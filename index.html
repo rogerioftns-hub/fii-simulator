@@ -710,22 +710,20 @@
       _fbApp    = firebase.initializeApp(_fbConfig);
       _fbDb     = firebase.database(_fbApp);
       if (_fbDb) _fbReady = true;
-      console.log("[FB] ✅ Firebase inicializado com sucesso. _fbReady=" + _fbReady + ", projectId=" + _fbConfig.projectId);
+      console.log("[FB] ✅ Inicializado — projectId:", _fbConfig.projectId, "| _fbReady:", _fbReady);
       // Inicializa Firebase Storage se disponível
       try {
         if (firebase.storage) {
           _fbStorage = firebase.storage(_fbApp);
-          console.log("[FB] Firebase Storage inicializado.");
+          console.log("Firebase Storage inicializado.");
         }
       } catch(se) {
-        console.warn("[FB] Firebase Storage não disponível:", se);
+        console.warn("Firebase Storage não disponível:", se);
         _fbStorage = null;
       }
-    } else {
-      console.warn("[FB] Firebase não inicializado: firebase=" + !!firebase + ", _fbStubReady=" + window._fbStubReady);
     }
   } catch(e) {
-    console.error("[FB] ❌ Firebase init error:", e);
+    console.warn("Firebase init error (app funciona normalmente sem sync):", e);
     _fbReady = false;
   }
 
@@ -760,65 +758,53 @@
   }
 
   function fbWrite(k, v) {
-    if (!_fbReady || !_fbDb) { console.warn("[FB] fbWrite ignorado: _fbReady=" + _fbReady + ", _fbDb=" + !!_fbDb); return; }
+    if (!_fbReady || !_fbDb) return;
     try {
       const p = fbPath(k);
-      if (p) {
-        p.set(v === null ? null : JSON.stringify(v))
-          .then(function() { console.log("[FB] ✅ write OK:", k); })
-          .catch(function(e) {
-            console.error("[FB] ❌ write FAIL:", k, e.code, e.message);
-            if (e.code === 'PERMISSION_DENIED') {
-              console.error("[FB] 🔑 PERMISSÃO NEGADA! Verifique as Rules em console.firebase.google.com → Realtime Database → Rules");
-            }
-            _safeFbSyncBadge(false);
-          });
-      } else {
-        console.warn("[FB] fbPath retornou null para chave:", k);
-      }
-    } catch(e) { console.error("[FB] fbWrite sync error:", k, e); }
+      if (p) p.set(v === null ? null : JSON.stringify(v))
+        .then(function() { console.log("[FB] ✅ write OK:", k); })
+        .catch(function(e) {
+          console.error("[FB] ❌ write FAIL:", k, e.code, e.message);
+          if (typeof _safeFbSyncBadge === 'function') _safeFbSyncBadge(false);
+        });
+    } catch(e) { console.error("[FB] fbWrite error:", k, e); }
   }
 
   function fbDelete(k) {
     if (!_fbReady || !_fbDb) return;
     try {
       const p = fbPath(k);
-      if (p) {
-        p.remove()
-          .then(function() { console.log("[FB] ✅ delete OK:", k); })
-          .catch(function(e) { console.error("[FB] ❌ delete FAIL:", k, e.code, e.message); });
-      }
+      if (p) p.remove()
+        .catch(function(e) { console.error("[FB] delete FAIL:", k, e.code, e.message); });
     } catch(e) { console.error("[FB] fbDelete error:", k, e); }
   }
 
   function fbLoadAll(callback) {
-    if (!_fbReady || !_fbDb) { console.warn("[FB] fbLoadAll: Firebase não pronto, pulando sync"); callback(); return; }
+    if (!_fbReady || !_fbDb) { console.warn("[FB] fbLoadAll: Firebase não pronto"); callback(); return; }
     try {
       _fbDb.ref("dados").once("value").then(snap => {
         try {
           const data = snap.val() || {};
-          const loadedKeys = [];
           window.FB_SYNC_KEYS.forEach(k => {
             const fk = k.replace(/[.$#[\]\/]/g, "_");
             if (data[fk] !== undefined && data[fk] !== null) {
-              try { localStorage.setItem(k, data[fk]); loadedKeys.push(k); } catch(e2) { console.error("[FB] erro ao salvar no localStorage:", k, e2); }
+              try { localStorage.setItem(k, data[fk]); } catch(e2) {}
             }
           });
-          console.log("[FB] ✅ fbLoadAll OK — " + loadedKeys.length + " chave(s) carregadas:", loadedKeys);
+          console.log("[FB] ✅ fbLoadAll OK — " + Object.keys(data).length + " chave(s)");
           // Normaliza watchlist: Android usa "watchlist-tickers", web usa "fii-watchlist"
           if (data["watchlist-tickers"] && !data["fii-watchlist"]) {
             try { localStorage.setItem("fii-watchlist", data["watchlist-tickers"]); } catch(e2) {}
           }
-        } catch(e) { console.error("[FB] erro ao processar dados do Firebase:", e); }
+        } catch(e) { console.error("[FB] fbLoadAll parse error:", e); }
         callback();
       }).catch((e) => { console.error("[FB] ❌ fbLoadAll FAIL:", e.code, e.message); callback(); });
-    } catch(e) { console.error("[FB] fbLoadAll outer error:", e); callback(); }
+    } catch(e) { console.error("[FB] fbLoadAll error:", e); callback(); }
   }
 
   function fbStartListeners() {
-    if (!_fbReady || !_fbDb) { console.warn("[FB] Listeners não iniciados: Firebase não pronto"); return; }
+    if (!_fbReady || !_fbDb) return;
     try {
-      console.log("[FB] Iniciando listeners para " + window.FB_SYNC_KEYS.length + " chaves...");
       window.FB_SYNC_KEYS.forEach(k => {
         const fk = k.replace(/[.$#[\]\/]/g, "_");
         _fbDb.ref("dados/" + fk).on("value", snap => {
@@ -829,13 +815,13 @@
             const current = localStorage.getItem(k);
             if (current === raw) return;
             localStorage.setItem(k, raw);
-            console.log("[FB] 📥 listener update:", k);
             fbReRender(k);
           } catch(e) { console.error("[FB] listener error:", k, e); }
         }, function(err) {
-          console.error("[FB] ❌ listener DENIED:", k, err.code, err.message);
+          console.error("[FB] ❌ listener denied:", k, err.code);
         });
       });
+      console.log("[FB] ✅ Listeners ativos para " + window.FB_SYNC_KEYS.length + " chaves");
     } catch(e) { console.error("[FB] fbStartListeners error:", e); }
   }
 
@@ -957,7 +943,7 @@
           if (typeof iaRender === "function") iaRender();
         }
       }
-    }
+    } catch(e) { console.error("[FB] fbReRender error:", k, e); }
   }
 
   // ── Mostra indicador de sync na UI ─────────────────────────────────────
@@ -969,15 +955,7 @@
       badge.style.cssText = "position:fixed;bottom:14px;right:14px;z-index:9999;" +
         "background:#0d0f1e;border:1px solid #1c1f38;border-radius:20px;" +
         "padding:.3rem .7rem;font-size:.58rem;font-family:monospace;" +
-        "display:flex;align-items:center;gap:.4rem;transition:opacity .4s;cursor:pointer";
-      badge.title = "Clique para diagnosticar Firebase";
-      badge.onclick = function() {
-        if (typeof window.fbDiagnostico === 'function') {
-          window.fbDiagnostico().then(function(log) {
-            alert('── DIAGNÓSTICO FIREBASE ──\n\n' + log.join('\n'));
-          });
-        }
-      };
+        "display:flex;align-items:center;gap:.4rem;transition:opacity .4s";
       document.body.appendChild(badge);
     }
     if (ok) {
@@ -1005,71 +983,26 @@
     });
   } catch(e) { window._fbApp = _fbApp; }
 
-  // ── Diagnóstico Firebase embutido (chamar via console: fbDiagnostico()) ──
+  // ── Diagnóstico Firebase (chamar via console: fbDiagnostico()) ──
   window.fbDiagnostico = async function() {
-    const log = [];
-    const p = function(icon, msg) { console.log(icon + ' ' + msg); log.push(icon + ' ' + msg); };
-    p('🔍', 'DIAGNÓSTICO FIREBASE — ' + new Date().toLocaleString('pt-BR'));
-    p('🌐', 'Protocolo: ' + location.protocol + ' | URL: ' + location.href);
-    p('──', '────────────────────────────────────────');
-
-    // SDK
-    if (typeof firebase === 'undefined' || window._fbStubReady) {
-      p('❌', 'SDK Firebase: NÃO CARREGADO (stub ativo). Verifique rede/bloqueio de gstatic.com');
-      return log;
-    }
-    p('✅', 'SDK Firebase v' + (firebase.SDK_VERSION || '?'));
-    p(window._fbReady ? '✅' : '❌', '_fbReady: ' + window._fbReady);
-    p('──', '────────────────────────────────────────');
-
-    // Leitura
-    try {
-      var db = firebase.database(firebase.apps[0]);
-      var snap = await db.ref('dados').once('value');
-      var data = snap.val();
-      if (!data) { p('⚠️', 'LEITURA: banco vazio (null)'); }
-      else { p('✅', 'LEITURA OK: ' + Object.keys(data).length + ' chave(s) → ' + Object.keys(data).join(', ')); }
-    } catch(e) {
-      p('❌', 'LEITURA FALHOU: ' + (e.code || '') + ' ' + e.message);
-      if (e.code === 'PERMISSION_DENIED') p('🔑', '→ Rules bloqueando! Acesse console.firebase.google.com → Realtime Database → Rules');
-    }
-    p('──', '────────────────────────────────────────');
-
-    // Escrita
-    var tk = '__diag_' + Date.now();
-    try {
-      await db.ref('dados/' + tk).set(JSON.stringify({test:true}));
-      p('✅', 'ESCRITA OK');
-      await db.ref('dados/' + tk).remove();
-      p('✅', 'DELETE OK');
-    } catch(e) {
-      p('❌', 'ESCRITA FALHOU: ' + (e.code || '') + ' ' + e.message);
-      if (e.code === 'PERMISSION_DENIED') {
-        p('🔑', '╔══════════════════════════════════════════╗');
-        p('🔑', '║ PROBLEMA: PERMISSÃO DE ESCRITA NEGADA!  ║');
-        p('🔑', '╚══════════════════════════════════════════╝');
-        p('  ', '→ console.firebase.google.com → Realtime Database → Rules');
-        p('  ', '→ Mude para: { "rules": { ".read": true, ".write": true } }');
-      }
-    }
-    p('──', '────────────────────────────────────────');
-
-    // FB_SYNC_KEYS
-    p('📦', 'FB_SYNC_KEYS: ' + (window.FB_SYNC_KEYS || []).length + ' chaves');
-    var faltando = (window.FB_SYNC_KEYS || []).filter(function(k) { return !localStorage.getItem(k); });
-    if (faltando.length > 0) p('⚠️', 'Chaves sem dados locais: ' + faltando.join(', '));
-
-    // Storage
-    if (typeof firebase.storage === 'function') {
-      p('✅', 'Firebase Storage SDK: carregado');
-    } else {
-      p('⚠️', 'Firebase Storage SDK: NÃO carregado');
-    }
-    p('──', '────────────────────────────────────────');
-    p('📊', 'Diagnóstico concluído. ' + log.filter(function(l){return l.startsWith('❌');}).length + ' erro(s).');
+    var log = [], p = function(i,m){console.log(i+' '+m);log.push(i+' '+m);};
+    p('🔍','DIAGNÓSTICO FIREBASE — '+new Date().toLocaleString('pt-BR'));
+    p('🌐','URL: '+location.href+' | Protocolo: '+location.protocol);
+    if(typeof firebase==='undefined'||window._fbStubReady){p('❌','SDK não carregou');return log;}
+    p('✅','SDK v'+(firebase.SDK_VERSION||'?')+' | _fbReady: '+window._fbReady+' | Apps: '+firebase.apps.length);
+    if(!firebase.apps.length){p('❌','Nenhum app inicializado!');return log;}
+    var db=firebase.database(firebase.apps[0]);
+    try{var s=await db.ref('dados').once('value');var d=s.val();
+    p(d?'✅':'⚠️',d?'LEITURA OK: '+Object.keys(d).length+' chaves':'Banco vazio');}
+    catch(e){p('❌','LEITURA: '+e.code+' '+e.message);if(e.code==='PERMISSION_DENIED')p('🔑','→ Rules bloqueando!');}
+    var tk='__diag_'+Date.now();
+    try{await db.ref('dados/'+tk).set(JSON.stringify({t:1}));p('✅','ESCRITA OK');await db.ref('dados/'+tk).remove();}
+    catch(e){p('❌','ESCRITA: '+e.code+' '+e.message);if(e.code==='PERMISSION_DENIED')p('🔑','→ console.firebase.google.com → Realtime Database → Rules → {rules:{".read":true,".write":true}}');}
+    p('📦','FB_SYNC_KEYS: '+(window.FB_SYNC_KEYS||[]).length+' chaves');
+    p('📊','Concluído. '+log.filter(function(l){return l.indexOf('❌')>=0;}).length+' erro(s)');
     return log;
   };
-  console.log('[FB] 💡 Dica: execute fbDiagnostico() no console para testar o Firebase');
+  console.log('[FB] 💡 Execute fbDiagnostico() no console para testar o Firebase');
   </script>
 </head>
 <body class="theme-dark">
@@ -3584,22 +3517,14 @@ function _safeFbWrite(k,val)    { try { if(typeof window.fbWrite==='function') w
 function _safeFbDelete(k)       { try { if(typeof window.fbDelete==='function') window.fbDelete(k); } catch(e) {} }
 function _safeFbSyncBadge(ok)   { try { if(typeof window.fbShowSyncBadge==='function') window.fbShowSyncBadge(ok); } catch(e) {} }
 
-// ── Contador para guard _fbWriting (evita race condition) ─────────────────
-let _fbWriteCount = 0;
-
 function stSet(k, v) {
   try {
     localStorage.setItem(k, JSON.stringify(v));
     if (window.FB_SYNC_KEYS.includes(k) && _safeFbReady()) {
-      _fbWriteCount++;
       _safeFbWriting(true);
       _safeFbWrite(k, v);
       _safeFbSyncBadge(true);
-      const myCount = _fbWriteCount;
-      setTimeout(() => {
-        // Só desliga o guard se nenhum outro stSet ocorreu depois
-        if (_fbWriteCount === myCount) _safeFbWriting(false);
-      }, 800);
+      setTimeout(() => { _safeFbWriting(false); }, 500);
     }
   } catch(e) {
     console.error("stSet erro ao salvar chave", k, e);
@@ -13634,11 +13559,17 @@ function wlDrawCandleChart(ctx, data, pad, cW, cH, W, H) {
 }
 
 function wlPersist() {
-  // stSet já gerencia o guard _fbWriting com contador (sem race condition)
+  // Ativa o guard antes de qualquer escrita para evitar que o listener Firebase
+  // recarregue os dados durante a operação (causaria itens "voltarem" após exclusão)
+  if (typeof _fbWriting !== 'undefined') _fbWriting = true;
   stSet("fii-watchlist", watchlistItems);
   // Salva também em watchlist-tickers (chave usada pelo app mobile)
   const tickers = watchlistItems.map(i => typeof i === 'string' ? i : i.ticker).filter(Boolean);
   stSet("watchlist-tickers", tickers);
+  // Mantém o guard ativo por tempo suficiente para cobrir ambas as escritas no Firebase
+  if (typeof _fbWriting !== 'undefined') {
+    setTimeout(() => { _fbWriting = false; }, 1500);
+  }
 }
 
 function renderWatchlist() {
