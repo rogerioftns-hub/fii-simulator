@@ -699,9 +699,10 @@
   };
 
   // Chaves que devem ser sincronizadas com Firebase
-  const FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos","ia-analises","vol-cenarios-salvos","cal-eventos-custom","recdy-ativos"];
+  window.FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos","ia-analises","vol-cenarios-salvos","cal-eventos-custom","recdy-ativos"];
+  var FB_SYNC_KEYS = window.FB_SYNC_KEYS;
 
-  let _fbApp, _fbDb, _fbStorage, _fbReady = false, _fbWriting = false;
+  var _fbApp, _fbDb, _fbStorage, _fbReady = false, _fbWriting = false;
 
   try {
     if (firebase && !window._fbStubReady) {
@@ -735,6 +736,11 @@
     Object.defineProperty(window, '_fbReady', {
       get: function() { return _fbReady; },
       set: function(v) { _fbReady = v; },
+      configurable: true, enumerable: false
+    });
+    Object.defineProperty(window, '_fbWriting', {
+      get: function() { return _fbWriting; },
+      set: function(v) { _fbWriting = v; },
       configurable: true, enumerable: false
     });
   } catch(defErr) {
