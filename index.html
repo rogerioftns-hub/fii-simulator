@@ -701,7 +701,7 @@
   // Chaves sincronizadas com Firebase
   // IMPORTANTE: window.FB_SYNC_KEYS (não const) — const/let ficam no escopo do <script>
   // e não são visíveis para outros blocos <script> do documento.
-  window.FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-rf","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos","ia-analises","vol-cenarios-salvos","cal-eventos-custom","recdy-ativos"];
+  window.FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos","ia-analises","vol-cenarios-salvos","cal-eventos-custom","recdy-ativos"];
 
   let _fbApp, _fbDb, _fbStorage, _fbReady = false, _fbWriting = false;
 
@@ -710,7 +710,6 @@
       _fbApp    = firebase.initializeApp(_fbConfig);
       _fbDb     = firebase.database(_fbApp);
       if (_fbDb) _fbReady = true;
-      console.log("[FB] ✅ Inicializado — projectId:", _fbConfig.projectId, "| _fbReady:", _fbReady);
       // Inicializa Firebase Storage se disponível
       try {
         if (firebase.storage) {
@@ -759,28 +758,16 @@
 
   function fbWrite(k, v) {
     if (!_fbReady || !_fbDb) return;
-    try {
-      const p = fbPath(k);
-      if (p) p.set(v === null ? null : JSON.stringify(v))
-        .then(function() { console.log("[FB] ✅ write OK:", k); })
-        .catch(function(e) {
-          console.error("[FB] ❌ write FAIL:", k, e.code, e.message);
-          if (typeof _safeFbSyncBadge === 'function') _safeFbSyncBadge(false);
-        });
-    } catch(e) { console.error("[FB] fbWrite error:", k, e); }
+    try { const p = fbPath(k); if (p) p.set(v === null ? null : JSON.stringify(v)); } catch(e) {}
   }
 
   function fbDelete(k) {
     if (!_fbReady || !_fbDb) return;
-    try {
-      const p = fbPath(k);
-      if (p) p.remove()
-        .catch(function(e) { console.error("[FB] delete FAIL:", k, e.code, e.message); });
-    } catch(e) { console.error("[FB] fbDelete error:", k, e); }
+    try { const p = fbPath(k); if (p) p.remove(); } catch(e) {}
   }
 
   function fbLoadAll(callback) {
-    if (!_fbReady || !_fbDb) { console.warn("[FB] fbLoadAll: Firebase não pronto"); callback(); return; }
+    if (!_fbReady || !_fbDb) { callback(); return; }
     try {
       _fbDb.ref("dados").once("value").then(snap => {
         try {
@@ -791,15 +778,14 @@
               try { localStorage.setItem(k, data[fk]); } catch(e2) {}
             }
           });
-          console.log("[FB] ✅ fbLoadAll OK — " + Object.keys(data).length + " chave(s)");
           // Normaliza watchlist: Android usa "watchlist-tickers", web usa "fii-watchlist"
           if (data["watchlist-tickers"] && !data["fii-watchlist"]) {
             try { localStorage.setItem("fii-watchlist", data["watchlist-tickers"]); } catch(e2) {}
           }
-        } catch(e) { console.error("[FB] fbLoadAll parse error:", e); }
+        } catch(e) {}
         callback();
-      }).catch((e) => { console.error("[FB] ❌ fbLoadAll FAIL:", e.code, e.message); callback(); });
-    } catch(e) { console.error("[FB] fbLoadAll error:", e); callback(); }
+      }).catch(() => callback());
+    } catch(e) { callback(); }
   }
 
   function fbStartListeners() {
@@ -816,13 +802,10 @@
             if (current === raw) return;
             localStorage.setItem(k, raw);
             fbReRender(k);
-          } catch(e) { console.error("[FB] listener error:", k, e); }
-        }, function(err) {
-          console.error("[FB] ❌ listener denied:", k, err.code);
+          } catch(e) {}
         });
       });
-      console.log("[FB] ✅ Listeners ativos para " + window.FB_SYNC_KEYS.length + " chaves");
-    } catch(e) { console.error("[FB] fbStartListeners error:", e); }
+    } catch(e) {}
   }
 
   function fbReRender(k) {
@@ -838,10 +821,6 @@
       if (k === "fii-etfs") {
         var _e = stGet("fii-etfs"); if (_e && _e.length) carteiraEtfs = _e;
         if (typeof renderCarteiraEtfs === "function") renderCarteiraEtfs();
-      }
-      if (k === "fii-rf") {
-        var _rf = stGet("fii-rf"); if (_rf && _rf.length) carteiraRF = _rf;
-        if (typeof renderCarteiraRF === "function") renderCarteiraRF();
       }
       if (k === "fii-cenarios") {
         var _s = stGet("fii-cenarios"); if (_s && _s.length) cenariosSalvos = _s;
@@ -943,7 +922,7 @@
           if (typeof iaRender === "function") iaRender();
         }
       }
-    } catch(e) { console.error("[FB] fbReRender error:", k, e); }
+    } catch(e) {}
   }
 
   // ── Mostra indicador de sync na UI ─────────────────────────────────────
@@ -982,27 +961,6 @@
       configurable: true, enumerable: false
     });
   } catch(e) { window._fbApp = _fbApp; }
-
-  // ── Diagnóstico Firebase (chamar via console: fbDiagnostico()) ──
-  window.fbDiagnostico = async function() {
-    var log = [], p = function(i,m){console.log(i+' '+m);log.push(i+' '+m);};
-    p('🔍','DIAGNÓSTICO FIREBASE — '+new Date().toLocaleString('pt-BR'));
-    p('🌐','URL: '+location.href+' | Protocolo: '+location.protocol);
-    if(typeof firebase==='undefined'||window._fbStubReady){p('❌','SDK não carregou');return log;}
-    p('✅','SDK v'+(firebase.SDK_VERSION||'?')+' | _fbReady: '+window._fbReady+' | Apps: '+firebase.apps.length);
-    if(!firebase.apps.length){p('❌','Nenhum app inicializado!');return log;}
-    var db=firebase.database(firebase.apps[0]);
-    try{var s=await db.ref('dados').once('value');var d=s.val();
-    p(d?'✅':'⚠️',d?'LEITURA OK: '+Object.keys(d).length+' chaves':'Banco vazio');}
-    catch(e){p('❌','LEITURA: '+e.code+' '+e.message);if(e.code==='PERMISSION_DENIED')p('🔑','→ Rules bloqueando!');}
-    var tk='__diag_'+Date.now();
-    try{await db.ref('dados/'+tk).set(JSON.stringify({t:1}));p('✅','ESCRITA OK');await db.ref('dados/'+tk).remove();}
-    catch(e){p('❌','ESCRITA: '+e.code+' '+e.message);if(e.code==='PERMISSION_DENIED')p('🔑','→ console.firebase.google.com → Realtime Database → Rules → {rules:{".read":true,".write":true}}');}
-    p('📦','FB_SYNC_KEYS: '+(window.FB_SYNC_KEYS||[]).length+' chaves');
-    p('📊','Concluído. '+log.filter(function(l){return l.indexOf('❌')>=0;}).length+' erro(s)');
-    return log;
-  };
-  console.log('[FB] 💡 Execute fbDiagnostico() no console para testar o Firebase');
   </script>
 </head>
 <body class="theme-dark">
@@ -3952,8 +3910,6 @@ function carregarDados() {
   if (acoes && acoes.length) carteiraAcoes = acoes;
   const etfs = stGet("fii-etfs");
   if (etfs && etfs.length) carteiraEtfs = etfs;
-  const rf = stGet("fii-rf");
-  if (rf && rf.length) carteiraRF = rf;
   const wl = stGet("fii-watchlist");
   if (Array.isArray(wl) && wl.length > 0 && typeof wl[0] === 'object') watchlistItems = wl; else if (Array.isArray(wl) && wl.length === 0) watchlistItems = [];
   const sf = stGet("snapshot-fiis");
@@ -3964,7 +3920,7 @@ function carregarDados() {
   if (se && se.length) snapshotsEtfs = se;
   renderCarteira();
   updateNavInfo();
-  applyStoredTheme();
+  if (typeof applyStoredTheme === 'function') applyStoredTheme();
   // Atualiza status do token na sidebar/info (se o usuário navegar para a aba Token)
   tokenAtualizarInfoCard();
 }
@@ -12764,9 +12720,12 @@ async function fetchBrapiTickers(tickerList, extra) {
       const json = await res.json();
       return json.results || [];
     }
-    // Se o erro for de limite de ativos por req, cai para individual
+    // Se o erro for de limite de ativos por req ou token inválido (400/401), cai para individual
     const body = await res.json().catch(() => ({}));
-    if (!body.code || body.code !== 'QUOTES_PER_REQUEST_EXCEEDED') {
+    if (res.status === 400 || res.status === 401 || res.status === 403) {
+      console.warn(`Brapi lote falhou (${res.status}) — tentando um por um...`);
+      // cai para o loop individual abaixo
+    } else if (!body.code || body.code !== 'QUOTES_PER_REQUEST_EXCEEDED') {
       throw new Error(`HTTP ${res.status} — ${body.message || res.statusText}`);
     }
     // else: cai para o loop individual abaixo
@@ -20267,7 +20226,6 @@ function getFbStorage() {
 function getFbReady() {
   try { if (typeof _fbReady !== 'undefined') return _fbReady; } catch(e) {}
   return window._fbReady || false;
-}
 }
 // ════════════════════════════════════════════════════════════════════════════
 
