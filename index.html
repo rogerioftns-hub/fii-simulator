@@ -818,8 +818,16 @@
         if (_e && _e.length) carteiraEtfs = _e;
         if (typeof renderCarteiraEtfs === "function") renderCarteiraEtfs();
       }
-      if (k === "fii-cenarios")    { if (typeof renderCenarios === "function")    renderCenarios(); }
-      if (k === "fii-indicadores") { if (typeof renderIndicadores === "function") renderIndicadores(); }
+      if (k === "fii-cenarios") {
+        const _s = stGet("fii-cenarios");
+        if (_s && _s.length) cenariosSalvos = _s;
+        if (typeof renderCenarios === "function") renderCenarios();
+      }
+      if (k === "fii-indicadores") {
+        const _i = stGet("fii-indicadores");
+        if (_i && _i.length) indAtivos = _i;
+        if (typeof renderIndicadores === "function") renderIndicadores();
+      }
       // "fii-watchlist" é o nome local; Android grava em "watchlist-tickers"
       if (k === "fii-watchlist" || k === "watchlist-tickers") {
         // Normaliza: se veio de "watchlist-tickers" só copia para "fii-watchlist"
@@ -979,6 +987,19 @@
       fbStartListeners();
       _safeFbSyncBadge(_fbReady);
       window._fbInitDone = true;
+      // Re-sincroniza variáveis em memória com o localStorage recém-populado pelo Firebase
+      // e re-renderiza a página ativa para que máquinas B vejam os dados atuais
+      if (_fbReady && typeof carregarDados === 'function') {
+        try {
+          carregarDados();
+          // Re-renderiza a aba atualmente visível
+          const activePage = document.querySelector('.page.on');
+          if (activePage) {
+            const pageId = activePage.id.replace('page-', '');
+            if (typeof goPage === 'function') goPage(pageId);
+          }
+        } catch(e) {}
+      }
     }
     const _fbTimeout = setTimeout(function() {
       console.warn("Firebase demorou — inicializando app sem sync.");
