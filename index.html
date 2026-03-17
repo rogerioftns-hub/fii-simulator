@@ -698,30 +698,34 @@
     appId:             "1:678198491018:web:4f2787b844a0794c86ba73"
   };
 
-  // Chaves que devem ser sincronizadas com Firebase
-  window.FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos","ia-analises","vol-cenarios-salvos","cal-eventos-custom","recdy-ativos"];
-  var FB_SYNC_KEYS = window.FB_SYNC_KEYS;
+  // Chaves sincronizadas com Firebase
+  // IMPORTANTE: window.FB_SYNC_KEYS (não const) — const/let ficam no escopo do <script>
+  // e não são visíveis para outros blocos <script> do documento.
+  window.FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-rf","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos","ia-analises","vol-cenarios-salvos","cal-eventos-custom","recdy-ativos"];
 
-  var _fbApp, _fbDb, _fbStorage, _fbReady = false, _fbWriting = false;
+  let _fbApp, _fbDb, _fbStorage, _fbReady = false, _fbWriting = false;
 
   try {
     if (firebase && !window._fbStubReady) {
       _fbApp    = firebase.initializeApp(_fbConfig);
       _fbDb     = firebase.database(_fbApp);
       if (_fbDb) _fbReady = true;
+      console.log("[FB] ✅ Firebase inicializado com sucesso. _fbReady=" + _fbReady + ", projectId=" + _fbConfig.projectId);
       // Inicializa Firebase Storage se disponível
       try {
         if (firebase.storage) {
           _fbStorage = firebase.storage(_fbApp);
-          console.log("Firebase Storage inicializado.");
+          console.log("[FB] Firebase Storage inicializado.");
         }
       } catch(se) {
-        console.warn("Firebase Storage não disponível:", se);
+        console.warn("[FB] Firebase Storage não disponível:", se);
         _fbStorage = null;
       }
+    } else {
+      console.warn("[FB] Firebase não inicializado: firebase=" + !!firebase + ", _fbStubReady=" + window._fbStubReady);
     }
   } catch(e) {
-    console.warn("Firebase init error (app funciona normalmente sem sync):", e);
+    console.error("[FB] ❌ Firebase init error:", e);
     _fbReady = false;
   }
 
@@ -756,41 +760,66 @@
   }
 
   function fbWrite(k, v) {
-    if (!_fbReady || !_fbDb) return;
-    try { const p = fbPath(k); if (p) p.set(v === null ? null : JSON.stringify(v)); } catch(e) {}
+    if (!_fbReady || !_fbDb) { console.warn("[FB] fbWrite ignorado: _fbReady=" + _fbReady + ", _fbDb=" + !!_fbDb); return; }
+    try {
+      const p = fbPath(k);
+      if (p) {
+        p.set(v === null ? null : JSON.stringify(v))
+          .then(function() { console.log("[FB] ✅ write OK:", k); })
+          .catch(function(e) {
+            console.error("[FB] ❌ write FAIL:", k, e.code, e.message);
+            if (e.code === 'PERMISSION_DENIED') {
+              console.error("[FB] 🔑 PERMISSÃO NEGADA! Verifique as Rules em console.firebase.google.com → Realtime Database → Rules");
+            }
+            _safeFbSyncBadge(false);
+          });
+      } else {
+        console.warn("[FB] fbPath retornou null para chave:", k);
+      }
+    } catch(e) { console.error("[FB] fbWrite sync error:", k, e); }
   }
 
   function fbDelete(k) {
     if (!_fbReady || !_fbDb) return;
-    try { const p = fbPath(k); if (p) p.remove(); } catch(e) {}
+    try {
+      const p = fbPath(k);
+      if (p) {
+        p.remove()
+          .then(function() { console.log("[FB] ✅ delete OK:", k); })
+          .catch(function(e) { console.error("[FB] ❌ delete FAIL:", k, e.code, e.message); });
+      }
+    } catch(e) { console.error("[FB] fbDelete error:", k, e); }
   }
 
   function fbLoadAll(callback) {
-    if (!_fbReady || !_fbDb) { callback(); return; }
+    if (!_fbReady || !_fbDb) { console.warn("[FB] fbLoadAll: Firebase não pronto, pulando sync"); callback(); return; }
     try {
       _fbDb.ref("dados").once("value").then(snap => {
         try {
           const data = snap.val() || {};
-          FB_SYNC_KEYS.forEach(k => {
+          const loadedKeys = [];
+          window.FB_SYNC_KEYS.forEach(k => {
             const fk = k.replace(/[.$#[\]\/]/g, "_");
             if (data[fk] !== undefined && data[fk] !== null) {
-              try { localStorage.setItem(k, data[fk]); } catch(e2) {}
+              try { localStorage.setItem(k, data[fk]); loadedKeys.push(k); } catch(e2) { console.error("[FB] erro ao salvar no localStorage:", k, e2); }
             }
           });
+          console.log("[FB] ✅ fbLoadAll OK — " + loadedKeys.length + " chave(s) carregadas:", loadedKeys);
           // Normaliza watchlist: Android usa "watchlist-tickers", web usa "fii-watchlist"
           if (data["watchlist-tickers"] && !data["fii-watchlist"]) {
             try { localStorage.setItem("fii-watchlist", data["watchlist-tickers"]); } catch(e2) {}
           }
-        } catch(e) {}
+        } catch(e) { console.error("[FB] erro ao processar dados do Firebase:", e); }
         callback();
-      }).catch(() => callback());
-    } catch(e) { callback(); }
+      }).catch((e) => { console.error("[FB] ❌ fbLoadAll FAIL:", e.code, e.message); callback(); });
+    } catch(e) { console.error("[FB] fbLoadAll outer error:", e); callback(); }
   }
 
   function fbStartListeners() {
-    if (!_fbReady || !_fbDb) return;
+    if (!_fbReady || !_fbDb) { console.warn("[FB] Listeners não iniciados: Firebase não pronto"); return; }
     try {
-      FB_SYNC_KEYS.forEach(k => {
+      console.log("[FB] Iniciando listeners para " + window.FB_SYNC_KEYS.length + " chaves...");
+      window.FB_SYNC_KEYS.forEach(k => {
         const fk = k.replace(/[.$#[\]\/]/g, "_");
         _fbDb.ref("dados/" + fk).on("value", snap => {
           if (_fbWriting) return;
@@ -800,38 +829,40 @@
             const current = localStorage.getItem(k);
             if (current === raw) return;
             localStorage.setItem(k, raw);
+            console.log("[FB] 📥 listener update:", k);
             fbReRender(k);
-          } catch(e) {}
+          } catch(e) { console.error("[FB] listener error:", k, e); }
+        }, function(err) {
+          console.error("[FB] ❌ listener DENIED:", k, err.code, err.message);
         });
       });
-    } catch(e) {}
+    } catch(e) { console.error("[FB] fbStartListeners error:", e); }
   }
 
   function fbReRender(k) {
     try {
       if (k === "fii-carteira") {
-        const _c = stGet("fii-carteira");
-        if (_c && _c.length) carteira = _c;
+        var _c = stGet("fii-carteira"); if (_c && _c.length) carteira = _c;
         if (typeof renderCarteira === "function") renderCarteira();
       }
       if (k === "fii-acoes") {
-        const _a = stGet("fii-acoes");
-        if (_a && _a.length) carteiraAcoes = _a;
+        var _a = stGet("fii-acoes"); if (_a && _a.length) carteiraAcoes = _a;
         if (typeof renderCarteiraAcoes === "function") renderCarteiraAcoes();
       }
       if (k === "fii-etfs") {
-        const _e = stGet("fii-etfs");
-        if (_e && _e.length) carteiraEtfs = _e;
+        var _e = stGet("fii-etfs"); if (_e && _e.length) carteiraEtfs = _e;
         if (typeof renderCarteiraEtfs === "function") renderCarteiraEtfs();
       }
+      if (k === "fii-rf") {
+        var _rf = stGet("fii-rf"); if (_rf && _rf.length) carteiraRF = _rf;
+        if (typeof renderCarteiraRF === "function") renderCarteiraRF();
+      }
       if (k === "fii-cenarios") {
-        const _s = stGet("fii-cenarios");
-        if (_s && _s.length) cenariosSalvos = _s;
+        var _s = stGet("fii-cenarios"); if (_s && _s.length) cenariosSalvos = _s;
         if (typeof renderCenarios === "function") renderCenarios();
       }
       if (k === "fii-indicadores") {
-        const _i = stGet("fii-indicadores");
-        if (_i && _i.length) indAtivos = _i;
+        var _i = stGet("fii-indicadores"); if (_i && _i.length) indAtivos = _i;
         if (typeof renderIndicadores === "function") renderIndicadores();
       }
       // "fii-watchlist" é o nome local; Android grava em "watchlist-tickers"
@@ -895,10 +926,10 @@
         if (t) try { localStorage.setItem("brapi-token", t); } catch(e2) {}
       }
       if (k === "hist-vendas") {
-        if (typeof hvRenderTabela === "function") { try { hvRenderTabela(); } catch(e) {} }
+        if (typeof hvRenderTabela === "function") hvRenderTabela();
       }
       if (k === "hist-compras") {
-        if (typeof hcRenderTabela === "function") { try { hcRenderTabela(); } catch(e) {} }
+        if (typeof hcRenderTabela === "function") hcRenderTabela();
       }
       if (k === "fav-ativos") {
         if (typeof favRender === "function") favRender();
@@ -938,7 +969,15 @@
       badge.style.cssText = "position:fixed;bottom:14px;right:14px;z-index:9999;" +
         "background:#0d0f1e;border:1px solid #1c1f38;border-radius:20px;" +
         "padding:.3rem .7rem;font-size:.58rem;font-family:monospace;" +
-        "display:flex;align-items:center;gap:.4rem;transition:opacity .4s";
+        "display:flex;align-items:center;gap:.4rem;transition:opacity .4s;cursor:pointer";
+      badge.title = "Clique para diagnosticar Firebase";
+      badge.onclick = function() {
+        if (typeof window.fbDiagnostico === 'function') {
+          window.fbDiagnostico().then(function(log) {
+            alert('── DIAGNÓSTICO FIREBASE ──\n\n' + log.join('\n'));
+          });
+        }
+      };
       document.body.appendChild(badge);
     }
     if (ok) {
@@ -965,6 +1004,72 @@
       configurable: true, enumerable: false
     });
   } catch(e) { window._fbApp = _fbApp; }
+
+  // ── Diagnóstico Firebase embutido (chamar via console: fbDiagnostico()) ──
+  window.fbDiagnostico = async function() {
+    const log = [];
+    const p = function(icon, msg) { console.log(icon + ' ' + msg); log.push(icon + ' ' + msg); };
+    p('🔍', 'DIAGNÓSTICO FIREBASE — ' + new Date().toLocaleString('pt-BR'));
+    p('🌐', 'Protocolo: ' + location.protocol + ' | URL: ' + location.href);
+    p('──', '────────────────────────────────────────');
+
+    // SDK
+    if (typeof firebase === 'undefined' || window._fbStubReady) {
+      p('❌', 'SDK Firebase: NÃO CARREGADO (stub ativo). Verifique rede/bloqueio de gstatic.com');
+      return log;
+    }
+    p('✅', 'SDK Firebase v' + (firebase.SDK_VERSION || '?'));
+    p(window._fbReady ? '✅' : '❌', '_fbReady: ' + window._fbReady);
+    p('──', '────────────────────────────────────────');
+
+    // Leitura
+    try {
+      var db = firebase.database(firebase.apps[0]);
+      var snap = await db.ref('dados').once('value');
+      var data = snap.val();
+      if (!data) { p('⚠️', 'LEITURA: banco vazio (null)'); }
+      else { p('✅', 'LEITURA OK: ' + Object.keys(data).length + ' chave(s) → ' + Object.keys(data).join(', ')); }
+    } catch(e) {
+      p('❌', 'LEITURA FALHOU: ' + (e.code || '') + ' ' + e.message);
+      if (e.code === 'PERMISSION_DENIED') p('🔑', '→ Rules bloqueando! Acesse console.firebase.google.com → Realtime Database → Rules');
+    }
+    p('──', '────────────────────────────────────────');
+
+    // Escrita
+    var tk = '__diag_' + Date.now();
+    try {
+      await db.ref('dados/' + tk).set(JSON.stringify({test:true}));
+      p('✅', 'ESCRITA OK');
+      await db.ref('dados/' + tk).remove();
+      p('✅', 'DELETE OK');
+    } catch(e) {
+      p('❌', 'ESCRITA FALHOU: ' + (e.code || '') + ' ' + e.message);
+      if (e.code === 'PERMISSION_DENIED') {
+        p('🔑', '╔══════════════════════════════════════════╗');
+        p('🔑', '║ PROBLEMA: PERMISSÃO DE ESCRITA NEGADA!  ║');
+        p('🔑', '╚══════════════════════════════════════════╝');
+        p('  ', '→ console.firebase.google.com → Realtime Database → Rules');
+        p('  ', '→ Mude para: { "rules": { ".read": true, ".write": true } }');
+      }
+    }
+    p('──', '────────────────────────────────────────');
+
+    // FB_SYNC_KEYS
+    p('📦', 'FB_SYNC_KEYS: ' + (window.FB_SYNC_KEYS || []).length + ' chaves');
+    var faltando = (window.FB_SYNC_KEYS || []).filter(function(k) { return !localStorage.getItem(k); });
+    if (faltando.length > 0) p('⚠️', 'Chaves sem dados locais: ' + faltando.join(', '));
+
+    // Storage
+    if (typeof firebase.storage === 'function') {
+      p('✅', 'Firebase Storage SDK: carregado');
+    } else {
+      p('⚠️', 'Firebase Storage SDK: NÃO carregado');
+    }
+    p('──', '────────────────────────────────────────');
+    p('📊', 'Diagnóstico concluído. ' + log.filter(function(l){return l.startsWith('❌');}).length + ' erro(s).');
+    return log;
+  };
+  console.log('[FB] 💡 Dica: execute fbDiagnostico() no console para testar o Firebase');
   </script>
 </head>
 <body class="theme-dark">
@@ -990,20 +1095,16 @@
       if (_initDone) return;
       _initDone = true;
       if (loader.parentNode) document.body.removeChild(loader);
-      fbStartListeners();
-      _safeFbSyncBadge(_fbReady);
+      if (typeof window.fbStartListeners === 'function') window.fbStartListeners();
+      _safeFbSyncBadge(window._fbReady);
       window._fbInitDone = true;
-      // Re-sincroniza variáveis em memória com o localStorage recém-populado pelo Firebase
-      // e re-renderiza a página ativa para que máquinas B vejam os dados atuais
-      if (_fbReady && typeof carregarDados === 'function') {
+      // FIX: recarrega variáveis em memória com dados frescos do Firebase
+      // e re-renderiza a aba ativa para que outras máquinas vejam os dados atuais
+      if (window._fbReady && typeof carregarDados === 'function') {
         try {
           carregarDados();
-          // Re-renderiza a aba atualmente visível
-          const activePage = document.querySelector('.page.on');
-          if (activePage) {
-            const pageId = activePage.id.replace('page-', '');
-            if (typeof goPage === 'function') goPage(pageId);
-          }
+          var _ap = document.querySelector('.page.on');
+          if (_ap && typeof goPage === 'function') goPage(_ap.id.replace('page-', ''));
         } catch(e) {}
       }
     }
@@ -1012,7 +1113,7 @@
       finalizarInit();
     }, 4000);
 
-    fbLoadAll(function() {
+    (typeof window.fbLoadAll === 'function' ? window.fbLoadAll : function(cb){cb();})(function() {
       clearTimeout(_fbTimeout);
       finalizarInit();
     });
@@ -3483,14 +3584,22 @@ function _safeFbWrite(k,val)    { try { if(typeof window.fbWrite==='function') w
 function _safeFbDelete(k)       { try { if(typeof window.fbDelete==='function') window.fbDelete(k); } catch(e) {} }
 function _safeFbSyncBadge(ok)   { try { if(typeof window.fbShowSyncBadge==='function') window.fbShowSyncBadge(ok); } catch(e) {} }
 
+// ── Contador para guard _fbWriting (evita race condition) ─────────────────
+let _fbWriteCount = 0;
+
 function stSet(k, v) {
   try {
     localStorage.setItem(k, JSON.stringify(v));
-    if (FB_SYNC_KEYS.includes(k) && _safeFbReady()) {
+    if (window.FB_SYNC_KEYS.includes(k) && _safeFbReady()) {
+      _fbWriteCount++;
       _safeFbWriting(true);
       _safeFbWrite(k, v);
       _safeFbSyncBadge(true);
-      setTimeout(() => { _safeFbWriting(false); }, 500);
+      const myCount = _fbWriteCount;
+      setTimeout(() => {
+        // Só desliga o guard se nenhum outro stSet ocorreu depois
+        if (_fbWriteCount === myCount) _safeFbWriting(false);
+      }, 800);
     }
   } catch(e) {
     console.error("stSet erro ao salvar chave", k, e);
@@ -3500,7 +3609,7 @@ function stSet(k, v) {
 function stDel(k) {
   try {
     localStorage.removeItem(k);
-    if (FB_SYNC_KEYS.includes(k)) _safeFbDelete(k);
+    if (window.FB_SYNC_KEYS.includes(k)) _safeFbDelete(k);
   } catch(e) {}
 }
 
@@ -3918,6 +4027,8 @@ function carregarDados() {
   if (acoes && acoes.length) carteiraAcoes = acoes;
   const etfs = stGet("fii-etfs");
   if (etfs && etfs.length) carteiraEtfs = etfs;
+  const rf = stGet("fii-rf");
+  if (rf && rf.length) carteiraRF = rf;
   const wl = stGet("fii-watchlist");
   if (Array.isArray(wl) && wl.length > 0 && typeof wl[0] === 'object') watchlistItems = wl; else if (Array.isArray(wl) && wl.length === 0) watchlistItems = [];
   const sf = stGet("snapshot-fiis");
@@ -13523,17 +13634,11 @@ function wlDrawCandleChart(ctx, data, pad, cW, cH, W, H) {
 }
 
 function wlPersist() {
-  // Ativa o guard antes de qualquer escrita para evitar que o listener Firebase
-  // recarregue os dados durante a operação (causaria itens "voltarem" após exclusão)
-  if (typeof _fbWriting !== 'undefined') _fbWriting = true;
+  // stSet já gerencia o guard _fbWriting com contador (sem race condition)
   stSet("fii-watchlist", watchlistItems);
   // Salva também em watchlist-tickers (chave usada pelo app mobile)
   const tickers = watchlistItems.map(i => typeof i === 'string' ? i : i.ticker).filter(Boolean);
   stSet("watchlist-tickers", tickers);
-  // Mantém o guard ativo por tempo suficiente para cobrir ambas as escritas no Firebase
-  if (typeof _fbWriting !== 'undefined') {
-    setTimeout(() => { _fbWriting = false; }, 1500);
-  }
 }
 
 function renderWatchlist() {
@@ -14155,12 +14260,7 @@ function favGetAll() {
 }
 function favSaveAll(arr) {
   if (!Array.isArray(arr)) arr = [];
-  if (typeof stSet === 'function') {
-    stSet(FAV_KEY, arr);
-  } else {
-    localStorage.setItem(FAV_KEY, JSON.stringify(arr));
-    try { _safeFbWrite(FAV_KEY, arr); } catch(e) {}
-  }
+  stSet(FAV_KEY, arr);
 }
 
 function favAddAtivo() {
@@ -16908,12 +17008,7 @@ function calGetCustom() {
   try { let r=JSON.parse(localStorage.getItem(CAL_KEY)||'[]'); return Array.isArray(r)?r:[]; } catch{ return []; }
 }
 function calSaveCustom(arr) {
-  if (typeof stSet === 'function') {
-    stSet(CAL_KEY, arr);
-  } else {
-    localStorage.setItem(CAL_KEY, JSON.stringify(arr));
-    try { _safeFbWrite(CAL_KEY, arr); } catch(e) {}
-  }
+  stSet(CAL_KEY, arr);
 }
 
 function calHoje() {
@@ -23049,12 +23144,7 @@ function hcGetAll() {
 }
 function hcSaveAll(arr) {
   if (!Array.isArray(arr)) arr = [];
-  if (typeof stSet === 'function') {
-    stSet('hist-compras', arr);
-  } else {
-    localStorage.setItem('hist-compras', JSON.stringify(arr));
-    try { _safeFbWrite('hist-compras', arr); } catch(e) {}
-  }
+  stSet('hist-compras', arr);
 }
 
 // ── Chips da carteira para modal de Compras ──────────────────────────────
@@ -23381,16 +23471,18 @@ function hvGetAll() {
 }
 function hvSaveAll(arr) {
   if (!Array.isArray(arr)) arr = [];
-  if (typeof stSet === 'function') {
-    stSet('hist-vendas', arr);
-  } else {
-    const json = JSON.stringify(arr);
-    localStorage.setItem('hist-vendas', json);
-    try { _safeFbWrite('hist-vendas', arr); } catch(e) {}
-  }
+  stSet('hist-vendas', arr);
 }
 
-// ── Popula chips da carteira no modal ──────────────────────────────────────
+function hvPopularChips() {
+  const wrap = document.getElementById('hv-carteira-chips');
+  if (!wrap) return;
+
+
+
+
+
+
 function hvPopularChips() {
   const wrap = document.getElementById('hv-carteira-chips');
   if (!wrap) return;
@@ -29219,15 +29311,7 @@ let   recDyMesesSel = [];
 
 // ── Persistência ─────────────────────────────
 function recDyLoad()  { try { return JSON.parse(localStorage.getItem(RECDY_KEY) || '[]'); } catch(e){ return []; } }
-function recDySave(d) {
-  try {
-    if (typeof stSet === 'function') {
-      stSet(RECDY_KEY, d);
-    } else {
-      localStorage.setItem(RECDY_KEY, JSON.stringify(d));
-    }
-  } catch(e) {}
-}
+function recDySave(d) { try { stSet(RECDY_KEY, d); } catch(e){} }
 
 // ── Meses padrão por frequência ───────────────
 function recDyMesesPadrao(freq) {
