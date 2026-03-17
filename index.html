@@ -699,7 +699,7 @@
   };
 
   // Chaves que devem ser sincronizadas com Firebase
-  const FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos","ia-analises"];
+  const FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos","ia-analises","vol-cenarios-salvos"];
 
   let _fbApp, _fbDb, _fbStorage, _fbReady = false, _fbWriting = false;
 
@@ -3104,6 +3104,17 @@ function irSavePrej() {
       </div>
     </div>
 
+    <!-- ── SALVAR CENÁRIO ── -->
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;margin-top:.6rem;padding:.7rem 1rem;background:var(--bg3);border:1px solid var(--border2);border-radius:10px">
+      <div style="display:flex;align-items:center;gap:.6rem;flex:1;min-width:200px">
+        <span style="font-size:.9rem">💾</span>
+        <input type="text" id="vol-cenario-nome" placeholder="Nome do cenário (ex: PETR4 Otimista)"
+          style="font-size:.68rem;flex:1;max-width:360px;padding:.38rem .6rem"/>
+      </div>
+      <button class="btn" style="padding:.4rem 1.2rem;font-size:.65rem;font-weight:700;background:#818cf815;color:#818cf8;border:1px solid #818cf830"
+        onclick="volSalvarCenario()">💾 Salvar cenário</button>
+    </div>
+
   </div>
 
   <!-- empty state -->
@@ -3111,6 +3122,19 @@ function irSavePrej() {
     <div style="font-size:2.5rem;margin-bottom:.6rem">🎯</div>
     <div style="font-size:.8rem;color:var(--hi);margin-bottom:.35rem">Preencha os dados e clique em Calcular</div>
     <div style="font-size:.58rem;color:var(--dim2)">Defina o preço atual, o preço alvo (upside) e o preço mínimo projetado (downside).</div>
+  </div>
+
+  <!-- ═══ CENÁRIOS SALVOS ═══ -->
+  <div id="vol-cenarios-salvos" class="card" style="margin-top:1rem;display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.65rem;flex-wrap:wrap;gap:.4rem">
+      <div class="card-label" style="margin-bottom:0">📂 CENÁRIOS SALVOS</div>
+      <div style="display:flex;gap:.35rem;align-items:center">
+        <span id="vol-cenarios-count" style="font-size:.48rem;color:var(--dim2)"></span>
+        <button class="btn" style="font-size:.48rem;padding:.18rem .5rem;background:#f871710a;color:#f87171;border:1px solid #f8717120"
+          onclick="volLimparTodosCenarios()">🗑️ Limpar todos</button>
+      </div>
+    </div>
+    <div id="vol-cenarios-lista"></div>
   </div>
 
   </div><!-- /vol-panel-individual -->
@@ -6589,6 +6613,7 @@ function runVolSim() {
 
   document.getElementById("vol-resultado").style.display = "block";
   document.getElementById("vol-empty").style.display     = "none";
+  volRenderCenariosSalvos();
 }
 
 // ── Canvas: mapa visual de preço
@@ -6863,6 +6888,200 @@ function renderAlvoSimulacao(S0, alvo, cotas, posTotal) {
 
   el.innerHTML = html;
 }
+
+// ══════════════════════════════════════════════════════════════════════════
+//  VOLATILIDADE — CENÁRIOS SALVOS (salvar / carregar / excluir)
+// ══════════════════════════════════════════════════════════════════════════
+
+const VOL_CENARIOS_KEY = 'vol-cenarios-salvos';
+
+function volCenariosLoad() {
+  return stGet(VOL_CENARIOS_KEY) || [];
+}
+
+function volCenariosSave(arr) {
+  stSet(VOL_CENARIOS_KEY, arr);
+}
+
+// ── Salvar cenário atual ──────────────────────────────────────────────────
+function volSalvarCenario() {
+  const ticker = (document.getElementById('vol-ticker').value.trim() || 'AÇÃO').toUpperCase();
+  const preco  = parseFloat(document.getElementById('vol-preco').value);
+  const cotas  = parseFloat(document.getElementById('vol-cotas').value) || 0;
+  const alvo   = parseFloat(document.getElementById('vol-alvo').value) || null;
+  const stop   = parseFloat(document.getElementById('vol-stop').value) || null;
+
+  if (!preco || preco <= 0) { toast('Nenhuma simulação para salvar. Execute a simulação primeiro.', false); return; }
+
+  const inputNome = document.getElementById('vol-cenario-nome');
+  const nome = (inputNome && inputNome.value.trim()) || (ticker + ' — ' + new Date().toLocaleDateString('pt-BR'));
+
+  const upPct = alvo ? ((alvo - preco) / preco * 100) : null;
+  const dnPct = stop ? ((preco - stop) / preco * 100) : null;
+  const rr    = (upPct !== null && dnPct !== null && dnPct > 0) ? (upPct / dnPct) : null;
+
+  const cenario = {
+    id:        Date.now(),
+    nome:      nome,
+    ticker:    ticker,
+    preco:     preco,
+    cotas:     cotas,
+    alvo:      alvo,
+    stop:      stop,
+    upPct:     upPct,
+    dnPct:     dnPct,
+    rr:        rr,
+    posTotal:  cotas > 0 ? cotas * preco : null,
+    dataHora:  new Date().toISOString()
+  };
+
+  const lista = volCenariosLoad();
+  lista.unshift(cenario); // mais recente no topo
+  volCenariosSave(lista);
+
+  if (inputNome) inputNome.value = '';
+  toast('Cenário "' + nome + '" salvo com sucesso!');
+  volRenderCenariosSalvos();
+}
+
+// ── Renderizar lista de cenários salvos ───────────────────────────────────
+function volRenderCenariosSalvos() {
+  const container = document.getElementById('vol-cenarios-salvos');
+  const lista     = volCenariosLoad();
+  const countEl   = document.getElementById('vol-cenarios-count');
+
+  if (!lista.length) {
+    container.style.display = 'none';
+    return;
+  }
+
+  container.style.display = 'block';
+  if (countEl) countEl.textContent = lista.length + ' cenário' + (lista.length > 1 ? 's' : '');
+
+  const listaEl = document.getElementById('vol-cenarios-lista');
+  let html = '<div style="display:flex;flex-direction:column;gap:.45rem">';
+
+  lista.forEach((c, i) => {
+    const dt    = new Date(c.dataHora);
+    const data  = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
+    const upStr = c.upPct !== null ? `<span style="color:var(--green);font-weight:700;font-size:.6rem">+${c.upPct.toFixed(1)}%</span>` : '';
+    const dnStr = c.dnPct !== null ? `<span style="color:var(--red);font-weight:700;font-size:.6rem">-${c.dnPct.toFixed(1)}%</span>` : '';
+    const rrStr = c.rr !== null ? `<span style="color:${c.rr >= 2 ? 'var(--green)' : c.rr >= 1 ? 'var(--yellow)' : 'var(--red)'};font-size:.55rem;font-weight:600">${c.rr.toFixed(2)}:1</span>` : '';
+    const posStr = c.posTotal ? `R$ ${c.posTotal.toLocaleString('pt-BR',{minimumFractionDigits:2})}` : '—';
+
+    html += `
+    <div style="display:grid;grid-template-columns:2.2fr 1fr .8fr .7fr .5fr auto;gap:.5rem;align-items:center;
+                padding:.6rem .7rem;background:var(--bg4);border:1px solid var(--border);border-radius:8px;
+                transition:all .15s;cursor:default"
+         onmouseenter="this.style.borderColor='var(--border2)'"
+         onmouseleave="this.style.borderColor='var(--border)'">
+      <!-- info -->
+      <div>
+        <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.15rem">
+          <span style="font-size:.72rem;font-weight:700;color:var(--hi);font-family:'Bebas Neue',sans-serif;letter-spacing:.04em">${esc(c.ticker)}</span>
+          <span style="font-size:.48rem;color:var(--dim2);background:var(--bg3);padding:.1rem .35rem;border-radius:4px">R$ ${c.preco.toFixed(2)}</span>
+          ${c.cotas ? `<span style="font-size:.44rem;color:var(--dim2)">${c.cotas} cotas</span>` : ''}
+        </div>
+        <div style="font-size:.52rem;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px" title="${esc(c.nome)}">${esc(c.nome)}</div>
+      </div>
+      <!-- alvos -->
+      <div style="text-align:center">
+        ${c.alvo ? `<div style="font-size:.44rem;color:var(--dim2)">ALVO</div><div style="font-size:.62rem;color:var(--green);font-weight:600">R$ ${c.alvo.toFixed(2)}</div>` : ''}
+        ${c.stop ? `<div style="font-size:.44rem;color:var(--dim2);margin-top:.15rem">MÍN</div><div style="font-size:.62rem;color:var(--red);font-weight:600">R$ ${c.stop.toFixed(2)}</div>` : ''}
+      </div>
+      <!-- up/down -->
+      <div style="text-align:center;display:flex;flex-direction:column;gap:.15rem">
+        ${upStr}${dnStr}
+      </div>
+      <!-- R/R -->
+      <div style="text-align:center">${rrStr}</div>
+      <!-- data -->
+      <div style="font-size:.44rem;color:var(--dim2);text-align:right;white-space:nowrap">${data}</div>
+      <!-- ações -->
+      <div style="display:flex;gap:.25rem;flex-shrink:0">
+        <button class="btn" title="Carregar cenário" onclick="volCarregarCenario(${i})"
+          style="font-size:.6rem;padding:.25rem .45rem;background:#38bdf808;color:#38bdf8;border:1px solid #38bdf820">▶</button>
+        <button class="btn" title="Duplicar cenário" onclick="volDuplicarCenario(${i})"
+          style="font-size:.6rem;padding:.25rem .45rem;background:#818cf808;color:#818cf8;border:1px solid #818cf820">📋</button>
+        <button class="btn" title="Excluir cenário" onclick="volDeletarCenario(${i})"
+          style="font-size:.6rem;padding:.25rem .45rem;background:#f871710a;color:#f87171;border:1px solid #f8717120">✕</button>
+      </div>
+    </div>`;
+  });
+
+  html += '</div>';
+  listaEl.innerHTML = html;
+}
+
+// ── Carregar cenário nos inputs e executar ─────────────────────────────────
+function volCarregarCenario(idx) {
+  const lista = volCenariosLoad();
+  const c = lista[idx];
+  if (!c) return;
+
+  // Garante modo individual ativo
+  const sel = document.getElementById('vol-mode-select');
+  if (sel && sel.value !== 'individual') { sel.value = 'individual'; volSetMode('individual'); }
+
+  document.getElementById('vol-ticker').value = c.ticker || '';
+  document.getElementById('vol-preco').value  = c.preco || '';
+  document.getElementById('vol-cotas').value  = c.cotas || '';
+  document.getElementById('vol-alvo').value   = c.alvo || '';
+  document.getElementById('vol-stop').value   = c.stop || '';
+  volSyncTotal();
+
+  // Roda a simulação automaticamente
+  runVolSim();
+
+  toast('Cenário "' + c.nome + '" carregado!');
+
+  // Scroll para o topo dos resultados
+  const res = document.getElementById('vol-resultado');
+  if (res) res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Duplicar cenário ───────────────────────────────────────────────────────
+function volDuplicarCenario(idx) {
+  const lista = volCenariosLoad();
+  const c = lista[idx];
+  if (!c) return;
+
+  const copia = { ...c, id: Date.now(), nome: c.nome + ' (cópia)', dataHora: new Date().toISOString() };
+  lista.unshift(copia);
+  volCenariosSave(lista);
+  volRenderCenariosSalvos();
+  toast('Cenário duplicado!');
+}
+
+// ── Excluir cenário ────────────────────────────────────────────────────────
+function volDeletarCenario(idx) {
+  const lista = volCenariosLoad();
+  const nome = lista[idx] ? lista[idx].nome : '';
+  if (!confirm('Excluir cenário "' + nome + '"?')) return;
+
+  lista.splice(idx, 1);
+  volCenariosSave(lista);
+  volRenderCenariosSalvos();
+  toast('Cenário excluído.');
+}
+
+// ── Limpar todos os cenários ───────────────────────────────────────────────
+function volLimparTodosCenarios() {
+  const lista = volCenariosLoad();
+  if (!lista.length) return;
+  if (!confirm('Tem certeza que deseja excluir TODOS os ' + lista.length + ' cenários salvos?')) return;
+
+  volCenariosSave([]);
+  volRenderCenariosSalvos();
+  toast('Todos os cenários foram excluídos.');
+}
+
+// ── Init cenários ao abrir a aba de volatilidade ───────────────────────────
+const _origInitVolPage = initVolPage;
+initVolPage = function() {
+  _origInitVolPage();
+  volRenderCenariosSalvos();
+};
 
 // ══════════════════════════════════════════════════════════════════════════
 //  VOLATILIDADE — MODO CONJUNTO (%) e CONJUNTO PREÇO ALVO
@@ -15623,45 +15842,129 @@ let iaAnalises = stGet('ia-analises') || [];
 let _iaEditandoId = null;
 let _iaCenarios   = [];
 
-// ── Inicializa com as análises SAPR11 e PETR4 da sessão ──────────────────
+// ── Seed upsert v4: injeta/atualiza análises seed SEM apagar dados do usuário ──
 (function iaInit() {
-  if (iaAnalises.length === 0) {
-    const hoje = new Date().toISOString().split('T')[0];
-    iaAnalises = [
-      {
-        id: uid(), ticker: 'SAPR11', tipo: 'fii', precoRef: 39.57, data: '2026-03-13',
-        titulo: 'Projeção de Preço-Alvo 2026/2027 — SAPR11 (Sanepar)',
-        resumo: 'Resultado 2025: Receita R$ 7,1B (+5%), EBITDA R$ 2,9B (margem 41,1%), lucro R$ 2,08B inflado por precatórios. ROE 18%, DL/EBITDA 0,6x. 3RTP homologada em +3,78% — abaixo da inflação. Preço esperado ponderado: R$ 41,70.',
-        cenarios: [
-          { nome:'Otimista',         preco:50.90, prob:12, direcao:'alta' },
-          { nome:'Moderado Positivo',preco:45.90, prob:28, direcao:'alta' },
-          { nome:'Base / Neutro',    preco:42.00, prob:35, direcao:'neutro' },
-          { nome:'Moderado Negativo',preco:35.00, prob:18, direcao:'baixa' },
-          { nome:'Pessimista',       preco:30.50, prob:7,  direcao:'baixa' },
-        ],
-        tecnica: 'BB: abaixo da banda inferior (sobrevenda). MA9: R$ 44,12 — preço abaixo. VWAP: R$ 46,07 — preço abaixo. Stoch RSI K=13,4 (sobrevenda extrema — potencial reversão). MACD negativo. OBV em queda. S1: R$ 38,39 | R1: R$ 42,37.',
-        revisoes: '1) Lucro 2025 não é recorrente — precatórios inflaram. Lucro recorrente ~R$ 1,3–1,5B, P/L real 8–9x. 2) RTP de 3,78% ficou abaixo da inflação — limitador de receita real. 3) Conflito EUA×Irã: impacto indireto via SELIC e custo de capital, não via receita.',
-        tags: ['saneamento','dividendos','selic','regulatorio','agepar'],
-        criadoEm: Date.now(), atualizadoEm: Date.now(),
-      },
-      {
-        id: uid(), ticker: 'PETR4', tipo: 'acao', precoRef: 44.57, data: '2026-03-13',
-        titulo: 'Projeção de Preço-Alvo 2026/2027 — PETR4 (Petrobras)',
-        resumo: 'Resultado 2025: Lucro R$ 110,1B (+200%), EBITDA R$ 244,3B (+10,6%), Produção 3,14 Mboed (+11%), Custo lifting US$ 9/bbl. Brent chegou a US$ 119 com conflito EUA×Irã. DY atual 7,26% — projeção BBI 12,5% em cenário Brent alto. Preço esperado ponderado: R$ 46,40.',
-        cenarios: [
-          { nome:'Conflito Prolongado',  preco:62.00, prob:10, direcao:'alta' },
-          { nome:'Moderado Positivo',    preco:53.00, prob:25, direcao:'alta' },
-          { nome:'Base / Neutro',        preco:47.00, prob:35, direcao:'neutro' },
-          { nome:'Moderado Negativo',    preco:38.00, prob:22, direcao:'baixa' },
-          { nome:'Pessimista',           preco:30.00, prob:8,  direcao:'baixa' },
-        ],
-        tecnica: 'BB: rompeu banda superior (sobrecompra). MA9: R$ 42,78 — preço acima. VWAP: R$ 44,85 — preço acima. Stoch RSI K=97,5 (sobrecompra extrema — risco de correção 5–10%). MACD +2,22 (bullish). OBV em máxima histórica com volume 87% acima da MM20. S1: R$ 42,78 | R1: R$ 45,61.',
-        revisoes: '1) Lucro 2025 parcialmente recorrente — analistas conservadores projetam lucro 2026 de R$ 70–80B (Brent US$ 65). 2) Brent alto NÃO é lucro linear: real aprecia, defasagem de combustíveis comprime downstream, taxa de exportação pode reduzir FCL. 3) Análise técnica ALINHADA com fundamentos — rara confluência. Aguardar correção para R$ 42–44 pode ser melhor entrada.',
-        tags: ['petroleo','brent','geopolitica','dividendos','eua-ira'],
-        criadoEm: Date.now(), atualizadoEm: Date.now(),
-      }
-    ];
-    iaSalvar();
+  const SEED = [
+    {
+      _seedId: 'CSMG3-v6',
+      ticker: 'CSMG3', tipo: 'acao', precoRef: 52.07, data: '2026-03-14',
+      titulo: 'Projeção de Preço-Alvo 2026/2027 — CSMG3 (Copasa)',
+      resumo: 'Resultado consolidado 2025: Receita R$ 7,2B (+5% a/a), EBITDA R$ 3,0B (+10%), Lucro R$ 1,43B (+8%), Margem EBITDA ~41%, DL/EBITDA 2,1x, Investimentos R$ 2,5B (+26%). Golden Cross ativo no semanal — MA50 em R$ 22,36, MA200 em R$ 15,47. Fibonacci traçado de R$ 13,29 ao topo R$ 59,34. Privatizacao aprovada pela ALMG em dez/25. Follow-on BTG/Itau BBA/BofA previsto abr/26. Preco esperado ponderado: R$ 55,20.',
+      cenarios: [
+        { nome:'Bull — Modelo Sabesp',          preco:84.00, prob:7,  direcao:'alta'   },
+        { nome:'Otimista — Priv. + investidor',  preco:68.00, prob:25, direcao:'alta'   },
+        { nome:'Base — Privatizacao jun/26',     preco:58.00, prob:40, direcao:'neutro' },
+        { nome:'Pessimista — Priv. atrasa',      preco:46.00, prob:18, direcao:'baixa'  },
+        { nome:'Bear — Priv. cancela',           preco:31.00, prob:10, direcao:'baixa'  },
+      ],
+      tecnica: 'Semanal: Golden Cross ativo (MA50=R$22,36 acima MA200=R$15,47). Preco em 84% do range Fib (fundo R$13,29 => topo R$59,34). Fib 23,6%=R$48,47 (Zona A). Fib 38,2%=R$41,75 + MA50 convergindo (Zona B ideal). BB: consolidacao com leve compressao. MACD diario negativo — correcao em curso. OBV semanal ascendente. Zonas de entrada: A) R$47,50-49,50 (stop R$45,50, R/R 1:5). B) R$40-43 (stop R$38, R/R 1:8). C) R$34-37 (stop R$32, R/R 1:12).',
+      revisoes: '1) PRECO JA PRECIFICA A PRIVATIZACAO: Alta de 160% em 12 meses. XP alvo R$53,6 — upside de apenas 3%. BB Investimentos alvo R$32,2 sem privatizacao. Risco de comprar o fato. 2) DIVIDA + SELIC SUBESTIMADOS: DL saltou 56% a/a para R$6,1B com Selic 15%. Emitiu R$2B em debentures em mar/26. Modelos de DCF usam Ke 10-12% — se Selic ficar em 15%, o preco-alvo correto cai. 3) MODELO CORPORATION PODE SER NEUTRO: Safra alerta que sem investidor estrategico assumindo gestao (como Equatorial na Sabesp), ganhos de eficiencia chegam mais devagar. Concessao de BH (~30% da receita) ainda pendente.',
+      tags: ['saneamento','privatizacao','copasa','fibonacci','goldenCross','minas-gerais','eua-ira'],
+      zonas: [
+        { label:'Zona A — Ideal',    range:'R$ 47,50 - 49,50', stop:'R$ 45,50', alvo:'R$ 68', rr:'1:5',  cor:'#fbbf24' },
+        { label:'Zona B — Otima',    range:'R$ 40,00 - 43,00', stop:'R$ 38,00', alvo:'R$ 68', rr:'1:8',  cor:'#00e5a0' },
+        { label:'Zona C — Conserv.', range:'R$ 34,00 - 37,00', stop:'R$ 32,00', alvo:'R$ 84', rr:'1:12', cor:'#818cf8' },
+      ],
+      criadoEm: 1741910400000, atualizadoEm: 1741910400000,
+    },
+    {
+      _seedId: 'SAPR11-v6',
+      ticker: 'SAPR11', tipo: 'acao', precoRef: 39.57, data: '2026-03-13',
+      titulo: 'Projecao de Preco-Alvo 2026/2027 — SAPR11 (Sanepar)',
+      resumo: 'Resultado 2025: Receita R$ 7,1B (+5%), EBITDA R$ 2,9B (margem 41,1%), lucro R$ 2,08B inflado por precatorios. ROE 18%, DL/EBITDA 0,6x. 3RTP homologada em +3,78% — abaixo da inflacao. Preco esperado ponderado: R$ 41,70.',
+      cenarios: [
+        { nome:'Otimista',          preco:50.90, prob:12, direcao:'alta'   },
+        { nome:'Moderado Positivo', preco:45.90, prob:28, direcao:'alta'   },
+        { nome:'Base / Neutro',     preco:42.00, prob:35, direcao:'neutro' },
+        { nome:'Moderado Negativo', preco:35.00, prob:18, direcao:'baixa'  },
+        { nome:'Pessimista',        preco:30.50, prob:7,  direcao:'baixa'  },
+      ],
+      tecnica: 'BB: abaixo da banda inferior (sobrevenda). MA9: R$ 44,12 — preco abaixo. VWAP: R$ 46,07 — preco abaixo. Stoch RSI K=13,4 (sobrevenda extrema — potencial reversao). MACD negativo. OBV em queda. S1: R$ 38,39 | R1: R$ 42,37.',
+      revisoes: '1) Lucro 2025 nao e recorrente — precatorios inflaram. Lucro recorrente ~R$ 1,3-1,5B, P/L real 8-9x. 2) RTP de 3,78% ficou abaixo da inflacao — limitador de receita real. 3) Conflito EUA x Ira: impacto indireto via SELIC e custo de capital, nao via receita.',
+      tags: ['saneamento','dividendos','selic','regulatorio','agepar'],
+      criadoEm: 1741824000000, atualizadoEm: 1741824000000,
+    },
+    {
+      _seedId: 'PETR4-v6',
+      ticker: 'PETR4', tipo: 'acao', precoRef: 44.57, data: '2026-03-13',
+      titulo: 'Projecao de Preco-Alvo 2026/2027 — PETR4 (Petrobras)',
+      resumo: 'Resultado 2025: Lucro R$ 110,1B (+200%), EBITDA R$ 244,3B (+10,6%), Producao 3,14 Mboed (+11%), Custo lifting US$ 9/bbl. Brent chegou a US$ 119 com conflito EUA x Ira. DY atual 7,26% — projecao BBI 12,5% em cenario Brent alto. Preco esperado ponderado: R$ 46,40.',
+      cenarios: [
+        { nome:'Conflito Prolongado', preco:62.00, prob:10, direcao:'alta'   },
+        { nome:'Moderado Positivo',   preco:53.00, prob:25, direcao:'alta'   },
+        { nome:'Base / Neutro',       preco:47.00, prob:35, direcao:'neutro' },
+        { nome:'Moderado Negativo',   preco:38.00, prob:22, direcao:'baixa'  },
+        { nome:'Pessimista',          preco:30.00, prob:8,  direcao:'baixa'  },
+      ],
+      tecnica: 'BB: rompeu banda superior (sobrecompra). MA9: R$ 42,78 — preco acima. VWAP: R$ 44,85 — preco acima. Stoch RSI K=97,5 (sobrecompra extrema — risco de correcao 5-10%). MACD +2,22 (bullish). OBV em maxima historica com volume 87% acima da MM20. S1: R$ 42,78 | R1: R$ 45,61.',
+      revisoes: '1) Lucro 2025 parcialmente recorrente — analistas conservadores projetam lucro 2026 de R$ 70-80B (Brent US$ 65). 2) Brent alto NAO e lucro linear: real aprecia, defasagem de combustiveis comprime downstream, taxa de exportacao pode reduzir FCL. 3) Analise tecnica ALINHADA com fundamentos — rara confluencia. Aguardar correcao para R$ 42-44 pode ser melhor entrada.',
+      tags: ['petroleo','brent','geopolitica','dividendos','eua-ira'],
+      criadoEm: 1741824000000, atualizadoEm: 1741824000000,
+    },
+    {
+      _seedId: 'VALE3-v2',
+      ticker: 'VALE3', tipo: 'acao', precoRef: 78.30, data: '2026-03-14',
+      titulo: 'Projecao de Preco-Alvo 2026/2027 — VALE3 (Vale S.A.)',
+      resumo: 'Resultado consolidado 2025: Receita US$38,4bi (+1%), EBITDA ajust. US$15,5bi (+4%), Lucro US$2,35bi (-62% por impairment US$3,5bi no niquel — nao-caixa). Producao Fe 336Mt (recorde desde 2018). Custo C1 US$20,7/t (-4%). FCF 4T25 US$1,69bi. EV/EBITDA 2026E ~5x (desconto 30-40% vs pares). DY ~6,9%. Minerio de ferro: US$103/t (mar/26). China: meta PIB 4,5-5%, importacoes Fe +10% a/a jan-fev/26. Preco esperado ponderado: R$88,10 (+12,5%).',
+      cenarios: [
+        { nome:'Bull — Minerio US$120+ / Cobre boom',     preco:120.00, prob:7,  direcao:'alta'   },
+        { nome:'Otimista — Minerio US$105-115 / China',   preco:102.00, prob:25, direcao:'alta'   },
+        { nome:'Base — Minerio US$95-102 / EBITDA US$17bi', preco:87.00, prob:38, direcao:'neutro' },
+        { nome:'Pessimista — Minerio US$85-90 / Selic',   preco:65.00, prob:20, direcao:'baixa'  },
+        { nome:'Bear — Minerio US$75 / Simandou pleno',   preco:52.00, prob:10, direcao:'baixa'  },
+      ],
+      tecnica: 'Semanal: MA50=R$61,84 (suporte dinamico forte), MA200=R$39,72 (tendencia primaria alta). Fibonacci (R$21,51 -> R$91,46): Fib23,6%=R$74,95 (sendo testado agora), Fib38,2%=R$64,74+MA50 (Zona B), Fib50%=R$56,49 (Zona C). Diario: BB banda inferior (sobrevenda), Stoch RSI K=8,0/D=11,3 (sobrevenda extrema), MACD histograma negativo convergindo, OBV 940bi ascendente, PVT positivo. Volume 26,4M vs media 14,3M — venda com volume acima da media (atencao). Zonas: A) R$73-75,50 (stop R$71, R/R 1:4). B) R$62-65,50 (stop R$60, R/R 1:7). C) R$54-57,50 (stop R$51, R/R 1:10).',
+      revisoes: '1) PREJUIZO 4T25 NAO E FRAQUEZA OPERACIONAL: US$3,84bi foi 91% impairment nao-caixa no niquel canadense. EBITDA ajustado cresceu 4% no ano. Risco real: novos impairments se niquel continuar deprimido. 2) VALUATION JA PRECIFICA MINERIO A US$102: XP alerta que o desconto sumiu — acao esta justa no cenario base. Upside agora depende de expansao de multiplo (cobre/eficiencia), nao de alta do minerio. 3) SIMANDOU E O RISCO ESTRUTURAL MAIS SUBESTIMADO: projeto de 60-120Mt/ano (Guine) pode virar superavit de oferta. BTG e Goldman cortaram projecoes para US$95/t por este motivo. Se Simandou antecipar producao, cenario C2 (R$65) se materializa.',
+      tags: ['mineracao','minerio-de-ferro','china','vale','cobre','niquel','simandou','eua-ira'],
+      zonas: [
+        { label:'Zona A — Prioritaria', range:'R$ 73,00 - 75,50', stop:'R$ 71,00', alvo:'R$ 102', rr:'1:4',  cor:'#fbbf24' },
+        { label:'Zona B — Excelente',   range:'R$ 62,00 - 65,50', stop:'R$ 60,00', alvo:'R$ 102', rr:'1:7',  cor:'#00e5a0' },
+        { label:'Zona C — Conserv.',    range:'R$ 54,00 - 57,50', stop:'R$ 51,00', alvo:'R$ 102', rr:'1:10', cor:'#818cf8' },
+      ],
+      criadoEm: 1741910400000, atualizadoEm: 1741910400000,
+    },
+    {
+      _seedId: 'AXIA3-v1',
+      ticker: 'AXIA3', tipo: 'acao', precoRef: 58.00, data: '2026-03-14',
+      titulo: 'Projecao de Preco-Alvo 2026/2027 — AXIA3 (Axia Energia / ex-Eletrobras)',
+      resumo: 'Consolidado 2025: Lucro ajust. 4T25 R$1,25bi (+141% a/a), EBITDA reg. ajust. 4T25 R$5,75bi (+13% t/t), Lucro contabil 4T25 R$13,68bi (ativo fiscal dif. R$12,36bi). Lucro ajust. 2025: R$4,76bi (-45,8% vs base alta 2024). Dividendos 2025: R$8,3bi (R$3,64/AXIA3). Invest. R$9,6bi (+18%). DL/EBITDA 1,9x. DY 2026E ~10%. TIR real 10,2-11,3%. OBV diario +1,056bi — acumulacao institucional confirmada. AGE Novo Mercado: 01/04/2026. Preco esperado ponderado: R$62,50 (+7,8%).',
+      cenarios: [
+        { nome:'Bull — Selic<11% + R$40bi dividendos',      preco:86.00, prob:8,  direcao:'alta'   },
+        { nome:'Otimista — Selic 12% + Novo Mercado',       preco:72.00, prob:24, direcao:'alta'   },
+        { nome:'Base — Selic inicia queda 2S26',            preco:63.00, prob:40, direcao:'neutro' },
+        { nome:'Pessimista — Selic 15% por todo 2026',      preco:51.00, prob:18, direcao:'baixa'  },
+        { nome:'Bear — Selic 16%+ / tributacao dividendos', preco:44.00, prob:10, direcao:'baixa'  },
+      ],
+      tecnica: 'Diario: MA50=R$56,15 (preco acima), MA200=R$49,93 (preco acima), BB sup=R$63,11 (resistencia), BB inf=R$57,37 (suporte imediato). OBV +1,056bi subindo — acumulacao institucional bullish. Stoch RSI K=7,3/D=14,0 (sobrevenda extrema). MACD -0,63/+0,58/+1,20 (negativo mas convergindo). Semanal Fib (R$12,42 -> R$64,71): Fib23,6%=R$52,37 (suporte imediato), Fib38,2%=R$44,74+MA200 (Zona B), Fib50%=R$38,57 (Zona C). Extensao Fib161,8%=R$86 (alvo bull). Tendencia primaria de alta desde 2020 intacta. Zonas: A) R$51-54 (stop R$49,50, R/R 1:5). B) R$43-46 (stop R$41, R/R 1:7). C) R$36-40 (stop R$34, R/R 1:12).',
+      revisoes: '1) PRECO ACIMA DOS ALVOS XP E BBA: XP alvo R$48,80 e Itau BBA R$50,30 — ambos abaixo do preco atual R$58. Tese de alta depende de Selic caindo para 11-12% ou distribuicao das reservas R$40bi. Com Selic 15%, upside de preco e limitado — tese e de dividendos. 2) NOVO MERCADO — VENDER NA NOTICIA?: AGE 01/04/26 pode gerar pressao de venda apos aprovacao (comprar no rumor, vender no fato). Emissao de 606mi novas acoes (AXIA7) ja criou pressao tecnica. AXIA3 perde diferencial sobre dividendos vs preferenciais apos conversao. 3) MACD NEGATIVO vs OBV POSITIVO — confie no OBV: Stoch RSI K=7,3 + MACD negativo indicam correcao de curto prazo dentro de tendencia de acumulacao. Se OBV virar para baixo, reavalie imediatamente. Correcao ate R$52 (Fib23,6%) e esperada e saudavel — oportunidade, nao perigo.',
+      tags: ['energia','eletrobras','dividendos','selic','novo-mercado','privatizacao','obv-bullish'],
+      zonas: [
+        { label:'Zona A — Prioritaria', range:'R$ 51,00 - 54,00', stop:'R$ 49,50', alvo:'R$ 72', rr:'1:5',  cor:'#fbbf24' },
+        { label:'Zona B — Excelente',   range:'R$ 43,00 - 46,00', stop:'R$ 41,00', alvo:'R$ 72', rr:'1:7',  cor:'#00e5a0' },
+        { label:'Zona C — Maxima',      range:'R$ 36,00 - 40,00', stop:'R$ 34,00', alvo:'R$ 86', rr:'1:12', cor:'#818cf8' },
+      ],
+      criadoEm: 1741910400001, atualizadoEm: 1741910400001,
+    },
+  ];
+
+  // Upsert: para cada seed, insere se ticker nao existe, ou substitui se _seedId mudou
+  let changed = false;
+  SEED.forEach(function(s) {
+    const idx = iaAnalises.findIndex(function(a) { return a.ticker === s.ticker; });
+    const obj = Object.assign({ id: (idx >= 0 ? iaAnalises[idx].id : (typeof uid === 'function' ? uid() : Math.random().toString(36).slice(2))) }, s);
+    if (idx < 0) {
+      // nao existe — insere no inicio
+      iaAnalises.unshift(obj);
+      changed = true;
+    } else if (!iaAnalises[idx]._seedId || iaAnalises[idx]._seedId !== s._seedId) {
+      // existe mas versao antiga — substitui preservando id
+      iaAnalises[idx] = obj;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    try { stSet('ia-analises', iaAnalises); } catch(e) {}
   }
 })();
 
@@ -15718,17 +16021,42 @@ function iaCardHTML(a) {
   const tipoLabel = { acao:'Ação', fii:'FII', etf:'ETF', macro:'Macro', setor:'Setor' }[a.tipo] || a.tipo;
   const tipoColor = { acao:'#818cf8', fii:'#00e5a0', etf:'#38bdf8', macro:'#fbbf24', setor:'#fb923c' }[a.tipo] || 'var(--dim)';
 
-  const cenaHTML = cenarios.slice(0,5).map(c => {
-    const up = ((c.preco - a.precoRef) / a.precoRef * 100);
-    const cor = c.direcao === 'alta' ? 'var(--green)' : c.direcao === 'baixa' ? 'var(--red)' : 'var(--dim)';
-    const seta = c.direcao === 'alta' ? '▲' : c.direcao === 'baixa' ? '▼' : '■';
-    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:.25rem 0;border-bottom:1px solid var(--border)">
-      <span style="font-size:.56rem;color:var(--dim);flex:1">${esc(c.nome)}</span>
-      <span style="font-size:.65rem;font-weight:700;color:${cor};min-width:60px;text-align:right">R$ ${c.preco.toFixed(2)}</span>
-      <span style="font-size:.55rem;color:${cor};min-width:50px;text-align:right">${up>=0?'+':''}${up.toFixed(1)}%</span>
-      <span style="font-size:.55rem;color:var(--dim2);min-width:36px;text-align:right">${c.prob}%</span>
+  // ── Gráfico de barras de probabilidade ──────────────────────────────────
+  const dirCor = { alta:'#00e5a0', baixa:'#f87171', neutro:'#64748b' };
+  const cenaBarras = cenarios.slice(0,5).map(c => {
+    const up  = ((c.preco - a.precoRef) / a.precoRef * 100);
+    const cor = dirCor[c.direcao] || 'var(--dim)';
+    const seta= c.direcao==='alta'?'▲':c.direcao==='baixa'?'▼':'■';
+    const barW= Math.min(100, c.prob * 2); // escala: 50% = barra cheia
+    return `
+    <div style="margin-bottom:.45rem">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.18rem">
+        <span style="font-size:.55rem;color:var(--text)">${seta} ${esc(c.nome)}</span>
+        <span style="display:flex;gap:.5rem;align-items:baseline">
+          <span style="font-size:.65rem;font-weight:700;color:${cor}">R$ ${c.preco.toFixed(2)}</span>
+          <span style="font-size:.5rem;color:${cor}">${up>=0?'+':''}${up.toFixed(1)}%</span>
+          <span style="font-size:.52rem;color:var(--dim2);min-width:28px;text-align:right">${c.prob}%</span>
+        </span>
+      </div>
+      <div class="bar-track" style="background:var(--border)">
+        <div class="bar-fill" style="width:${barW}%;background:${cor};opacity:.75"></div>
+      </div>
     </div>`;
   }).join('');
+
+  // ── Zonas de entrada (se existirem) ─────────────────────────────────────
+  const zonasHTML = (a.zonas||[]).map(z => `
+    <div style="background:var(--bg3);border:1px solid var(--border2);border-left:3px solid ${z.cor||'var(--green)'};border-radius:6px;padding:.45rem .7rem;margin-bottom:.35rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.3rem">
+        <span style="font-size:.52rem;font-weight:700;color:${z.cor||'var(--green)'}">${esc(z.label)}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:.9rem;color:var(--hi)">${esc(z.range)}</span>
+      </div>
+      <div style="display:flex;gap:.8rem;margin-top:.2rem;flex-wrap:wrap">
+        <span style="font-size:.5rem;color:#f87171">Stop: ${esc(z.stop)}</span>
+        <span style="font-size:.5rem;color:var(--green)">Alvo: ${esc(z.alvo)}</span>
+        <span style="font-size:.5rem;color:#38bdf8">R/R: ${esc(z.rr)}</span>
+      </div>
+    </div>`).join('');
 
   const tags = (a.tags||[]).map(t =>
     `<span style="font-size:.44rem;background:var(--bg3);color:var(--dim);border:1px solid var(--border2);border-radius:4px;padding:1px 6px">${esc(t)}</span>`
@@ -15736,52 +16064,61 @@ function iaCardHTML(a) {
 
   const dataStr = a.data ? new Date(a.data + 'T12:00:00').toLocaleDateString('pt-BR') : '—';
 
-  return `<div class="card" style="margin-bottom:.8rem">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.6rem;flex-wrap:wrap">
+  return `<div class="card" style="margin-bottom:.9rem">
+
+    <!-- ── Cabeçalho ── -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:.5rem;margin-bottom:.7rem;flex-wrap:wrap">
       <div style="display:flex;align-items:center;gap:.6rem;flex-wrap:wrap">
-        <span style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:${tipoColor}">${esc(a.ticker)}</span>
+        <span style="font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:${tipoColor}">${esc(a.ticker)}</span>
         <span style="font-size:.48rem;background:${tipoColor}20;color:${tipoColor};border:1px solid ${tipoColor}40;border-radius:4px;padding:2px 7px;font-weight:700">${tipoLabel}</span>
         <div>
           <div style="font-size:.6rem;font-weight:700;color:var(--hi)">${esc(a.titulo)}</div>
           <div style="font-size:.5rem;color:var(--dim)">Ref: R$ ${(a.precoRef||0).toFixed(2)} · ${dataStr}</div>
         </div>
       </div>
-      <div style="display:flex;gap:.3rem;align-items:center;flex-shrink:0">
-        ${precoEsperado != null ? `<div style="text-align:right">
-          <div style="font-size:.44rem;color:var(--dim)">PREÇO ESPERADO</div>
-          <div style="font-size:1rem;font-family:'Bebas Neue',sans-serif;color:${upsideCor}">R$ ${precoEsperado.toFixed(2)}</div>
-          <div style="font-size:.48rem;color:${upsideCor}">${upsideEsp>=0?'+':''}${upsideEsp.toFixed(1)}%</div>
+      <div style="display:flex;gap:.4rem;align-items:center;flex-shrink:0">
+        ${precoEsperado != null ? `<div style="text-align:right;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:.3rem .7rem">
+          <div style="font-size:.42rem;color:var(--dim);letter-spacing:.08em">PREÇO ESPERADO</div>
+          <div style="font-size:1.1rem;font-family:'Bebas Neue',sans-serif;color:${upsideCor};line-height:1.1">R$ ${precoEsperado.toFixed(2)}</div>
+          <div style="font-size:.5rem;color:${upsideCor}">${upsideEsp>=0?'+':''}${upsideEsp.toFixed(1)}%</div>
         </div>` : ''}
-        <button class="btn" onclick="iaEditar('${a.id}')" style="font-size:.52rem;padding:.22rem .5rem;background:var(--bg3);color:var(--dim);border:1px solid var(--border2)">✏️ Editar</button>
-        <button class="btn-icon" onclick="iaRemover('${a.id}')" title="Excluir análise">✕</button>
+        <button class="btn" onclick="iaEditar('${a.id}')" style="font-size:.52rem;padding:.22rem .5rem;background:var(--bg3);color:var(--dim);border:1px solid var(--border2)">✏️</button>
+        <button class="btn-icon" onclick="iaRemover('${a.id}')" title="Excluir">✕</button>
       </div>
     </div>
 
-    ${a.resumo ? `<p style="font-size:.58rem;color:var(--dim);line-height:1.5;margin-bottom:.6rem">${esc(a.resumo)}</p>` : ''}
+    <!-- ── Resumo ── -->
+    ${a.resumo ? `<p style="font-size:.58rem;color:var(--dim);line-height:1.55;margin-bottom:.7rem;padding:.5rem .7rem;background:var(--bg3);border-radius:6px;border-left:2px solid var(--border2)">${esc(a.resumo)}</p>` : ''}
 
-    ${cenarios.length ? `<div style="margin-bottom:.6rem">
-      <div class="card-label" style="margin-bottom:.3rem">Cenários de Preço-Alvo</div>
-      <div style="display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:0">
-        <div style="font-size:.48rem;color:var(--dim2);padding:.2rem 0;border-bottom:1px solid var(--border)">CENÁRIO</div>
-        <div style="font-size:.48rem;color:var(--dim2);padding:.2rem 0;border-bottom:1px solid var(--border);text-align:right">PREÇO-ALVO</div>
-        <div style="font-size:.48rem;color:var(--dim2);padding:.2rem 0;border-bottom:1px solid var(--border);text-align:right">UPSIDE</div>
-        <div style="font-size:.48rem;color:var(--dim2);padding:.2rem 0;border-bottom:1px solid var(--border);text-align:right">PROB.</div>
-      </div>
-      ${cenaHTML}
-    </div>` : ''}
+    <!-- ── Layout 2 colunas: cenários + zonas ── -->
+    <div style="display:grid;grid-template-columns:1fr ${(a.zonas&&a.zonas.length)?'1fr':'0fr'};gap:.7rem;margin-bottom:.6rem">
 
+      <!-- Cenários com barras -->
+      ${cenarios.length ? `<div>
+        <div class="card-label" style="margin-bottom:.5rem">Cenários de Preço-Alvo</div>
+        ${cenaBarras}
+      </div>` : '<div></div>'}
+
+      <!-- Zonas de entrada -->
+      ${(a.zonas&&a.zonas.length) ? `<div>
+        <div class="card-label" style="margin-bottom:.5rem">Zonas de Entrada</div>
+        ${zonasHTML}
+      </div>` : ''}
+    </div>
+
+    <!-- ── Técnica + Revisões ── -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-bottom:.5rem">
-      ${a.tecnica ? `<div style="background:var(--bg3);border-radius:6px;padding:.5rem .6rem">
-        <div class="card-label" style="margin-bottom:.3rem">Análise Técnica</div>
-        <div style="font-size:.56rem;color:var(--dim);line-height:1.5">${esc(a.tecnica)}</div>
+      ${a.tecnica ? `<div style="background:var(--bg3);border-radius:6px;padding:.5rem .6rem;border-left:2px solid #38bdf830">
+        <div class="card-label" style="margin-bottom:.3rem;color:#38bdf8">Análise Técnica</div>
+        <div style="font-size:.55rem;color:var(--dim);line-height:1.55">${esc(a.tecnica)}</div>
       </div>` : ''}
-      ${a.revisoes ? `<div style="background:var(--bg3);border-radius:6px;padding:.5rem .6rem">
-        <div class="card-label" style="margin-bottom:.3rem">Revisões / Riscos</div>
-        <div style="font-size:.56rem;color:var(--dim);line-height:1.5">${esc(a.revisoes)}</div>
+      ${a.revisoes ? `<div style="background:var(--bg3);border-radius:6px;padding:.5rem .6rem;border-left:2px solid #f8717130">
+        <div class="card-label" style="margin-bottom:.3rem;color:#f87171">Revisões / Riscos</div>
+        <div style="font-size:.55rem;color:var(--dim);line-height:1.55">${esc(a.revisoes)}</div>
       </div>` : ''}
     </div>
 
-    ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:.3rem">${tags}</div>` : ''}
+    ${tags ? `<div style="display:flex;flex-wrap:wrap;gap:.3rem;margin-top:.3rem">${tags}</div>` : ''}
   </div>`;
 }
 
@@ -15878,7 +16215,7 @@ function iaSalvarAnalise() {
 
   if (_iaEditandoId) {
     const idx = iaAnalises.findIndex(x => x.id === _iaEditandoId);
-    if (idx >= 0) iaAnalises[idx] = { ...iaAnalises[idx], ...obj };
+    if (idx >= 0) iaAnalises[idx] = { ...iaAnalises[idx], ...obj, zonas: iaAnalises[idx].zonas || [] };
     toast('Análise atualizada!');
   } else {
     iaAnalises.unshift({ id: uid(), criadoEm: agora, ...obj });
