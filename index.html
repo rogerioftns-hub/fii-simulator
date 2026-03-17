@@ -699,7 +699,7 @@
   };
 
   // Chaves que devem ser sincronizadas com Firebase
-  const FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos","ia-analises","vol-cenarios-salvos"];
+  const FB_SYNC_KEYS = ["fii-carteira","fii-cenarios","fii-indicadores","fii-acoes","fii-etfs","fii-watchlist","snapshot-fiis","snapshot-acoes","snapshot-etfs","watchlist-tickers","dividendos","metas","patrimonio-hist","alertas-preco","rend-diarios","vendas-ir","prejuizo-ir","brapi-token","pdf-meta","hist-compras","hist-vendas","fav-ativos","ia-analises","vol-cenarios-salvos","cal-eventos-custom","recdy-ativos"];
 
   let _fbApp, _fbDb, _fbStorage, _fbReady = false, _fbWriting = false;
 
@@ -803,9 +803,21 @@
 
   function fbReRender(k) {
     try {
-      if (k === "fii-carteira")    { if (typeof renderCarteira === "function")    renderCarteira(); }
-      if (k === "fii-acoes")       { if (typeof renderCarteiraAcoes === "function") renderCarteiraAcoes(); }
-      if (k === "fii-etfs")        { if (typeof renderCarteiraEtfs === "function")  renderCarteiraEtfs(); }
+      if (k === "fii-carteira") {
+        const _c = stGet("fii-carteira");
+        if (_c && _c.length) carteira = _c;
+        if (typeof renderCarteira === "function") renderCarteira();
+      }
+      if (k === "fii-acoes") {
+        const _a = stGet("fii-acoes");
+        if (_a && _a.length) carteiraAcoes = _a;
+        if (typeof renderCarteiraAcoes === "function") renderCarteiraAcoes();
+      }
+      if (k === "fii-etfs") {
+        const _e = stGet("fii-etfs");
+        if (_e && _e.length) carteiraEtfs = _e;
+        if (typeof renderCarteiraEtfs === "function") renderCarteiraEtfs();
+      }
       if (k === "fii-cenarios")    { if (typeof renderCenarios === "function")    renderCenarios(); }
       if (k === "fii-indicadores") { if (typeof renderIndicadores === "function") renderIndicadores(); }
       // "fii-watchlist" é o nome local; Android grava em "watchlist-tickers"
@@ -843,17 +855,36 @@
         if (typeof renderRendimentosPage === "function") renderRendimentosPage();
       }
       if (k === "alertas-preco") {
+        alertasLista = stGet("alertas-preco") || [];
         if (typeof renderAlertas === "function") renderAlertas();
+      }
+      if (k === "vendas-ir") {
+        irOps = stGet("vendas-ir") || [];
+        if (typeof renderIRPage === "function") try { renderIRPage(); } catch(e) {}
+      }
+      if (k === "prejuizo-ir") {
+        irPrej = stGet("prejuizo-ir") || { swing:0, fii:0, daytrade:0 };
+        if (typeof renderIRPage === "function") try { renderIRPage(); } catch(e) {}
+      }
+      if (k === "vol-cenarios-salvos") {
+        if (typeof volRenderCenariosSalvos === "function") try { volRenderCenariosSalvos(); } catch(e) {}
+      }
+      if (k === "cal-eventos-custom") {
+        if (typeof renderCalGrade === "function") try { renderCalGrade(); } catch(e) {}
+        if (typeof calRenderProximos === "function") try { calRenderProximos(); } catch(e) {}
+      }
+      if (k === "recdy-ativos") {
+        if (typeof recDyRender === "function") try { recDyRender(); } catch(e) {}
       }
       if (k === "brapi-token") {
         const t = localStorage.getItem("brapi-token");
         if (t) try { localStorage.setItem("brapi-token", t); } catch(e2) {}
       }
       if (k === "hist-vendas") {
-        if (typeof hvRenderTabela === "function") hvRenderTabela();
+        if (typeof hvRenderTabela === "function") { try { hvRenderTabela(); } catch(e) {} }
       }
       if (k === "hist-compras") {
-        if (typeof hcRenderTabela === "function") hcRenderTabela();
+        if (typeof hcRenderTabela === "function") { try { hcRenderTabela(); } catch(e) {} }
       }
       if (k === "fav-ativos") {
         if (typeof favRender === "function") favRender();
@@ -14097,8 +14128,10 @@ function favGetAll() {
 }
 function favSaveAll(arr) {
   if (!Array.isArray(arr)) arr = [];
-  localStorage.setItem(FAV_KEY, JSON.stringify(arr));
-  if (typeof fbWrite === 'function') {
+  if (typeof stSet === 'function') {
+    stSet(FAV_KEY, arr);
+  } else {
+    localStorage.setItem(FAV_KEY, JSON.stringify(arr));
     try { _safeFbWrite(FAV_KEY, arr); } catch(e) {}
   }
 }
@@ -16848,8 +16881,12 @@ function calGetCustom() {
   try { let r=JSON.parse(localStorage.getItem(CAL_KEY)||'[]'); return Array.isArray(r)?r:[]; } catch{ return []; }
 }
 function calSaveCustom(arr) {
-  localStorage.setItem(CAL_KEY, JSON.stringify(arr));
-  if(typeof fbWrite==='function') try{_safeFbWrite(CAL_KEY,arr);}catch(e){}
+  if (typeof stSet === 'function') {
+    stSet(CAL_KEY, arr);
+  } else {
+    localStorage.setItem(CAL_KEY, JSON.stringify(arr));
+    try { _safeFbWrite(CAL_KEY, arr); } catch(e) {}
+  }
 }
 
 function calHoje() {
@@ -18045,8 +18082,6 @@ function rdGetAll() {
 }
 
 function rdSaveAll(arr) {
-  localStorage.setItem(RD_KEY, JSON.stringify(arr));
-  // Sincroniza com Firebase usando a chave correta (igual ao mobile)
   stSet('rend-diarios', arr);
 }
 
@@ -22987,8 +23022,10 @@ function hcGetAll() {
 }
 function hcSaveAll(arr) {
   if (!Array.isArray(arr)) arr = [];
-  localStorage.setItem('hist-compras', JSON.stringify(arr));
-  if (typeof fbWrite === 'function') {
+  if (typeof stSet === 'function') {
+    stSet('hist-compras', arr);
+  } else {
+    localStorage.setItem('hist-compras', JSON.stringify(arr));
     try { _safeFbWrite('hist-compras', arr); } catch(e) {}
   }
 }
@@ -23317,9 +23354,11 @@ function hvGetAll() {
 }
 function hvSaveAll(arr) {
   if (!Array.isArray(arr)) arr = [];
-  const json = JSON.stringify(arr);
-  localStorage.setItem('hist-vendas', json);
-  if (typeof fbWrite === 'function') {
+  if (typeof stSet === 'function') {
+    stSet('hist-vendas', arr);
+  } else {
+    const json = JSON.stringify(arr);
+    localStorage.setItem('hist-vendas', json);
     try { _safeFbWrite('hist-vendas', arr); } catch(e) {}
   }
 }
@@ -29153,7 +29192,15 @@ let   recDyMesesSel = [];
 
 // ── Persistência ─────────────────────────────
 function recDyLoad()  { try { return JSON.parse(localStorage.getItem(RECDY_KEY) || '[]'); } catch(e){ return []; } }
-function recDySave(d) { try { localStorage.setItem(RECDY_KEY, JSON.stringify(d)); } catch(e){} }
+function recDySave(d) {
+  try {
+    if (typeof stSet === 'function') {
+      stSet(RECDY_KEY, d);
+    } else {
+      localStorage.setItem(RECDY_KEY, JSON.stringify(d));
+    }
+  } catch(e) {}
+}
 
 // ── Meses padrão por frequência ───────────────
 function recDyMesesPadrao(freq) {
