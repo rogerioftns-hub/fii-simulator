@@ -3491,6 +3491,11 @@ function irSavePrej() {
 // ══════════════════════════════════════════════════════════════════════════
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
 function fmt(n,d=2) { return (+n).toFixed(d); }
+/** Retorna YYYY-MM-DD no fuso LOCAL (toISOString usa UTC — após 21h no Brasil vira "amanhã") */
+function hojeLocal(d) {
+  var dt = d || new Date();
+  return dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+}
 function fmtMoeda(n) {
   if (n == null || isNaN(n)) return '--';
   return 'R$ ' + Number(n).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -3931,7 +3936,7 @@ function goPage(id) {
   if (id==="token")         tokenCarregarNaTela();
   if (id==="setorial")      setorialInit();
   if (id==="dividendos")    renderDividendosPage();
-  if (id==="rendimentos")    { renderRendimentosPage(); setTimeout(() => { const dot=document.getElementById('rd-autosave-dot'); if(dot) { const t=new Date(); const hoje=t.toISOString().slice(0,10); const jaSalvou=localStorage.getItem(RD_AUTOSAVE_KEY)===hoje; const ehUtil=rdEDiaUtil(t); const badge=document.getElementById('rd-autosave-badge'); const lbl=document.getElementById('rd-autosave-label'); if(!badge)return; if(jaSalvou){dot.style.background='#00e5a0';lbl.textContent='✅ salvo às 18:45';badge.style.color='var(--green)';}else if(!ehUtil){dot.style.background='#334155';lbl.textContent='⏰ auto-save 18:45';badge.style.color='var(--dim2)';}else{dot.style.background='#38bdf8';lbl.textContent='⏰ auto-save 18:45';badge.style.color='var(--dim)';} }}, 100); }
+  if (id==="rendimentos")    { renderRendimentosPage(); setTimeout(() => { const dot=document.getElementById('rd-autosave-dot'); if(dot) { const t=new Date(); const hoje=(typeof rdHojeLocal==='function'?rdHojeLocal(t):t.toISOString().slice(0,10)); const jaSalvou=localStorage.getItem(RD_AUTOSAVE_KEY)===hoje; const ehUtil=rdEDiaUtil(t); const badge=document.getElementById('rd-autosave-badge'); const lbl=document.getElementById('rd-autosave-label'); if(!badge)return; if(jaSalvou){dot.style.background='#00e5a0';lbl.textContent='✅ salvo às 18:45';badge.style.color='var(--green)';}else if(!ehUtil){dot.style.background='#334155';lbl.textContent='⏰ auto-save 18:45';badge.style.color='var(--dim2)';}else{dot.style.background='#38bdf8';lbl.textContent='⏰ auto-save 18:45';badge.style.color='var(--dim)';} }}, 100); }
   if (id==="calculadorair")    renderIRPage();
   if (id==="historicocompras") { try { hcRenderTabela(); } catch(e) {} }
   if (id==="historicovendas")  { try { hvRenderTabela(); } catch(e) {} }
@@ -6274,7 +6279,7 @@ function exportarDados() {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement("a");
   a.href     = url;
-  a.download = `fii-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `fii-backup-${hojeLocal()}.json`;
   a.click();
   URL.revokeObjectURL(url);
   toast("Backup exportado com sucesso!");
@@ -18127,6 +18132,11 @@ window.addEventListener('resize', _removeAcDD);
 
 const RD_KEY = 'fii-rendimentos-diarios';
 
+/** Retorna data local YYYY-MM-DD (wrapper de hojeLocal para contexto RD) */
+function rdHojeLocal(d) {
+  return hojeLocal(d);
+}
+
 function rdGetAll() {
   try {
     // Tenta a chave local primeiro; se vazia, tenta a chave sincronizada com Firebase
@@ -18148,7 +18158,7 @@ function rdSaveAll(arr) {
 // ─── Capturar snapshot do dia atual ───────────────────────────────────────
 function rdCapturarHoje() {
   const today = new Date();
-  const dateStr = today.toISOString().slice(0,10); // YYYY-MM-DD
+  const dateStr = rdHojeLocal(today); // YYYY-MM-DD (fuso local)
 
   const all = rdGetAll();
   const existing = all.find(r => r.date === dateStr);
@@ -18310,7 +18320,7 @@ function rdAutoSaveTick() {
   // Janela de 1 minuto: 18:45:00 → 18:45:59
   if (h !== RD_AUTOSAVE_HOUR || m !== RD_AUTOSAVE_MIN) return false;
 
-  const hoje = agora.toISOString().slice(0,10);
+  const hoje = rdHojeLocal(agora);
   // Evita salvar mais de uma vez no mesmo dia
   if (localStorage.getItem(RD_AUTOSAVE_KEY) === hoje) return false;
 
@@ -18405,7 +18415,7 @@ function rdAutoCapturar(dateStr) {
     if (!badge) return;
 
     const agora = new Date();
-    const hoje  = agora.toISOString().slice(0,10);
+    const hoje  = rdHojeLocal(agora);
     const jaSalvou = localStorage.getItem(RD_AUTOSAVE_KEY) === hoje;
     const ehDiaUtil = rdEDiaUtil(agora);
     const h = agora.getHours(), m = agora.getMinutes();
@@ -20197,7 +20207,7 @@ function renderPatrimonioHist() {
     <div class="card"><div class="card-label">dividendos/mês</div><div class="num" style="font-size:1.5rem;color:var(--green)">R$ ${fmt(ultimo.dividendosMes)}</div></div>
     <div class="card"><div class="card-label">registros</div><div class="num" style="font-size:1.5rem;color:var(--hi)">${hist.length} dias</div></div>`;
   tbodyEl.innerHTML = hist.slice(-30).reverse().map(p => {
-    const dt = p.dataStr || new Date(p.data).toISOString().slice(0,10);
+    const dt = p.dataStr || hojeLocal(new Date(p.data));
     return `<tr>
       <td style="color:var(--hi);font-weight:700">${dt}</td>
       <td class="num" style="color:var(--hi)">R$ ${fmt(p.total)}</td>
@@ -23222,7 +23232,7 @@ function hcAbrirModal(id) {
     if(badge&&r.ticker){badge.textContent=r.ticker+' — editando';badge.style.display='block';}
   } else {
     delete el.dataset.editId;
-    document.getElementById('hc-data').value      = new Date().toISOString().slice(0,10);
+    document.getElementById('hc-data').value      = hojeLocal();
     document.getElementById('hc-tipo').value      = 'Ação';
     document.getElementById('hc-ticker').value    = '';
     document.getElementById('hc-qtd').value       = '';
@@ -23506,7 +23516,7 @@ function hvAbrirModal(id) {
   } else {
     delete el.dataset.editId;
     // Data de hoje
-    document.getElementById('hv-data').value      = new Date().toISOString().slice(0,10);
+    document.getElementById('hv-data').value      = hojeLocal();
     document.getElementById('hv-tipo').value      = 'Ação';
     document.getElementById('hv-ticker').value    = '';
     document.getElementById('hv-qtd').value       = '';
