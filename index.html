@@ -18139,20 +18139,24 @@ function rdHojeLocal(d) {
 
 function rdGetAll() {
   try {
-    // Tenta a chave local primeiro; se vazia, tenta a chave sincronizada com Firebase
-    const local = localStorage.getItem(RD_KEY);
-    if (local && local !== '[]') return JSON.parse(local);
+    // Prioriza a chave sincronizada com Firebase (rend-diarios) — é a que rdSaveAll usa
     const synced = localStorage.getItem('rend-diarios');
     if (synced && synced !== '[]') {
-      localStorage.setItem(RD_KEY, synced); // migra para chave local
+      // Mantém RD_KEY atualizado para compatibilidade
+      try { localStorage.setItem(RD_KEY, synced); } catch(e2) {}
       return JSON.parse(synced);
     }
+    // Fallback: chave local legada
+    const local = localStorage.getItem(RD_KEY);
+    if (local && local !== '[]') return JSON.parse(local);
     return [];
   } catch(e) { return []; }
 }
 
 function rdSaveAll(arr) {
   stSet('rend-diarios', arr);
+  // Também atualiza a chave local legada para manter compatibilidade
+  try { localStorage.setItem(RD_KEY, JSON.stringify(arr)); } catch(e) {}
 }
 
 // ─── Capturar snapshot do dia atual ───────────────────────────────────────
