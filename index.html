@@ -3103,7 +3103,23 @@ function irSavePrej() {
 
   <!-- ── INPUTS ── -->
   <div class="card" style="margin-bottom:.8rem">
-    <div class="card-label">📋 Dados do ativo</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem">
+      <div class="card-label" style="margin-bottom:0">📋 Dados do ativo</div>
+      <!-- Toggle modo R$ / % -->
+      <div style="display:flex;align-items:center;gap:.4rem">
+        <span style="font-size:.48rem;color:var(--dim2);letter-spacing:.06em">MODO ALVO/MÍNIMO:</span>
+        <div style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;overflow:hidden">
+          <button id="vol-mode-price" onclick="volSimSetMode('price')"
+            style="padding:.22rem .7rem;font-size:.52rem;font-weight:700;font-family:'IBM Plex Mono',monospace;border:none;cursor:pointer;transition:all .15s;background:var(--green);color:#000;border-radius:20px 0 0 20px">
+            R$
+          </button>
+          <button id="vol-mode-pct" onclick="volSimSetMode('pct')"
+            style="padding:.22rem .7rem;font-size:.52rem;font-weight:700;font-family:'IBM Plex Mono',monospace;border:none;cursor:pointer;transition:all .15s;background:transparent;color:var(--dim);border-radius:0 20px 20px 0">
+            %
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div style="display:grid;grid-template-columns:repeat(3,1fr) repeat(3,1fr);gap:.65rem;margin-bottom:.7rem">
 
@@ -3122,7 +3138,7 @@ function irSavePrej() {
       <div>
         <div style="font-size:.5rem;color:var(--dim);margin-bottom:.22rem;letter-spacing:.06em">PREÇO ATUAL (R$)</div>
         <input type="number" id="vol-preco" placeholder="38.50" step="0.01" min="0.01"
-          style="font-size:.78rem" oninput="volSyncCotas()"/>
+          style="font-size:.78rem" oninput="volSyncCotas();volSimUpdatePctHints()"/>
       </div>
 
       <div>
@@ -3138,15 +3154,19 @@ function irSavePrej() {
       </div>
 
       <div>
-        <div style="font-size:.5rem;color:var(--green);margin-bottom:.22rem;letter-spacing:.06em">🎯 PREÇO ALVO / TAKE PROFIT (R$)</div>
+        <div id="vol-alvo-label" style="font-size:.5rem;color:var(--green);margin-bottom:.22rem;letter-spacing:.06em">🎯 PREÇO ALVO / TAKE PROFIT (R$)</div>
         <input type="number" id="vol-alvo" placeholder="ex: 48.00" step="0.01" min="0"
-          style="font-size:.78rem;border-color:#00e5a040;background:#00e5a006"/>
+          style="font-size:.78rem;border-color:#00e5a040;background:#00e5a006"
+          oninput="volSimUpdatePctHints()"/>
+        <div id="vol-alvo-hint" style="display:none;font-size:.44rem;color:var(--green);margin-top:.18rem;letter-spacing:.04em"></div>
       </div>
 
       <div>
-        <div style="font-size:.5rem;color:var(--red);margin-bottom:.22rem;letter-spacing:.06em">⬇️ PREÇO MÍNIMO PROJETADO (R$)</div>
+        <div id="vol-stop-label" style="font-size:.5rem;color:var(--red);margin-bottom:.22rem;letter-spacing:.06em">⬇️ PREÇO MÍNIMO PROJETADO (R$)</div>
         <input type="number" id="vol-stop" placeholder="ex: 28.00" step="0.01" min="0"
-          style="font-size:.78rem;border-color:#f8717140;background:#f871710a"/>
+          style="font-size:.78rem;border-color:#f8717140;background:#f871710a"
+          oninput="volSimUpdatePctHints()"/>
+        <div id="vol-stop-hint" style="display:none;font-size:.44rem;color:var(--red);margin-top:.18rem;letter-spacing:.04em"></div>
       </div>
     </div>
 
@@ -3375,17 +3395,41 @@ function irSavePrej() {
     </div>
 
     <div class="card" style="margin-bottom:.8rem">
-      <div class="card-label">📋 Dados do ativo para simulação</div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr) repeat(3,1fr);gap:.65rem;margin-bottom:.7rem">
-        <div>
-          <div style="font-size:.5rem;color:var(--dim);margin-bottom:.22rem;letter-spacing:.06em">TICKER / NOME</div>
-          <input type="text" id="hb-sim-ticker" placeholder="ex: PETR4"
-            oninput="this.value=this.value.toUpperCase()" style="font-size:.78rem"/>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem">
+        <div class="card-label" style="margin-bottom:0">📋 Dados do ativo para simulação</div>
+        <!-- Toggle modo R$ / % -->
+        <div style="display:flex;align-items:center;gap:.4rem">
+          <span style="font-size:.48rem;color:var(--dim2);letter-spacing:.06em">MODO ALVO/MÍNIMO:</span>
+          <div style="display:flex;background:var(--bg3);border:1px solid var(--border2);border-radius:20px;overflow:hidden">
+            <button id="hb-sim-mode-price" onclick="hbSimSetMode('price')"
+              style="padding:.22rem .7rem;font-size:.52rem;font-weight:700;font-family:'IBM Plex Mono',monospace;border:none;cursor:pointer;transition:all .15s;background:var(--green);color:#000;border-radius:20px 0 0 20px">
+              R$
+            </button>
+            <button id="hb-sim-mode-pct" onclick="hbSimSetMode('pct')"
+              style="padding:.22rem .7rem;font-size:.52rem;font-weight:700;font-family:'IBM Plex Mono',monospace;border:none;cursor:pointer;transition:all .15s;background:transparent;color:var(--dim);border-radius:0 20px 20px 0">
+              %
+            </button>
+          </div>
         </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr) repeat(3,1fr);gap:.65rem;margin-bottom:.7rem">
+        <!-- Ticker com autocomplete -->
+        <div style="position:relative">
+          <div style="font-size:.5rem;color:var(--dim);margin-bottom:.22rem;letter-spacing:.06em">TICKER / NOME</div>
+          <input type="text" id="hb-sim-ticker" placeholder="ex: PETR4" autocomplete="off"
+            oninput="this.value=this.value.toUpperCase();hbSimTickerAc(this)"
+            onfocus="hbSimTickerAc(this)"
+            onblur="tickerAcClose()"
+            onkeydown="hbSimTickerAcKey(event,this)"
+            style="font-size:.78rem;text-transform:uppercase;width:100%"/>
+          <div id="hb-sim-ticker-badge" style="display:none;margin-top:.3rem"></div>
+        </div>
+
         <div>
           <div style="font-size:.5rem;color:var(--dim);margin-bottom:.22rem;letter-spacing:.06em">PREÇO ATUAL (R$)</div>
           <input type="number" id="hb-sim-preco" placeholder="38.50" step="0.01" min="0.01"
-            style="font-size:.78rem" oninput="hbSyncCotas()"/>
+            style="font-size:.78rem" oninput="hbSyncCotas();hbSimUpdatePctHints()"/>
         </div>
         <div>
           <div style="font-size:.5rem;color:var(--dim);margin-bottom:.22rem;letter-spacing:.06em">QUANTIDADE</div>
@@ -3397,17 +3441,30 @@ function irSavePrej() {
           <input type="number" id="hb-sim-total" placeholder="3850.00" step="0.01" min="0"
             style="font-size:.78rem" oninput="hbSyncTotal()"/>
         </div>
+
+        <!-- Alvo -->
         <div>
-          <div style="font-size:.5rem;color:var(--green);margin-bottom:.22rem;letter-spacing:.06em">🎯 PREÇO ALVO / TAKE PROFIT (R$)</div>
-          <input type="number" id="hb-sim-alvo" placeholder="ex: 48.00" step="0.01" min="0"
-            style="font-size:.78rem;border-color:#00e5a040;background:var(--bg3)"/>
+          <div id="hb-sim-alvo-label" style="font-size:.5rem;color:var(--green);margin-bottom:.22rem;letter-spacing:.06em">🎯 PREÇO ALVO / TAKE PROFIT (R$)</div>
+          <div style="position:relative">
+            <input type="number" id="hb-sim-alvo" placeholder="ex: 48.00" step="0.01" min="0"
+              style="font-size:.78rem;border-color:#00e5a040;background:var(--bg3);width:100%"
+              oninput="hbSimUpdatePctHints()"/>
+            <div id="hb-sim-alvo-hint" style="display:none;font-size:.44rem;color:var(--green);margin-top:.18rem;letter-spacing:.04em"></div>
+          </div>
         </div>
+
+        <!-- Stop -->
         <div>
-          <div style="font-size:.5rem;color:var(--red);margin-bottom:.22rem;letter-spacing:.06em">⬇️ PREÇO MÍNIMO PROJETADO (R$)</div>
-          <input type="number" id="hb-sim-stop" placeholder="ex: 28.00" step="0.01" min="0"
-            style="font-size:.78rem;border-color:#f8717140;background:var(--bg3)"/>
+          <div id="hb-sim-stop-label" style="font-size:.5rem;color:var(--red);margin-bottom:.22rem;letter-spacing:.06em">⬇️ PREÇO MÍNIMO PROJETADO (R$)</div>
+          <div style="position:relative">
+            <input type="number" id="hb-sim-stop" placeholder="ex: 28.00" step="0.01" min="0"
+              style="font-size:.78rem;border-color:#f8717140;background:var(--bg3);width:100%"
+              oninput="hbSimUpdatePctHints()"/>
+            <div id="hb-sim-stop-hint" style="display:none;font-size:.44rem;color:var(--red);margin-top:.18rem;letter-spacing:.04em"></div>
+          </div>
         </div>
       </div>
+
       <div style="display:flex;justify-content:flex-end;padding-top:.6rem;border-top:1px solid var(--border)">
         <button class="btn btn-green" style="padding:.45rem 1.5rem;font-size:.7rem;font-weight:700"
           onclick="runHBSim()">▶ Calcular Simulação</button>
@@ -6654,6 +6711,7 @@ function volSyncCotas() {
 }
 
 function volPresetSimples(ticker, preco, cotas, alvo, precoMin) {
+  volSimSetMode('price');
   document.getElementById("vol-ticker").value = ticker;
   document.getElementById("vol-cotas").value  = cotas;
   document.getElementById("vol-alvo").value   = alvo;
@@ -6663,6 +6721,78 @@ function volPresetSimples(ticker, preco, cotas, alvo, precoMin) {
   campoPreco.value = preco; // fallback imediato
   volSyncTotal();
   if (typeof volBuscarPrecoAtual === 'function') volBuscarPrecoAtual(ticker);
+}
+
+// ── Estado do modo de simulação Volatilidade: 'price' | 'pct'
+let _volSimMode = 'price';
+
+function volSimSetMode(mode) {
+  _volSimMode = mode;
+  const btnPrice  = document.getElementById('vol-mode-price');
+  const btnPct    = document.getElementById('vol-mode-pct');
+  const alvoLabel = document.getElementById('vol-alvo-label');
+  const stopLabel = document.getElementById('vol-stop-label');
+  const alvoInput = document.getElementById('vol-alvo');
+  const stopInput = document.getElementById('vol-stop');
+  if (mode === 'price') {
+    if (btnPrice) { btnPrice.style.background='var(--green)'; btnPrice.style.color='#000'; }
+    if (btnPct)   { btnPct.style.background='transparent';   btnPct.style.color='var(--dim)'; }
+    if (alvoLabel) alvoLabel.textContent = '🎯 PREÇO ALVO / TAKE PROFIT (R$)';
+    if (stopLabel) stopLabel.textContent = '⬇️ PREÇO MÍNIMO PROJETADO (R$)';
+    if (alvoInput) { alvoInput.placeholder = 'ex: 48.00'; alvoInput.step = '0.01'; }
+    if (stopInput) { stopInput.placeholder = 'ex: 28.00'; stopInput.step = '0.01'; }
+  } else {
+    if (btnPrice) { btnPrice.style.background='transparent'; btnPrice.style.color='var(--dim)'; }
+    if (btnPct)   { btnPct.style.background='#818cf8';       btnPct.style.color='#000'; }
+    if (alvoLabel) alvoLabel.textContent = '🎯 UPSIDE ALVO (% acima do atual)';
+    if (stopLabel) stopLabel.textContent = '⬇️ DOWNSIDE MÁXIMO (% abaixo do atual)';
+    if (alvoInput) { alvoInput.placeholder = 'ex: 25  →  +25%'; alvoInput.step = '0.1'; }
+    if (stopInput) { stopInput.placeholder = 'ex: 15  →  -15%'; stopInput.step = '0.1'; }
+  }
+  if (alvoInput) alvoInput.value = '';
+  if (stopInput) stopInput.value = '';
+  const alvoHint = document.getElementById('vol-alvo-hint');
+  const stopHint = document.getElementById('vol-stop-hint');
+  if (alvoHint) { alvoHint.style.display='none'; alvoHint.textContent=''; }
+  if (stopHint) { stopHint.style.display='none'; stopHint.textContent=''; }
+}
+
+function volSimUpdatePctHints() {
+  const S0 = parseFloat(document.getElementById('vol-preco')?.value) || 0;
+  const alvoHint = document.getElementById('vol-alvo-hint');
+  const stopHint = document.getElementById('vol-stop-hint');
+  if (_volSimMode === 'pct' && S0 > 0) {
+    const alvoVal = parseFloat(document.getElementById('vol-alvo')?.value);
+    const stopVal = parseFloat(document.getElementById('vol-stop')?.value);
+    if (alvoHint) {
+      if (!isNaN(alvoVal) && alvoVal > 0) {
+        alvoHint.textContent = '→ R$ ' + (S0 * (1 + alvoVal / 100)).toFixed(2);
+        alvoHint.style.display = 'block';
+      } else alvoHint.style.display = 'none';
+    }
+    if (stopHint) {
+      if (!isNaN(stopVal) && stopVal > 0) {
+        stopHint.textContent = '→ R$ ' + (S0 * (1 - stopVal / 100)).toFixed(2);
+        stopHint.style.display = 'block';
+      } else stopHint.style.display = 'none';
+    }
+  } else {
+    if (alvoHint) alvoHint.style.display = 'none';
+    if (stopHint) stopHint.style.display = 'none';
+  }
+}
+
+function volSimResolveTargets(S0) {
+  const alvoRaw = parseFloat(document.getElementById('vol-alvo')?.value) || null;
+  const stopRaw = parseFloat(document.getElementById('vol-stop')?.value) || null;
+  if (_volSimMode === 'pct') {
+    return {
+      alvo:    (alvoRaw != null && alvoRaw > 0) ? S0 * (1 + alvoRaw / 100) : null,
+      pMin:    (stopRaw != null && stopRaw > 0) ? S0 * (1 - stopRaw / 100) : null,
+      alvoRaw, stopRaw
+    };
+  }
+  return { alvo: alvoRaw, pMin: stopRaw, alvoRaw: null, stopRaw: null };
 }
 
 // compatibilidade com chamadas antigas
@@ -6686,11 +6816,15 @@ function runVolSim() {
   const ticker = (document.getElementById("vol-ticker").value.trim() || "AÇÃO").toUpperCase();
   const S0     = parseFloat(document.getElementById("vol-preco").value);
   const cotas  = parseFloat(document.getElementById("vol-cotas").value) || 0;
-  const alvo   = parseFloat(document.getElementById("vol-alvo").value)  || null;
-  const pMin   = parseFloat(document.getElementById("vol-stop").value)  || null;
+  const { alvo, pMin, alvoRaw, stopRaw } = volSimResolveTargets(S0);
 
   if (!S0 || S0 <= 0) { toast("Preencha o Preço Atual da ação.", false); return; }
-  if (!alvo && !pMin) { toast("Informe ao menos o Preço Alvo ou o Preço Mínimo.", false); return; }
+  if (!alvo && !pMin) {
+    toast(_volSimMode === 'pct'
+      ? "Informe ao menos o Upside (%) ou o Downside (%)."
+      : "Informe ao menos o Preço Alvo ou o Preço Mínimo.", false);
+    return;
+  }
 
   const posTotal = cotas > 0 ? cotas * S0 : null;
   const upPct    = alvo ? ((alvo  - S0) / S0 * 100) : null;
@@ -6699,10 +6833,10 @@ function runVolSim() {
 
   // ── KPIs
   const kpis = [{ l:"Preço atual", v:`R$ ${S0.toFixed(2)}`, c:"var(--hi)" }];
-  if (alvo)           kpis.push({ l:"Preço alvo",     v:`R$ ${alvo.toFixed(2)}`, c:"var(--green)" });
-  if (upPct !== null) kpis.push({ l:"Upside",          v:`+${upPct.toFixed(2)}%`, c:"var(--green)" });
-  if (pMin)           kpis.push({ l:"Preço mínimo",   v:`R$ ${pMin.toFixed(2)}`, c:"var(--red)" });
-  if (dnPct !== null) kpis.push({ l:"Downside",        v:`-${dnPct.toFixed(2)}%`, c:"var(--red)" });
+  if (alvo)           kpis.push({ l:"Preço alvo",   v:`R$ ${alvo.toFixed(2)}${_volSimMode==='pct'?' (+'+alvoRaw+'%)':''}`, c:"var(--green)" });
+  if (upPct !== null) kpis.push({ l:"Upside",        v:`+${upPct.toFixed(2)}%`, c:"var(--green)" });
+  if (pMin)           kpis.push({ l:"Preço mínimo",  v:`R$ ${pMin.toFixed(2)}${_volSimMode==='pct'?' (-'+stopRaw+'%)':''}`, c:"var(--red)" });
+  if (dnPct !== null) kpis.push({ l:"Downside",      v:`-${dnPct.toFixed(2)}%`, c:"var(--red)" });
   if (rr !== null)    kpis.push({ l:"Risco/Retorno",   v:`${rr.toFixed(2)}:1`,
     c: rr >= 2 ? "var(--green)" : rr >= 1 ? "var(--yellow)" : "var(--red)" });
 
@@ -13092,6 +13226,83 @@ function hbStopAuto() {
 }
 
 // ── Simulação no Home Broker (igual ao vol page)
+// ── Estado do modo de simulação: 'price' | 'pct'
+let _hbSimMode = 'price';
+
+function hbSimSetMode(mode) {
+  _hbSimMode = mode;
+  const btnPrice = document.getElementById('hb-sim-mode-price');
+  const btnPct   = document.getElementById('hb-sim-mode-pct');
+  const alvoLabel = document.getElementById('hb-sim-alvo-label');
+  const stopLabel = document.getElementById('hb-sim-stop-label');
+  const alvoInput = document.getElementById('hb-sim-alvo');
+  const stopInput = document.getElementById('hb-sim-stop');
+
+  if (mode === 'price') {
+    if (btnPrice) { btnPrice.style.background='var(--green)'; btnPrice.style.color='#000'; }
+    if (btnPct)   { btnPct.style.background='transparent';   btnPct.style.color='var(--dim)'; }
+    if (alvoLabel) alvoLabel.textContent = '🎯 PREÇO ALVO / TAKE PROFIT (R$)';
+    if (stopLabel) stopLabel.textContent = '⬇️ PREÇO MÍNIMO PROJETADO (R$)';
+    if (alvoInput) { alvoInput.placeholder = 'ex: 48.00'; alvoInput.step = '0.01'; }
+    if (stopInput) { stopInput.placeholder = 'ex: 28.00'; stopInput.step = '0.01'; }
+  } else {
+    if (btnPrice) { btnPrice.style.background='transparent'; btnPrice.style.color='var(--dim)'; }
+    if (btnPct)   { btnPct.style.background='#818cf8';       btnPct.style.color='#000'; }
+    if (alvoLabel) alvoLabel.textContent = '🎯 UPSIDE ALVO (% acima do atual)';
+    if (stopLabel) stopLabel.textContent = '⬇️ DOWNSIDE MÁXIMO (% abaixo do atual)';
+    if (alvoInput) { alvoInput.placeholder = 'ex: 25  →  +25%'; alvoInput.step = '0.1'; }
+    if (stopInput) { stopInput.placeholder = 'ex: 15  →  -15%'; stopInput.step = '0.1'; }
+  }
+  // Limpa campos e hints ao trocar modo
+  if (alvoInput) alvoInput.value = '';
+  if (stopInput) stopInput.value = '';
+  const alvoHint = document.getElementById('hb-sim-alvo-hint');
+  const stopHint = document.getElementById('hb-sim-stop-hint');
+  if (alvoHint) { alvoHint.style.display='none'; alvoHint.textContent=''; }
+  if (stopHint) { stopHint.style.display='none'; stopHint.textContent=''; }
+}
+
+// Mostra conversão em tempo real ao digitar no modo %
+function hbSimUpdatePctHints() {
+  const S0 = parseFloat(document.getElementById('hb-sim-preco')?.value) || 0;
+  const alvoHint = document.getElementById('hb-sim-alvo-hint');
+  const stopHint = document.getElementById('hb-sim-stop-hint');
+
+  if (_hbSimMode === 'pct' && S0 > 0) {
+    const alvoVal = parseFloat(document.getElementById('hb-sim-alvo')?.value);
+    const stopVal = parseFloat(document.getElementById('hb-sim-stop')?.value);
+    if (alvoHint) {
+      if (!isNaN(alvoVal) && alvoVal > 0) {
+        const preco = S0 * (1 + alvoVal / 100);
+        alvoHint.textContent = `→ R$ ${preco.toFixed(2)}`;
+        alvoHint.style.display = 'block';
+      } else { alvoHint.style.display='none'; }
+    }
+    if (stopHint) {
+      if (!isNaN(stopVal) && stopVal > 0) {
+        const preco = S0 * (1 - stopVal / 100);
+        stopHint.textContent = `→ R$ ${preco.toFixed(2)}`;
+        stopHint.style.display = 'block';
+      } else { stopHint.style.display='none'; }
+    }
+  } else {
+    if (alvoHint) alvoHint.style.display='none';
+    if (stopHint) stopHint.style.display='none';
+  }
+}
+
+// ── Resolve alvo/stop considerando o modo selecionado ──
+function hbSimResolveTargets(S0) {
+  const alvoRaw = parseFloat(document.getElementById('hb-sim-alvo')?.value) || null;
+  const stopRaw = parseFloat(document.getElementById('hb-sim-stop')?.value) || null;
+  if (_hbSimMode === 'pct') {
+    const alvo = (alvoRaw != null && alvoRaw > 0) ? S0 * (1 + alvoRaw / 100) : null;
+    const pMin = (stopRaw != null && stopRaw > 0) ? S0 * (1 - stopRaw / 100) : null;
+    return { alvo, pMin, alvoRaw, stopRaw };
+  }
+  return { alvo: alvoRaw, pMin: stopRaw, alvoRaw: null, stopRaw: null };
+}
+
 function hbSimularAtivo(ticker, precoAtual) {
   hbSimAtivo = ticker;
   document.getElementById('hb-sim-ticker').value = ticker;
@@ -13101,6 +13312,13 @@ function hbSimularAtivo(ticker, precoAtual) {
   document.getElementById('hb-sim-stop').value = '';
   document.getElementById('hb-sim-resultado').style.display = 'none';
   document.getElementById('hb-sim-empty').style.display = 'block';
+  // Limpa badge e hints
+  const badge = document.getElementById('hb-sim-ticker-badge');
+  if (badge) badge.style.display = 'none';
+  const alvoHint = document.getElementById('hb-sim-alvo-hint');
+  const stopHint = document.getElementById('hb-sim-stop-hint');
+  if (alvoHint) { alvoHint.style.display='none'; }
+  if (stopHint) { stopHint.style.display='none'; }
   document.getElementById('hb-sim-section').scrollIntoView({ behavior: 'smooth' });
   toast(`Simular: ${ticker} a R$ ${precoAtual}`, true);
   hbSyncCotas();
@@ -13121,26 +13339,184 @@ function hbSyncTotal() {
   hbSyncCotas();
 }
 
+// ── Autocomplete para hb-sim-ticker ──────────────────────────────────────────
+function hbSimTickerAc(input) {
+  _acInput = input;
+  const q = (input.value || '').trim().toUpperCase();
+  _removeAcDD();
+  if (q.length < 2) {
+    const badge = document.getElementById('hb-sim-ticker-badge');
+    if (badge) badge.style.display = 'none';
+    return;
+  }
+
+  const all = [
+    ..._AC_DATA.fii.map(([t,n])  => [t, n, 'FII']),
+    ..._AC_DATA.acao.map(([t,n]) => [t, n, 'AÇÃO']),
+    ...(_AC_DATA.etf||[]).map(([t,n]) => [t, n, 'ETF']),
+  ];
+  const qLower = q.toLowerCase();
+  const byTicker = all.filter(([t]) => t.startsWith(q));
+  const byName   = all.filter(([t, n]) => !t.startsWith(q) && n.toLowerCase().includes(qLower));
+  const matches  = [...byTicker, ...byName].slice(0, 14);
+  if (!matches.length) return;
+
+  const typeColor = { 'FII':'#34d399', 'AÇÃO':'#38bdf8', 'ETF':'#fb923c' };
+  const typeBg    = { 'FII':'#34d39915', 'AÇÃO':'#38bdf815', 'ETF':'#fb923c15' };
+
+  const dd = document.createElement('div');
+  dd.id = '__acDD__';
+  dd.className = 'ticker-ac-dropdown';
+  dd.style.minWidth = '260px';
+
+  const hdr = document.createElement('div');
+  hdr.style.cssText = 'padding:.22rem .65rem .15rem;font-size:.44rem;color:var(--dim2);letter-spacing:.08em;border-bottom:1px solid var(--border);text-transform:uppercase';
+  hdr.textContent = matches.length + ' resultado' + (matches.length > 1 ? 's' : '') + ' · ↑↓ navegar · Enter selecionar';
+  dd.appendChild(hdr);
+
+  let globalIdx = 0;
+  function renderGroup(items, label) {
+    if (!items.length) return;
+    if (label) {
+      const sep = document.createElement('div');
+      sep.style.cssText = 'padding:.18rem .65rem .1rem;font-size:.42rem;color:var(--dim2);letter-spacing:.08em;text-transform:uppercase;background:var(--bg3);border-top:1px solid var(--border)';
+      sep.textContent = label;
+      dd.appendChild(sep);
+    }
+    items.forEach(([t, n, tipo]) => {
+      const item = document.createElement('div');
+      item.className = 'ticker-ac-item';
+      item.dataset.ticker = t;
+      item.dataset.name   = n;
+      item.dataset.tipo   = tipo;
+      item.dataset.idx    = globalIdx++;
+
+      const tickerHl = t.startsWith(q)
+        ? `<span class="ac-match">${t.slice(0, q.length)}</span>${t.slice(q.length)}`
+        : t;
+      const nameIdx = n.toLowerCase().indexOf(qLower);
+      const nameHl = nameIdx >= 0 && !t.startsWith(q)
+        ? `${n.slice(0, nameIdx)}<span class="ac-match">${n.slice(nameIdx, nameIdx + q.length)}</span>${n.slice(nameIdx + q.length)}`
+        : n;
+
+      item.innerHTML = `
+        <span class="ac-ticker" style="color:${typeColor[tipo]}">${tickerHl}</span>
+        <span class="ac-name" style="flex:1">${nameHl}</span>
+        <span style="font-size:.44rem;font-weight:700;letter-spacing:.04em;padding:1px 5px;border-radius:3px;color:${typeColor[tipo]};background:${typeBg[tipo]};flex-shrink:0">${tipo}</span>`;
+      item.addEventListener('mousedown', e => e.preventDefault());
+      item.addEventListener('click', () => { hbSimTickerAcApply(t, n, tipo); });
+      dd.appendChild(item);
+    });
+  }
+
+  renderGroup(byTicker.slice(0, 10), byName.length ? '🔤 Por ticker' : null);
+  renderGroup(byName.slice(0, Math.max(0, 14 - byTicker.length)), '🏢 Por nome da empresa');
+
+  const rect = input.getBoundingClientRect();
+  dd.style.cssText = `position:fixed;top:${rect.bottom+3}px;left:${rect.left}px;min-width:${Math.max(rect.width,260)}px;z-index:99999;`;
+  document.body.appendChild(dd);
+  _acDD = dd;
+  _acSelIdx = -1;
+}
+
+function hbSimTickerAcApply(ticker, name, tipo) {
+  const input = document.getElementById('hb-sim-ticker');
+  if (input) { input.value = ticker; input.dispatchEvent(new Event('change', { bubbles: true })); }
+  _removeAcDD();
+
+  const typeColor = { 'FII':'#34d399', 'AÇÃO':'#38bdf8', 'ETF':'#fb923c' };
+  const typeBg    = { 'FII':'#34d39915', 'AÇÃO':'#38bdf815', 'ETF':'#fb923c15' };
+  const badge = document.getElementById('hb-sim-ticker-badge');
+  if (badge) {
+    badge.innerHTML = `<span style="font-family:'Bebas Neue',sans-serif;font-size:.75rem;color:${typeColor[tipo]};letter-spacing:.04em">${ticker}</span>
+      <span style="color:var(--border2);margin:0 .25rem">·</span>
+      <span style="font-size:.52rem;color:var(--dim)">${name}</span>
+      <span style="margin-left:.35rem;font-size:.44rem;font-weight:700;padding:1px 5px;border-radius:3px;color:${typeColor[tipo]};background:${typeBg[tipo]}">${tipo}</span>`;
+    badge.style.display = 'block';
+    badge.style.fontFamily = "'IBM Plex Mono',monospace";
+  }
+  hbSimBuscarPrecoAtual(ticker);
+}
+
+async function hbSimBuscarPrecoAtual(ticker) {
+  const campoPreco = document.getElementById('hb-sim-preco');
+  if (!campoPreco) return;
+  campoPreco.placeholder = '⏳ buscando...';
+  campoPreco.value = '';
+  campoPreco.style.borderColor = 'var(--papel)';
+  try {
+    const url = buildBrapiUrl(ticker, '');
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.json();
+    const cotacao = json?.results?.[0]?.regularMarketPrice;
+    if (cotacao && cotacao > 0) {
+      campoPreco.value = cotacao.toFixed(2);
+      campoPreco.style.borderColor = 'var(--green)';
+      if (typeof hbSyncCotas === 'function') hbSyncCotas();
+      setTimeout(() => { campoPreco.style.borderColor = ''; }, 2000);
+    } else { throw new Error('sem cotação'); }
+  } catch(e) {
+    campoPreco.placeholder = '38.50';
+    campoPreco.style.borderColor = 'var(--red)';
+    setTimeout(() => { campoPreco.style.borderColor = ''; campoPreco.placeholder = '38.50'; }, 2500);
+  }
+}
+
+function hbSimTickerAcKey(e, input) {
+  if (!_acDD) return;
+  const items = _acDD.querySelectorAll('.ticker-ac-item');
+  if (!items.length) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    _acSelIdx = Math.min(_acSelIdx + 1, items.length - 1);
+    items.forEach((it, i) => it.classList.toggle('selected', i === _acSelIdx));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    _acSelIdx = Math.max(_acSelIdx - 1, 0);
+    items.forEach((it, i) => it.classList.toggle('selected', i === _acSelIdx));
+  } else if (e.key === 'Enter' || e.key === 'Tab') {
+    const target = _acSelIdx >= 0 ? items[_acSelIdx] : items[0];
+    if (target) {
+      e.preventDefault();
+      hbSimTickerAcApply(target.dataset.ticker, target.dataset.name, target.dataset.tipo);
+    }
+  } else if (e.key === 'Escape') {
+    _removeAcDD();
+  }
+}
+
 function runHBSim() {
   const ticker = (document.getElementById('hb-sim-ticker').value.trim() || 'AÇÃO').toUpperCase();
   const S0     = parseFloat(document.getElementById('hb-sim-preco').value);
   const cotas  = parseFloat(document.getElementById('hb-sim-cotas').value) || 0;
-  const alvo   = parseFloat(document.getElementById('hb-sim-alvo').value) || null;
-  const pMin   = parseFloat(document.getElementById('hb-sim-stop').value) || null;
 
   if (!S0 || S0 <= 0) { toast('Preencha o Preço Atual.', false); return; }
-  if (!alvo && !pMin) { toast('Informe ao menos o Preço Alvo ou o Preço Mínimo.', false); return; }
+
+  const { alvo, pMin, alvoRaw, stopRaw } = hbSimResolveTargets(S0);
+
+  if (!alvo && !pMin) {
+    toast(_hbSimMode === 'pct'
+      ? 'Informe ao menos o Upside (%) ou o Downside (%).'
+      : 'Informe ao menos o Preço Alvo ou o Preço Mínimo.', false);
+    return;
+  }
 
   const posTotal = cotas > 0 ? cotas * S0 : null;
   const upPct    = alvo ? ((alvo  - S0) / S0 * 100) : null;
   const dnPct    = pMin ? ((S0 - pMin)  / S0 * 100) : null;
   const rr       = (upPct !== null && dnPct !== null && dnPct > 0) ? upPct / dnPct : null;
 
+  // Subtítulo do modo
+  const modeTag = _hbSimMode === 'pct'
+    ? `<span style="font-size:.44rem;background:#818cf815;color:#818cf8;border:1px solid #818cf830;border-radius:4px;padding:1px 6px;margin-left:.5rem;letter-spacing:.04em">MODO %</span>`
+    : `<span style="font-size:.44rem;background:#00e5a015;color:var(--green);border:1px solid #00e5a030;border-radius:4px;padding:1px 6px;margin-left:.5rem;letter-spacing:.04em">MODO R$</span>`;
+
   // KPIs
   const kpis = [{ l:'Preço atual', v:`R$ ${S0.toFixed(2)}`, c:'var(--hi)' }];
-  if (alvo)           kpis.push({ l:'Preço alvo',   v:`R$ ${alvo.toFixed(2)}`, c:'var(--green)' });
+  if (alvo)           kpis.push({ l:'Preço alvo',   v:`R$ ${alvo.toFixed(2)}${_hbSimMode==='pct'?' (+'+alvoRaw+'%)':''}`, c:'var(--green)' });
   if (upPct !== null) kpis.push({ l:'Upside',        v:`+${upPct.toFixed(2)}%`, c:'var(--green)' });
-  if (pMin)           kpis.push({ l:'Preço mínimo',  v:`R$ ${pMin.toFixed(2)}`, c:'var(--red)' });
+  if (pMin)           kpis.push({ l:'Preço mínimo',  v:`R$ ${pMin.toFixed(2)}${_hbSimMode==='pct'?' (-'+stopRaw+'%)':''}`, c:'var(--red)' });
   if (dnPct !== null) kpis.push({ l:'Downside',      v:`-${dnPct.toFixed(2)}%`, c:'var(--red)' });
   if (rr !== null)    kpis.push({ l:'Risco/Retorno', v:`${rr.toFixed(2)}:1`,
     c: rr >= 2 ? 'var(--green)' : rr >= 1 ? 'var(--yellow)' : 'var(--red)' });
@@ -13199,8 +13575,8 @@ function runHBSim() {
       <thead><tr><th>CENÁRIO</th><th style="text-align:right">PREÇO</th><th style="text-align:right">VAR%</th>
       ${posTotal ? '<th style="text-align:right">PERDA</th><th style="text-align:right">TOTAL PÓS</th>' : ''}
       </tr></thead><tbody>`;
-    steps.forEach((s, i) => {
-      const pct = ((s.p - S0) / S0 * 100).toFixed(2);
+    steps.forEach(s => {
+      const pct  = ((s.p - S0) / S0 * 100).toFixed(2);
       const loss = posTotal ? Math.abs((s.p - S0) * cotas).toFixed(2) : null;
       const posAfter = posTotal ? (s.p * cotas).toFixed(2) : null;
       quedaHtml += `<tr>
@@ -13230,8 +13606,8 @@ function runHBSim() {
       <thead><tr><th>CENÁRIO</th><th style="text-align:right">PREÇO</th><th style="text-align:right">VAR%</th>
       ${posTotal ? '<th style="text-align:right">GANHO</th><th style="text-align:right">TOTAL PÓS</th>' : ''}
       </tr></thead><tbody>`;
-    stepsA.forEach((s, i) => {
-      const pct = ((s.p - S0) / S0 * 100).toFixed(2);
+    stepsA.forEach(s => {
+      const pct  = ((s.p - S0) / S0 * 100).toFixed(2);
       const gain = posTotal ? Math.abs((s.p - S0) * cotas).toFixed(2) : null;
       const posAfter = posTotal ? (s.p * cotas).toFixed(2) : null;
       altaHtml += `<tr>
@@ -17939,7 +18315,14 @@ function volTickerAc(input) {
     ..._AC_DATA.acao.map(([t,n]) => [t, n, 'AÇÃO']),
     ...(_AC_DATA.etf||[]).map(([t,n]) => [t, n, 'ETF']),
   ];
-  const matches = all.filter(([t]) => t.startsWith(q)).slice(0, 14);
+
+  // Busca por ticker (prefixo) e por nome (contém), sem duplicatas
+  const qLower = q.toLowerCase();
+  const byTicker = all.filter(([t]) => t.startsWith(q));
+  const byName   = all.filter(([t, n]) =>
+    !t.startsWith(q) && n.toLowerCase().includes(qLower)
+  );
+  const matches = [...byTicker, ...byName].slice(0, 14);
   if (!matches.length) return;
 
   const typeColor = { 'FII':'#34d399', 'AÇÃO':'#38bdf8', 'ETF':'#fb923c' };
@@ -17956,24 +18339,45 @@ function volTickerAc(input) {
   hdr.textContent = matches.length + ' resultado' + (matches.length > 1 ? 's' : '') + ' · ↑↓ navegar · Enter selecionar';
   dd.appendChild(hdr);
 
-  matches.forEach(([t, n, tipo], i) => {
-    const item = document.createElement('div');
-    item.className = 'ticker-ac-item';
-    item.dataset.ticker = t;
-    item.dataset.name   = n;
-    item.dataset.tipo   = tipo;
-    item.dataset.idx    = i;
-    const hl = t.startsWith(q)
-      ? `<span class="ac-match">${t.slice(0, q.length)}</span>${t.slice(q.length)}`
-      : t;
-    item.innerHTML = `
-      <span class="ac-ticker" style="color:${typeColor[tipo]}">${hl}</span>
-      <span class="ac-name" style="flex:1">${n}</span>
-      <span style="font-size:.44rem;font-weight:700;letter-spacing:.04em;padding:1px 5px;border-radius:3px;color:${typeColor[tipo]};background:${typeBg[tipo]};flex-shrink:0">${tipo}</span>`;
-    item.addEventListener('mousedown', e => e.preventDefault());
-    item.addEventListener('click', () => { volTickerAcApply(t, n, tipo); });
-    dd.appendChild(item);
-  });
+  let globalIdx = 0;
+  // Renderiza grupo de resultados com label separador opcional
+  function renderGroup(items, label) {
+    if (!items.length) return;
+    if (label) {
+      const sep = document.createElement('div');
+      sep.style.cssText = 'padding:.18rem .65rem .1rem;font-size:.42rem;color:var(--dim2);letter-spacing:.08em;text-transform:uppercase;background:var(--bg3);border-top:1px solid var(--border)';
+      sep.textContent = label;
+      dd.appendChild(sep);
+    }
+    items.forEach(([t, n, tipo]) => {
+      const item = document.createElement('div');
+      item.className = 'ticker-ac-item';
+      item.dataset.ticker = t;
+      item.dataset.name   = n;
+      item.dataset.tipo   = tipo;
+      item.dataset.idx    = globalIdx++;
+
+      // Destaca match no ticker ou no nome conforme o caso
+      const tickerHl = t.startsWith(q)
+        ? `<span class="ac-match">${t.slice(0, q.length)}</span>${t.slice(q.length)}`
+        : t;
+      const nameIdx = n.toLowerCase().indexOf(qLower);
+      const nameHl = nameIdx >= 0 && !t.startsWith(q)
+        ? `${n.slice(0, nameIdx)}<span class="ac-match">${n.slice(nameIdx, nameIdx + q.length)}</span>${n.slice(nameIdx + q.length)}`
+        : n;
+
+      item.innerHTML = `
+        <span class="ac-ticker" style="color:${typeColor[tipo]}">${tickerHl}</span>
+        <span class="ac-name" style="flex:1">${nameHl}</span>
+        <span style="font-size:.44rem;font-weight:700;letter-spacing:.04em;padding:1px 5px;border-radius:3px;color:${typeColor[tipo]};background:${typeBg[tipo]};flex-shrink:0">${tipo}</span>`;
+      item.addEventListener('mousedown', e => e.preventDefault());
+      item.addEventListener('click', () => { volTickerAcApply(t, n, tipo); });
+      dd.appendChild(item);
+    });
+  }
+
+  renderGroup(byTicker.slice(0, 10), byName.length ? '🔤 Por ticker' : null);
+  renderGroup(byName.slice(0, Math.max(0, 14 - byTicker.length)), '🏢 Por nome da empresa');
 
   const rect = input.getBoundingClientRect();
   dd.style.cssText = `position:fixed;top:${rect.bottom+3}px;left:${rect.left}px;min-width:${Math.max(rect.width,260)}px;z-index:99999;`;
